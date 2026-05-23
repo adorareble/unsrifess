@@ -59,11 +59,12 @@ class TwitterClient:
                         "--disable-blink-features=AutomationControlled",
                         "--no-sandbox",
                         "--disable-gpu",
+                        "--disable-dev-shm-usage",
                     ],
                 )
                 context = browser.new_context(storage_state=self.state_file)
                 page = context.new_page()
-                page.goto("https://x.com", wait_until="load", timeout=30000)
+                page.goto("https://x.com", wait_until="domcontentloaded", timeout=60000)
                 logged = False
                 try:
                     page.wait_for_selector(
@@ -88,7 +89,7 @@ class TwitterClient:
             )
             context = browser.new_context()
             page = context.new_page()
-            page.goto("https://x.com/login", wait_until="load")
+            page.goto("https://x.com/login", wait_until="domcontentloaded", timeout=60000)
 
             print("\n=== Browser opened for login ===")
             print("Log in to X/Twitter manually in the browser window.")
@@ -129,6 +130,7 @@ class TwitterClient:
                     "--disable-blink-features=AutomationControlled",
                     "--no-sandbox",
                     "--disable-gpu",
+                    "--disable-dev-shm-usage",
                 ],
             )
             context = browser.new_context(
@@ -193,13 +195,13 @@ class TwitterClient:
 
         try:
             if reply_to_url:
-                page.goto(reply_to_url, wait_until="load", timeout=30000)
+                page.goto(reply_to_url, wait_until="domcontentloaded", timeout=60000)
                 time.sleep(3)
                 page.keyboard.press("r")
                 time.sleep(2)
             else:
                 page.goto(
-                    "https://x.com", wait_until="load", timeout=30000
+                    "https://x.com", wait_until="domcontentloaded", timeout=60000
                 )
                 time.sleep(2)
                 post_btn = page.locator(
