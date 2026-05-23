@@ -179,16 +179,14 @@ class TwitterClient:
         try:
             if reply_to_url:
                 page.goto(reply_to_url, wait_until="domcontentloaded", timeout=60000)
-                page.wait_for_load_state("networkidle", timeout=30000)
                 time.sleep(3)
                 page.keyboard.press("r")
                 time.sleep(2)
             else:
                 page.goto(
-                    "https://x.com/home", wait_until="domcontentloaded", timeout=60000
+                    "https://x.com/home", wait_until="domcontentloaded", timeout=90000
                 )
-                page.wait_for_load_state("networkidle", timeout=30000)
-                time.sleep(3)
+                time.sleep(5)
 
             textbox = page.locator(
                 '[data-testid="tweetTextarea_0"]'
