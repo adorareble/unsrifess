@@ -186,14 +186,30 @@ class TwitterClient:
                 page.goto(
                     "https://x.com", wait_until="domcontentloaded", timeout=60000
                 )
+                page.wait_for_load_state("networkidle", timeout=30000)
                 time.sleep(2)
+
                 post_btn = page.locator(
                     'a[data-testid="SideNav_NewTweet_Button"]'
                 ).first
-                if not post_btn.is_visible(timeout=5000):
-                    raise Exception("Post button not found")
-                post_btn.click()
-                time.sleep(2)
+                posted = False
+                for sel in [
+                    'a[data-testid="SideNav_NewTweet_Button"]',
+                    'a[href="/compose/post"]',
+                    'div[data-testid="SideNav_NewTweet_Button"]',
+                ]:
+                    try:
+                        btn = page.locator(sel).first
+                        if btn.is_visible(timeout=3000):
+                            btn.click()
+                            posted = True
+                            break
+                    except Exception:
+                        continue
+
+                if not posted:
+                    page.goto("https://x.com/compose/post", wait_until="domcontentloaded", timeout=30000)
+                    time.sleep(2)
 
             textbox = page.locator(
                 '[data-testid="tweetTextarea_0"]'
