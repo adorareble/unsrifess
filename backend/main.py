@@ -16,12 +16,12 @@ from twitter_client import TwitterClient
 from PIL import Image, ImageDraw, ImageFont
 
 STATE_DIR = os.environ.get("STATE_DIR", os.path.dirname(os.path.dirname(__file__)))
+os.makedirs(STATE_DIR, exist_ok=True)
 STATE_FILE = os.path.join(STATE_DIR, "twitter_state.json")
 
 state_gz_b64 = os.environ.get("TWITTER_STATE_GZ")
 if state_gz_b64:
     try:
-        os.makedirs(STATE_DIR, exist_ok=True)
         compressed = base64.b64decode(state_gz_b64)
         decoded = gzip.decompress(compressed).decode("utf-8")
         with open(STATE_FILE, "w", encoding="utf-8") as f:
@@ -81,7 +81,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 
 RATE_LIMIT = 5
 RATE_WINDOW = 3600
-RATE_FILE = os.path.join(TEMP_DIR, "tweet_log.json")
+RATE_FILE = os.path.join(STATE_DIR, "tweet_log.json")
 
 
 def check_rate_limit():
