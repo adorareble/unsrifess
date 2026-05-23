@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unsr!fess</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #000; color: #e7e9ea; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .container { width: 100%; max-width: 600px; padding: 20px; }
+  h1 { font-size: 1.5rem; margin-bottom: 20px; color: #e7e9ea; }
+  .card {
+    background: #16181c; border: 1px solid #2f3336; border-radius: 16px;
+    padding: 20px;
+  }
+  .status-bar {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+    font-size: 0.85rem; color: #71767b;
+  }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .status-dot.online { background: #00ba7c; }
+  .status-dot.offline { background: #f4212e; }
+  textarea {
+    width: 100%; background: transparent; border: 1px solid #2f3336;
+    border-radius: 8px; color: #e7e9ea; font-size: 1rem;
+    padding: 12px; resize: vertical; min-height: 120px; font-family: inherit;
+    outline: none; transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: #1d9bf0; }
+  .tweet-count {
+    margin-top: 4px; font-size: 0.85rem; color: #f4212e; font-weight: 500;
+    min-height: 1.2em;
+  }
+  .upload-area {
+    border: 1px dashed #2f3336; border-radius: 8px; padding: 12px;
+    text-align: center; margin-top: 12px; cursor: pointer; color: #71767b;
+    transition: border-color 0.2s;
+  }
+  .upload-area:hover { border-color: #1d9bf0; }
+  .upload-area.has-file { border-color: #00ba7c; }
+  .file-preview {
+    margin-top: 8px; position: relative; width: 120px; height: 120px;
+    border-radius: 8px; overflow: hidden; border: 1px solid #2f3336;
+  }
+  .file-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .file-preview .remove {
+    position: absolute; top: 2px; right: 2px; width: 24px; height: 24px;
+    background: rgba(0,0,0,0.7); border: none; border-radius: 50%;
+    color: #fff; font-size: 0.8rem; cursor: pointer; line-height: 24px;
+    text-align: center;
+  }
+  .btn {
+    width: 100%; padding: 12px; border: none; border-radius: 9999px;
+    color: #fff; font-size: 1rem; font-weight: 700;
+    cursor: pointer; margin-top: 16px; transition: background 0.2s;
+  }
+  .btn-primary { background: #1d9bf0; }
+  .btn-primary:hover { background: #1a8cd8; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-success { background: #00ba7c; }
+  .btn-success:hover { background: #009d68; }
+  .result {
+    margin-top: 16px; padding: 16px; border-radius: 12px;
+    font-size: 0.95rem; text-align: center; display: none;
+  }
+  .result.success { display: block; background: #00321c; color: #00ba7c; border: 1px solid #00ba7c; }
+  .result.error { display: block; background: #2c0a0e; color: #f4212e; border: 1px solid #f4212e; }
+  .result.progress { display: block; background: #0a1e30; color: #1d9bf0; border: 1px solid #1d9bf0; }
+  .result a { color: #1d9bf0; }
+  .result .url-list { margin-top: 8px; list-style: none; }
+  .result .url-list li { margin-bottom: 4px; }
+  .hidden { display: none !important; }
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Unsr!fess</h1>
+  <div class="card">
+    <div class="status-bar">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Preparing tools, please wait...</span>
+    </div>
+
+    <div id="composeArea">
+      <textarea id="tweetText" placeholder="What's happening?" maxlength="3000"></textarea>
+      <div class="tweet-count" id="tweetCount"></div>
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+        + Add image (optional)
+        <div class="file-preview" id="filePreview" style="display:none">
+          <img id="previewImg">
+          <button type="button" class="remove" id="removeFile">&times;</button>
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*">
+      <button class="btn btn-primary" id="submitBtn" disabled>Tweet</button>
+    </div>
+
+    <div id="progressArea" class="hidden">
+      <div class="result progress" id="progressMsg" style="display:block">Memulai...</div>
+      <p style="color:#71767b; font-size:0.8rem; text-align:center; margin-top:12px">
+        Proses tetap berjalan meskipun browser ditutup.
+      </p>
+    </div>
+
+    <div id="doneArea" class="hidden">
+      <div class="result" id="result"></div>
+      <button class="btn btn-success" id="retryBtn">Tweet lagi</button>
+    </div>
+  </div>
+</div>
+<script>
+const MAX_CHARS = 280;
+let selectedFile = null;
+let activeTaskId = null;
+
+function estimateTweets(text) {
+  const len = text.length;
+  if (len === 0) return 0;
+  if (len <= MAX_CHARS) return 1;
+  let remaining = text.trim();
+  let count = 0;
+  while (remaining.length > 0) {
+    count++;
+    if (remaining.length <= MAX_CHARS) break;
+    let splitAt = remaining.lastIndexOf(". ", MAX_CHARS);
+    if (splitAt < 0) splitAt = remaining.lastIndexOf("\n", MAX_CHARS);
+    if (splitAt < 0) splitAt = remaining.lastIndexOf(" ", MAX_CHARS);
+    if (splitAt < 0) splitAt = MAX_CHARS;
+    else splitAt++;
+    remaining = remaining.slice(splitAt).trim();
+  }
+  return count;
+}
+
+function showCompose() {
+  document.getElementById('composeArea').classList.remove('hidden');
+  document.getElementById('progressArea').classList.add('hidden');
+  document.getElementById('doneArea').classList.add('hidden');
+}
+
+function showProgress(msg) {
+  document.getElementById('composeArea').classList.add('hidden');
+  document.getElementById('doneArea').classList.add('hidden');
+  document.getElementById('progressArea').classList.remove('hidden');
+  document.getElementById('progressMsg').textContent = msg;
+}
+
+function showDone() {
+  document.getElementById('composeArea').classList.add('hidden');
+  document.getElementById('progressArea').classList.add('hidden');
+  document.getElementById('doneArea').classList.remove('hidden');
+}
+
+function updateTweetCount() {
+  const text = document.getElementById('tweetText').value;
+  const el = document.getElementById('tweetCount');
+  if (text.length > MAX_CHARS) {
+    const n = estimateTweets(text);
+    el.textContent = '\u2192 ' + n + ' tweets';
+  } else {
+    el.textContent = '';
+  }
+}
+
+function updateFilePreview() {
+  const preview = document.getElementById('filePreview');
+  const area = document.getElementById('uploadArea');
+  const img = document.getElementById('previewImg');
+  if (!selectedFile) {
+    preview.style.display = 'none';
+    area.classList.remove('has-file');
+    area.innerHTML = '+ Add 1 image (optional)';
+    return;
+  }
+  area.classList.add('has-file');
+  area.innerHTML = '';
+  area.appendChild(preview);
+  preview.style.display = 'block';
+  img.src = URL.createObjectURL(selectedFile);
+}
+
+async function checkStatus() {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  try {
+    const r = await fetch('/api/status');
+    const data = await r.json();
+    dot.className = 'status-dot ' + (data.logged_in ? 'online' : 'offline');
+    text.textContent = data.logged_in ? 'Active' : 'Something went wrong, please contact @rektorunsri';
+    document.getElementById('submitBtn').disabled = !data.logged_in;
+  } catch {
+    dot.className = 'status-dot offline';
+    text.textContent = 'Something went wrong, please contact @rektorunsri';
+  }
+}
+
+document.getElementById('tweetText').addEventListener('input', updateTweetCount);
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  if (e.target.files.length > 0) {
+    selectedFile = e.target.files[0];
+    updateFilePreview();
+  }
+  e.target.value = '';
+});
+document.getElementById('removeFile').addEventListener('click', () => {
+  selectedFile = null;
+  updateFilePreview();
+});
+document.getElementById('retryBtn').addEventListener('click', () => {
+  document.getElementById('tweetText').value = '';
+  document.getElementById('result').className = 'result';
+  document.getElementById('result').style.display = 'none';
+  selectedFile = null;
+  updateFilePreview();
+  updateTweetCount();
+  showCompose();
+});
+
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const text = document.getElementById('tweetText').value.trim();
+  if (!text) return;
+
+  showProgress('Mengirim...');
+  document.getElementById('submitBtn').disabled = true;
+
+  const formData = new FormData();
+  formData.append('text', text);
+  if (selectedFile) formData.append('image', selectedFile);
+
+  try {
+    const r = await fetch('/api/tweet', { method: 'POST', body: formData });
+    const data = await r.json();
+    activeTaskId = data.task_id;
+    pollTask(activeTaskId);
+  } catch (err) {
+    showCompose();
+    document.getElementById('result').className = 'result error';
+    document.getElementById('result').textContent = 'Gagal: ' + err.message;
+    document.getElementById('submitBtn').disabled = false;
+    showDone();
+  }
+});
+
+function pollTask(taskId) {
+  const interval = setInterval(async () => {
+    try {
+      const r = await fetch('/api/task/' + taskId);
+      const data = await r.json();
+
+      if (data.status === 'running' || data.status === 'pending') {
+        showProgress(data.progress || 'Proses...');
+        return;
+      }
+
+      clearInterval(interval);
+
+      const result = document.getElementById('result');
+      if (data.status === 'done') {
+        let html = 'Tweet berhasil dikirim!';
+        if (data.urls && data.urls.length > 0) {
+          html = '<ul class="url-list">';
+          data.urls.forEach((url, i) => {
+            const label = data.urls.length > 1 ? 'Tweet ' + (i + 1) + ': ' : '';
+            html += '<li>' + label + '<a href="' + url + '" target="_blank">' + url + '</a></li>';
+          });
+          html += '</ul>';
+        }
+        result.className = 'result success';
+        result.innerHTML = html;
+      } else {
+        result.className = 'result error';
+        result.textContent = 'Error: ' + (data.progress || 'Gagal');
+      }
+      showDone();
+    } catch (err) {
+      clearInterval(interval);
+      document.getElementById('result').className = 'result error';
+      document.getElementById('result').textContent = 'Error: ' + err.message;
+      showDone();
+    }
+  }, 1500);
+}
+
+checkStatus();
+setInterval(checkStatus, 30000);
+</script>
+</body>
+</html>

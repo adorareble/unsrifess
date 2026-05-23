@@ -1,0 +1,5 @@
+twitter_state.json
+temp_images/
+__pycache__/
+*.pyc
+.env
