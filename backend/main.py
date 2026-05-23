@@ -94,10 +94,10 @@ def check_rate_limit():
         pass
     timestamps = [t for t in timestamps if now - t < RATE_WINDOW]
     remaining = max(0, RATE_LIMIT - len(timestamps))
+    next_at = timestamps[0] + RATE_WINDOW if timestamps else 0
     if len(timestamps) >= RATE_LIMIT:
-        next_at = timestamps[0] + RATE_WINDOW
         return {"ok": False, "remaining": remaining, "reset_at": next_at, "message": f"Rate limit reached. Try again after {time.strftime('%H:%M', time.localtime(next_at))}."}
-    return {"ok": True, "remaining": remaining, "timestamps": timestamps}
+    return {"ok": True, "remaining": remaining, "reset_at": next_at, "timestamps": timestamps}
 
 
 def log_tweet(timestamps):
@@ -119,10 +119,9 @@ async def index():
 async def status():
     logged_in = await asyncio.to_thread(client.is_logged_in)
     rate = check_rate_limit()
-    resp = {"logged_in": logged_in, "remaining": rate["remaining"]}
+    resp = {"logged_in": logged_in, "remaining": rate["remaining"], "reset_at": rate["reset_at"]}
     if not rate["ok"]:
         resp["rate_limited"] = True
-        resp["reset_at"] = rate["reset_at"]
         resp["rate_message"] = rate["message"]
     return resp
 
@@ -152,6 +151,8 @@ async def tweet_sync(
                     saved_paths.append(saved_path)
 
         result = await asyncio.to_thread(client.post_tweet, text, saved_paths)
+        if result.get("success"):
+            result["reset_at"] = check_rate_limit().get("reset_at", 0)
         return result
     except Exception as e:
         return {"success": False, "error": str(e)}

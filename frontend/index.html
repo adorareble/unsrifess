@@ -369,6 +369,38 @@ let rateLimited = false;
 let rateResetAt = null;
 let isDone = false;
 
+(function restoreRate() {
+  const saved = localStorage.getItem('unsr_reset_at');
+  if (saved) {
+    const t = parseFloat(saved);
+    if (t > Date.now() / 1000) {
+      rateLimited = true;
+      rateResetAt = t;
+    }
+  }
+})();
+
+function saveResetAt(t) {
+  if (t && t > 0) {
+    localStorage.setItem('unsr_reset_at', t.toString());
+  }
+}
+
+function showCooldown(resetAt) {
+  const t = new Date(resetAt * 1000);
+  const now = new Date();
+  const waitMin = Math.ceil((t - now) / 60000);
+  document.getElementById('statusText').textContent = 'Cooldown ' + waitMin + 'm \u2022 0/5';
+  document.getElementById('composeArea').classList.add('hidden');
+  document.getElementById('rateLimitMsg')?.classList.remove('hidden');
+  const msg = document.getElementById('rateLimitMsg');
+  if (msg) {
+    const h = t.getHours().toString().padStart(2,'0');
+    const m = t.getMinutes().toString().padStart(2,'0');
+    msg.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#71767b"><div style="font-size:2rem;margin-bottom:12px">&#9200;</div><div style="font-size:1rem;font-weight:600;color:#e7e9ea;margin-bottom:8px">You\'ve used all 5 confessions</div><div style="font-size:0.9rem">Next available at <strong>' + h + ':' + m + '</strong> (~' + waitMin + ' min)</div></div>';
+  }
+}
+
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
@@ -378,28 +410,21 @@ async function checkStatus() {
     dot.className = 'status-dot ' + (data.logged_in ? 'online' : 'offline');
     rateLimited = !!data.rate_limited;
     rateResetAt = data.reset_at || null;
+    saveResetAt(data.reset_at);
 
-    if (data.logged_in && !data.rate_limited) {
+    if (rateLimited) {
+      showCooldown(data.reset_at);
+    } else {
       text.textContent = data.remaining + ' remaining';
-      if (!isDone) {
+      const saved = localStorage.getItem('unsr_reset_at');
+      if (saved && parseFloat(saved) > Date.now() / 1000 && !isDone) {
+        rateLimited = true;
+        rateResetAt = parseFloat(saved);
+        showCooldown(rateResetAt);
+      } else if (!isDone) {
         document.getElementById('composeArea').classList.remove('hidden');
         document.getElementById('rateLimitMsg')?.classList.add('hidden');
       }
-    } else if (data.rate_limited) {
-      const t = new Date(data.reset_at * 1000);
-      const now = new Date();
-      const waitMin = Math.ceil((t - now) / 60000);
-      text.textContent = 'Cooldown ' + waitMin + 'm \u2022 0/5';
-      document.getElementById('composeArea').classList.add('hidden');
-      document.getElementById('rateLimitMsg')?.classList.remove('hidden');
-      const msg = document.getElementById('rateLimitMsg');
-      if (msg) {
-        const h = t.getHours().toString().padStart(2,'0');
-        const m = t.getMinutes().toString().padStart(2,'0');
-        msg.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#71767b"><div style="font-size:2rem;margin-bottom:12px">&#9200;</div><div style="font-size:1rem;font-weight:600;color:#e7e9ea;margin-bottom:8px">You\'ve used all 5 confessions</div><div style="font-size:0.9rem">Next available at <strong>' + h + ':' + m + '</strong> (~' + waitMin + ' min)</div></div>';
-      }
-    } else {
-      text.textContent = 'Something went wrong, please report to @rektorunsri';
     }
   } catch {
     dot.className = 'status-dot offline';
@@ -488,6 +513,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       }
     }
     submitBtn.disabled = false;
+    if (data.reset_at) saveResetAt(data.reset_at);
     checkStatus();
     showDone();
   } catch (err) {
