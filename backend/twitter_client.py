@@ -188,18 +188,22 @@ class TwitterClient:
                 )
                 time.sleep(5)
 
-            textbox = page.locator(
-                '[data-testid="tweetTextarea_0"]'
-            ).first
-            try:
-                textbox.wait_for(state="visible", timeout=15000)
-                textbox.click()
-                time.sleep(1)
-            except Exception:
-                textbox = page.locator('div[role="textbox"]').first
-                textbox.wait_for(state="visible", timeout=15000)
-                textbox.click()
-                time.sleep(1)
+            for attempt in range(2):
+                textbox = page.locator('[data-testid="tweetTextarea_0"]').first
+                try:
+                    textbox.wait_for(state="visible", timeout=30000)
+                    textbox.click()
+                    time.sleep(1)
+                    break
+                except Exception:
+                    if attempt == 0:
+                        page.reload(wait_until="domcontentloaded", timeout=60000)
+                        time.sleep(5)
+                    else:
+                        textbox = page.locator('div[role="textbox"]').first
+                        textbox.wait_for(state="visible", timeout=30000)
+                        textbox.click()
+                        time.sleep(1)
             page.keyboard.type(text, delay=10)
 
             if image_path:
