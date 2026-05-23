@@ -116,7 +116,6 @@
 <script>
 const MAX_CHARS = 280;
 let selectedFile = null;
-let activeTaskId = null;
 
 function estimateTweets(text) {
   const len = text.length;
@@ -233,11 +232,29 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   if (selectedFile) formData.append('image', selectedFile);
 
   try {
-    const r = await fetch('/api/tweet', { method: 'POST', body: formData });
+    const r = await fetch('/api/tweet-sync', { method: 'POST', body: formData });
     const data = await r.json();
-    activeTaskId = data.task_id;
-    pollTask(activeTaskId);
+    const result = document.getElementById('result');
+    if (data.success) {
+      let html = 'Tweet berhasil dikirim!';
+      if (data.urls && data.urls.length > 0) {
+        html = '<ul class="url-list">';
+        data.urls.forEach((url, i) => {
+          const label = data.urls.length > 1 ? 'Tweet ' + (i + 1) + ': ' : '';
+          html += '<li>' + label + '<a href="' + url + '" target="_blank">' + url + '</a></li>';
+        });
+        html += '</ul>';
+      }
+      result.className = 'result success';
+      result.innerHTML = html;
+    } else {
+      result.className = 'result error';
+      result.textContent = 'Error: ' + (data.error || 'Gagal');
+    }
+    document.getElementById('submitBtn').disabled = false;
+    showDone();
   } catch (err) {
+    document.getElementById('submitBtn').disabled = false;
     showCompose();
     document.getElementById('result').className = 'result error';
     document.getElementById('result').textContent = 'Gagal: ' + err.message;
@@ -245,46 +262,6 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     showDone();
   }
 });
-
-function pollTask(taskId) {
-  const interval = setInterval(async () => {
-    try {
-      const r = await fetch('/api/task/' + taskId);
-      const data = await r.json();
-
-      if (data.status === 'running' || data.status === 'pending') {
-        showProgress(data.progress || 'Proses...');
-        return;
-      }
-
-      clearInterval(interval);
-
-      const result = document.getElementById('result');
-      if (data.status === 'done') {
-        let html = 'Tweet berhasil dikirim!';
-        if (data.urls && data.urls.length > 0) {
-          html = '<ul class="url-list">';
-          data.urls.forEach((url, i) => {
-            const label = data.urls.length > 1 ? 'Tweet ' + (i + 1) + ': ' : '';
-            html += '<li>' + label + '<a href="' + url + '" target="_blank">' + url + '</a></li>';
-          });
-          html += '</ul>';
-        }
-        result.className = 'result success';
-        result.innerHTML = html;
-      } else {
-        result.className = 'result error';
-        result.textContent = 'Error: ' + (data.progress || 'Gagal');
-      }
-      showDone();
-    } catch (err) {
-      clearInterval(interval);
-      document.getElementById('result').className = 'result error';
-      document.getElementById('result').textContent = 'Error: ' + err.message;
-      showDone();
-    }
-  }, 1500);
-}
 
 checkStatus();
 setInterval(checkStatus, 30000);
