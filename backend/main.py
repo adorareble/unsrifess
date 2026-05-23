@@ -137,20 +137,22 @@ async def tweet_sync(
     image: UploadFile = File(default=None),
 ):
     saved_path = None
-    if image and image.filename:
-        ext = os.path.splitext(image.filename)[1] or ".jpg"
-        filename = f"{uuid.uuid4().hex}{ext}"
-        saved_path = os.path.join(TEMP_DIR, filename)
-        content = await image.read()
-        with open(saved_path, "wb") as f:
-            f.write(content)
+    try:
+        if image and image.filename:
+            ext = os.path.splitext(image.filename)[1] or ".jpg"
+            filename = f"{uuid.uuid4().hex}{ext}"
+            saved_path = os.path.join(TEMP_DIR, filename)
+            content = await image.read()
+            with open(saved_path, "wb") as f:
+                f.write(content)
 
-    result = await asyncio.to_thread(client.post_tweet, text, saved_path)
-
-    if saved_path:
-        try:
-            os.remove(saved_path)
-        except Exception:
-            pass
-
-    return result
+        result = await asyncio.to_thread(client.post_tweet, text, saved_path)
+        return result
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    finally:
+        if saved_path:
+            try:
+                os.remove(saved_path)
+            except Exception:
+                pass
