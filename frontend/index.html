@@ -12,83 +12,187 @@
     display: flex; align-items: center; justify-content: center;
   }
   .container { width: 100%; max-width: 600px; padding: 20px; }
-  h1 { font-size: 1.5rem; margin-bottom: 20px; color: #e7e9ea; }
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .header h1 {
+    font-size: 1.4rem; font-weight: 700;
+    background: linear-gradient(135deg, #1d9bf0, #8b5cf6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header .subtitle { font-size: 0.75rem; color: #4a4b4e; -webkit-text-fill-color: #4a4b4e; }
   .card {
-    background: #16181c; border: 1px solid #2f3336; border-radius: 16px;
+    background: #16181c; border: 1px solid #2f3336; border-radius: 20px;
     padding: 20px;
   }
   .status-bar {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
     font-size: 0.85rem; color: #71767b;
   }
-  .status-dot { width: 10px; height: 10px; border-radius: 50%; }
-  .status-dot.online { background: #00ba7c; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.online { background: #00ba7c; box-shadow: 0 0 8px rgba(0,186,124,0.4); }
   .status-dot.offline { background: #f4212e; }
+  .status-badge {
+    margin-left: auto;
+    padding: 2px 10px; border-radius: 999px;
+    font-size: 0.7rem; font-weight: 600;
+    border: 1px solid #2f3336;
+  }
+  .keyword-hint {
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 12px; font-size: 0.8rem;
+    padding: 8px 12px; border-radius: 8px;
+    background: rgba(29,155,240,0.08); border: 1px solid rgba(29,155,240,0.15);
+    color: #1d9bf0;
+  }
+  .keyword-hint code {
+    background: rgba(29,155,240,0.15); padding: 1px 6px;
+    border-radius: 4px; font-weight: 600;
+  }
   textarea {
     width: 100%; background: transparent; border: 1px solid #2f3336;
-    border-radius: 8px; color: #e7e9ea; font-size: 1rem;
-    padding: 12px; resize: vertical; min-height: 120px; font-family: inherit;
-    outline: none; transition: border-color 0.2s;
+    border-radius: 12px; color: #e7e9ea; font-size: 1rem;
+    padding: 14px; resize: vertical; min-height: 130px; font-family: inherit;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
   }
-  textarea:focus { border-color: #1d9bf0; }
+  textarea:focus { border-color: #1d9bf0; box-shadow: 0 0 0 2px rgba(29,155,240,0.15); }
+  textarea.error { border-color: #f4212e; box-shadow: 0 0 0 2px rgba(244,33,46,0.15); }
   .tweet-count {
-    margin-top: 4px; font-size: 0.85rem; color: #f4212e; font-weight: 500;
+    margin-top: 6px; font-size: 0.85rem; font-weight: 500;
     min-height: 1.2em;
   }
+  .tweet-count.over { color: #f4212e; }
+  .tweet-count.ok { color: #00ba7c; }
+  .tweet-count.info { color: #71767b; }
   .upload-area {
-    border: 1px dashed #2f3336; border-radius: 8px; padding: 12px;
+    border: 1px dashed #2f3336; border-radius: 12px; padding: 14px;
     text-align: center; margin-top: 12px; cursor: pointer; color: #71767b;
-    transition: border-color 0.2s;
+    transition: all 0.2s; font-size: 0.9rem;
   }
-  .upload-area:hover { border-color: #1d9bf0; }
+  .upload-area:hover { border-color: #1d9bf0; color: #1d9bf0; background: rgba(29,155,240,0.04); }
   .upload-area.has-file { border-color: #00ba7c; }
   .file-preview {
-    margin-top: 8px; position: relative; width: 120px; height: 120px;
-    border-radius: 8px; overflow: hidden; border: 1px solid #2f3336;
+    margin: 0 auto; width: 120px; height: 120px;
+    border-radius: 12px; overflow: hidden; border: 1px solid #2f3336;
+    position: relative;
   }
   .file-preview img { width: 100%; height: 100%; object-fit: cover; }
   .file-preview .remove {
-    position: absolute; top: 2px; right: 2px; width: 24px; height: 24px;
-    background: rgba(0,0,0,0.7); border: none; border-radius: 50%;
-    color: #fff; font-size: 0.8rem; cursor: pointer; line-height: 24px;
-    text-align: center;
+    position: absolute; top: 4px; right: 4px; width: 26px; height: 26px;
+    background: rgba(0,0,0,0.75); border: none; border-radius: 50%;
+    color: #fff; font-size: 0.9rem; cursor: pointer; line-height: 26px;
+    text-align: center; transition: background 0.2s;
   }
+  .file-preview .remove:hover { background: rgba(244,33,46,0.8); }
   .btn {
-    width: 100%; padding: 12px; border: none; border-radius: 9999px;
+    width: 100%; padding: 13px; border: none; border-radius: 9999px;
     color: #fff; font-size: 1rem; font-weight: 700;
-    cursor: pointer; margin-top: 16px; transition: background 0.2s;
+    cursor: pointer; margin-top: 16px; transition: all 0.2s;
   }
   .btn-primary { background: #1d9bf0; }
-  .btn-primary:hover { background: #1a8cd8; }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary:hover:not(:disabled) { background: #1a8cd8; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
   .btn-success { background: #00ba7c; }
   .btn-success:hover { background: #009d68; }
+  .validate-msg {
+    font-size: 0.82rem; min-height: 1.2em; margin-top: 6px;
+    padding: 0 4px; transition: all 0.2s;
+  }
+  .validate-msg.error { color: #f4212e; }
+  .validate-msg.ok { color: #00ba7c; }
+  .loading-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    border-radius: 20px; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 20px;
+    background: rgba(22,24,28,0.92); backdrop-filter: blur(4px);
+  }
+  .card-wrap { position: relative; }
+  .spinner {
+    width: 48px; height: 48px; border: 4px solid #2f3336;
+    border-top-color: #1d9bf0; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: #e7e9ea; font-size: 0.95rem; font-weight: 500; }
+  .loading-detail { color: #71767b; font-size: 0.8rem; }
+  .progress-track {
+    width: 70%; height: 4px; background: #2f3336; border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%; width: 0%; background: linear-gradient(90deg, #1d9bf0, #8b5cf6);
+    border-radius: 2px; transition: width 0.3s ease;
+    animation: progressPulse 1.5s ease-in-out infinite;
+  }
+  @keyframes progressPulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+  }
   .result {
     margin-top: 16px; padding: 16px; border-radius: 12px;
     font-size: 0.95rem; text-align: center; display: none;
   }
   .result.success { display: block; background: #00321c; color: #00ba7c; border: 1px solid #00ba7c; }
   .result.error { display: block; background: #2c0a0e; color: #f4212e; border: 1px solid #f4212e; }
-  .result.progress { display: block; background: #0a1e30; color: #1d9bf0; border: 1px solid #1d9bf0; }
   .result a { color: #1d9bf0; }
   .result .url-list { margin-top: 8px; list-style: none; }
   .result .url-list li { margin-bottom: 4px; }
   .hidden { display: none !important; }
   input[type="file"] { display: none; }
+  .done-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .done-actions .btn { margin-top: 0; flex: 1; }
+  .btn-outline {
+    background: transparent; border: 1px solid #2f3336;
+    color: #e7e9ea;
+  }
+  .btn-outline:hover { background: rgba(239,243,244,0.05); }
+  @media (max-width: 480px) {
+    .container { padding: 12px; }
+    .card { padding: 16px; border-radius: 16px; }
+    .header h1 { font-size: 1.2rem; }
+  }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>Unsr!fess</h1>
-  <div class="card">
-    <div class="status-bar">
+  <div class="header">
+    <div>
+      <h1>Unsr!fess</h1>
+      <div class="subtitle">Confess anonymously on X</div>
+    </div>
+    <div class="status-bar" style="margin-bottom:0">
       <span class="status-dot" id="statusDot"></span>
-      <span id="statusText">Preparing tools, please wait...</span>
+      <span id="statusText">Checking...</span>
+    </div>
+  </div>
+
+  <div class="card card-wrap">
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="spinner"></div>
+      <div class="loading-text">Posting...</div>
+      <div class="loading-detail" id="loadingDetail">Sending to X</div>
+      <div class="progress-track">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div style="color:#4a4b4e;font-size:0.75rem;margin-top:8px">
+        Closing the browser won't cancel the process
+      </div>
     </div>
 
     <div id="composeArea">
-      <textarea id="tweetText" placeholder="What's happening?" maxlength="3000"></textarea>
-      <div class="tweet-count" id="tweetCount"></div>
+      <div class="keyword-hint">
+        <span>&#9432;</span>
+        Your message must contain <code>unsr!</code> to be sent.
+      </div>
+
+      <textarea id="tweetText" placeholder="What would you like to share?" maxlength="3000"></textarea>
+      <div class="tweet-count info" id="tweetCount"></div>
+      <div class="validate-msg" id="validateMsg"></div>
+
       <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
         + Add image (optional)
         <div class="file-preview" id="filePreview" style="display:none">
@@ -97,25 +201,29 @@
         </div>
       </div>
       <input type="file" id="fileInput" accept="image/*">
-      <button class="btn btn-primary" id="submitBtn" disabled>Tweet</button>
-    </div>
 
-    <div id="progressArea" class="hidden">
-      <div class="result progress" id="progressMsg" style="display:block">Memulai...</div>
-      <p style="color:#71767b; font-size:0.8rem; text-align:center; margin-top:12px">
-        Proses tetap berjalan meskipun browser ditutup.
-      </p>
+      <button class="btn btn-primary" id="submitBtn" disabled>Send</button>
     </div>
 
     <div id="doneArea" class="hidden">
       <div class="result" id="result"></div>
-      <button class="btn btn-success" id="retryBtn">Tweet lagi</button>
+      <div class="done-actions">
+        <button class="btn btn-success" id="newBtn">New confession</button>
+      </div>
     </div>
   </div>
 </div>
+
 <script>
 const MAX_CHARS = 280;
 let selectedFile = null;
+
+const tweetText = document.getElementById('tweetText');
+const tweetCount = document.getElementById('tweetCount');
+const validateMsg = document.getElementById('validateMsg');
+const submitBtn = document.getElementById('submitBtn');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const progressBar = document.getElementById('progressBar');
 
 function estimateTweets(text) {
   const len = text.length;
@@ -138,31 +246,74 @@ function estimateTweets(text) {
 
 function showCompose() {
   document.getElementById('composeArea').classList.remove('hidden');
-  document.getElementById('progressArea').classList.add('hidden');
   document.getElementById('doneArea').classList.add('hidden');
 }
 
-function showProgress(msg) {
-  document.getElementById('composeArea').classList.add('hidden');
-  document.getElementById('doneArea').classList.add('hidden');
-  document.getElementById('progressArea').classList.remove('hidden');
-  document.getElementById('progressMsg').textContent = msg;
+function showLoading() {
+  loadingOverlay.classList.remove('hidden');
+  progressBar.style.width = '0%';
+  let p = 0;
+  const interval = setInterval(() => {
+    p = Math.min(p + Math.random() * 12, 85);
+    progressBar.style.width = p + '%';
+  }, 800);
+  loadingOverlay._interval = interval;
+}
+
+function hideLoading() {
+  clearInterval(loadingOverlay._interval);
+  progressBar.style.width = '100%';
+  setTimeout(() => {
+    loadingOverlay.classList.add('hidden');
+    progressBar.style.width = '0%';
+  }, 300);
 }
 
 function showDone() {
   document.getElementById('composeArea').classList.add('hidden');
-  document.getElementById('progressArea').classList.add('hidden');
   document.getElementById('doneArea').classList.remove('hidden');
 }
 
-function updateTweetCount() {
-  const text = document.getElementById('tweetText').value;
-  const el = document.getElementById('tweetCount');
-  if (text.length > MAX_CHARS) {
-    const n = estimateTweets(text);
-    el.textContent = '\u2192 ' + n + ' tweets';
+function updateValidation() {
+  const text = tweetText.value;
+  const hasKeyword = /unsr!/i.test(text);
+  const isEmpty = text.trim().length === 0;
+
+  if (isEmpty) {
+    validateMsg.className = 'validate-msg';
+    validateMsg.textContent = '';
+    tweetText.classList.remove('error');
+    return hasKeyword && !isEmpty;
+  }
+
+  if (!hasKeyword) {
+    validateMsg.className = 'validate-msg error';
+    validateMsg.textContent = 'Must contain "unsr!" in your message';
+    tweetText.classList.add('error');
   } else {
+    validateMsg.className = 'validate-msg ok';
+    validateMsg.textContent = '\u2713 Contains "unsr!"';
+    tweetText.classList.remove('error');
+  }
+
+  return hasKeyword;
+}
+
+function updateTweetCount() {
+  const text = tweetText.value;
+  const el = tweetCount;
+  const len = text.length;
+
+  if (len === 0) {
+    el.className = 'tweet-count info';
     el.textContent = '';
+  } else if (len > MAX_CHARS) {
+    const n = estimateTweets(text);
+    el.className = 'tweet-count over';
+    el.textContent = '\u26A0 ' + len + ' chars (\u2192 ' + n + ' tweets)';
+  } else {
+    el.className = 'tweet-count ok';
+    el.textContent = len + '/' + MAX_CHARS;
   }
 }
 
@@ -173,7 +324,7 @@ function updateFilePreview() {
   if (!selectedFile) {
     preview.style.display = 'none';
     area.classList.remove('has-file');
-    area.innerHTML = '+ Add 1 image (optional)';
+    area.innerHTML = '+ Add image (optional)';
     return;
   }
   area.classList.add('has-file');
@@ -183,6 +334,12 @@ function updateFilePreview() {
   img.src = URL.createObjectURL(selectedFile);
 }
 
+function checkSubmitReady() {
+  const text = tweetText.value.trim();
+  const valid = /unsr!/i.test(text);
+  submitBtn.disabled = !valid;
+}
+
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
@@ -190,15 +347,20 @@ async function checkStatus() {
     const r = await fetch('/api/status');
     const data = await r.json();
     dot.className = 'status-dot ' + (data.logged_in ? 'online' : 'offline');
-    text.textContent = data.logged_in ? 'Active' : 'Something went wrong, please contact @rektorunsri';
-    document.getElementById('submitBtn').disabled = !data.logged_in;
+    text.textContent = data.logged_in ? 'Active' : 'Something went wrong, please report to @rektorunsri';
   } catch {
     dot.className = 'status-dot offline';
-    text.textContent = 'Something went wrong, please contact @rektorunsri';
+    text.textContent = 'Something went wrong, please report to @rektorunsri';
   }
+  checkSubmitReady();
 }
 
-document.getElementById('tweetText').addEventListener('input', updateTweetCount);
+tweetText.addEventListener('input', () => {
+  updateTweetCount();
+  updateValidation();
+  checkSubmitReady();
+});
+
 document.getElementById('fileInput').addEventListener('change', (e) => {
   if (e.target.files.length > 0) {
     selectedFile = e.target.files[0];
@@ -206,26 +368,34 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
   }
   e.target.value = '';
 });
+
 document.getElementById('removeFile').addEventListener('click', () => {
   selectedFile = null;
   updateFilePreview();
 });
-document.getElementById('retryBtn').addEventListener('click', () => {
-  document.getElementById('tweetText').value = '';
+
+document.getElementById('newBtn').addEventListener('click', resetForm);
+
+function resetForm() {
+  tweetText.value = '';
   document.getElementById('result').className = 'result';
   document.getElementById('result').style.display = 'none';
   selectedFile = null;
   updateFilePreview();
   updateTweetCount();
+  validateMsg.className = 'validate-msg';
+  validateMsg.textContent = '';
+  tweetText.classList.remove('error');
   showCompose();
-});
+  checkSubmitReady();
+}
 
 document.getElementById('submitBtn').addEventListener('click', async () => {
-  const text = document.getElementById('tweetText').value.trim();
-  if (!text) return;
+  const text = tweetText.value.trim();
+  if (!text || !/unsr!/i.test(text)) return;
 
-  showProgress('Mengirim...');
-  document.getElementById('submitBtn').disabled = true;
+  showLoading();
+  submitBtn.disabled = true;
 
   const formData = new FormData();
   formData.append('text', text);
@@ -234,9 +404,11 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   try {
     const r = await fetch('/api/tweet-sync', { method: 'POST', body: formData });
     const data = await r.json();
+    hideLoading();
+
     const result = document.getElementById('result');
     if (data.success) {
-      let html = 'Tweet berhasil dikirim!';
+      let html = 'Tweet sent successfully!';
       if (data.urls && data.urls.length > 0) {
         html = '<ul class="url-list">';
         data.urls.forEach((url, i) => {
@@ -249,16 +421,15 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       result.innerHTML = html;
     } else {
       result.className = 'result error';
-      result.textContent = 'Error: ' + (data.error || 'Gagal');
+      result.textContent = 'Error: ' + (data.error || 'Failed');
     }
-    document.getElementById('submitBtn').disabled = false;
+    submitBtn.disabled = false;
     showDone();
   } catch (err) {
-    document.getElementById('submitBtn').disabled = false;
-    showCompose();
+    hideLoading();
+    submitBtn.disabled = false;
     document.getElementById('result').className = 'result error';
-    document.getElementById('result').textContent = 'Gagal: ' + err.message;
-    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('result').textContent = 'Failed: ' + err.message;
     showDone();
   }
 });
