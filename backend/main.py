@@ -12,11 +12,13 @@ from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
 from twitter_client import TwitterClient
 
-STATE_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "twitter_state.json")
+STATE_DIR = os.environ.get("STATE_DIR", os.path.dirname(os.path.dirname(__file__)))
+STATE_FILE = os.path.join(STATE_DIR, "twitter_state.json")
 
 state_b64 = os.environ.get("TWITTER_STATE_B64")
 if state_b64:
     try:
+        os.makedirs(STATE_DIR, exist_ok=True)
         decoded = base64.b64decode(state_b64).decode("utf-8")
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             f.write(decoded)
