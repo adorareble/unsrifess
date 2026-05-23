@@ -482,8 +482,8 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       }
     }
     submitBtn.disabled = false;
-    showDone();
     checkStatus();
+    showDone();
   } catch (err) {
     hideLoading();
     submitBtn.disabled = false;
