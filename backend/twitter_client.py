@@ -55,7 +55,11 @@ class TwitterClient:
             with sync_playwright() as p:
                 browser = p.chromium.launch(
                     headless=True,
-                    args=["--disable-blink-features=AutomationControlled"],
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--no-sandbox",
+                        "--disable-gpu",
+                    ],
                 )
                 context = browser.new_context(storage_state=self.state_file)
                 page = context.new_page()
@@ -71,7 +75,9 @@ class TwitterClient:
                     pass
                 browser.close()
                 return logged
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.error(f"is_logged_in failed: {e}")
             return False
 
     def login(self):
@@ -99,7 +105,8 @@ class TwitterClient:
                 context.storage_state(path=self.state_file)
                 print(f"Session saved to {self.state_file}")
             except Exception as e:
-                print(f"Login failed: {e}")
+                import logging
+                logging.exception(f"Login failed: {e}")
                 raise
             finally:
                 browser.close()
@@ -118,7 +125,11 @@ class TwitterClient:
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=True,
-                args=["--disable-blink-features=AutomationControlled"],
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                    "--disable-gpu",
+                ],
             )
             context = browser.new_context(
                 storage_state=self.state_file,
@@ -150,6 +161,8 @@ class TwitterClient:
 
                 return {"success": True, "urls": tweet_urls}
             except Exception as e:
+                import logging
+                logging.exception(f"post_tweet failed: {e}")
                 if progress_callback:
                     progress_callback(0, 0, f"Error: {e}")
                 return {"success": False, "error": str(e)}
