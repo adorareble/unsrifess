@@ -73,16 +73,22 @@
   }
   .upload-area:hover { border-color: #1d9bf0; color: #1d9bf0; background: rgba(29,155,240,0.04); }
   .upload-area.has-file { border-color: #00ba7c; }
+  .upload-area.disabled { opacity: 0.5; cursor: not-allowed; }
+  .upload-area.disabled:hover { border-color: #2f3336; color: #71767b; background: none; }
+  .file-grid {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+    justify-content: center;
+  }
   .file-preview {
-    margin: 0 auto; width: 120px; height: 120px;
-    border-radius: 12px; overflow: hidden; border: 1px solid #2f3336;
-    position: relative;
+    width: 90px; height: 90px;
+    border-radius: 10px; overflow: hidden; border: 1px solid #2f3336;
+    position: relative; flex-shrink: 0;
   }
   .file-preview img { width: 100%; height: 100%; object-fit: cover; }
   .file-preview .remove {
-    position: absolute; top: 4px; right: 4px; width: 26px; height: 26px;
+    position: absolute; top: 2px; right: 2px; width: 22px; height: 22px;
     background: rgba(0,0,0,0.75); border: none; border-radius: 50%;
-    color: #fff; font-size: 0.9rem; cursor: pointer; line-height: 26px;
+    color: #fff; font-size: 0.75rem; cursor: pointer; line-height: 22px;
     text-align: center; transition: background 0.2s;
   }
   .file-preview .remove:hover { background: rgba(244,33,46,0.8); }
@@ -159,16 +165,16 @@
 </head>
 <body>
 <div class="container">
-  <div class="header">
-    <div>
-      <h1>Unsr!fess</h1>
-      <div class="subtitle">Confess anonymously on X</div>
+    <div class="header">
+      <div>
+        <h1>Unsr!fess</h1>
+        <div class="subtitle" id="subtitle">Confess anonymously on X</div>
+      </div>
+      <div class="status-bar" style="margin-bottom:0">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Checking...</span>
+      </div>
     </div>
-    <div class="status-bar" style="margin-bottom:0">
-      <span class="status-dot" id="statusDot"></span>
-      <span id="statusText">Checking...</span>
-    </div>
-  </div>
 
   <div class="card card-wrap">
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -193,22 +199,22 @@
       <div class="tweet-count info" id="tweetCount"></div>
       <div class="validate-msg" id="validateMsg"></div>
 
-      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-        + Add image (optional)
-        <div class="file-preview" id="filePreview" style="display:none">
-          <img id="previewImg">
-          <button type="button" class="remove" id="removeFile">&times;</button>
-        </div>
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-label">+ Add images (max 4)</div>
+        <div class="file-grid" id="fileGrid"></div>
       </div>
-      <input type="file" id="fileInput" accept="image/*">
+      <input type="file" id="fileInput" accept="image/*" multiple>
 
       <button class="btn btn-primary" id="submitBtn" disabled>Send</button>
     </div>
+
+    <div id="rateLimitMsg" class="hidden"></div>
 
     <div id="doneArea" class="hidden">
       <div class="result" id="result"></div>
       <div class="done-actions">
         <button class="btn btn-success" id="newBtn">New confession</button>
+        <button class="btn btn-outline hidden" id="retryBtn">Try again</button>
       </div>
     </div>
   </div>
@@ -216,7 +222,8 @@
 
 <script>
 const MAX_CHARS = 280;
-let selectedFile = null;
+const MAX_IMAGES = 4;
+let selectedFiles = [];
 
 const tweetText = document.getElementById('tweetText');
 const tweetCount = document.getElementById('tweetCount');
@@ -246,6 +253,7 @@ function estimateTweets(text) {
 
 function showCompose() {
   document.getElementById('composeArea').classList.remove('hidden');
+  document.getElementById('rateLimitMsg')?.classList.add('hidden');
   document.getElementById('doneArea').classList.add('hidden');
 }
 
@@ -318,27 +326,45 @@ function updateTweetCount() {
 }
 
 function updateFilePreview() {
-  const preview = document.getElementById('filePreview');
+  const grid = document.getElementById('fileGrid');
   const area = document.getElementById('uploadArea');
-  const img = document.getElementById('previewImg');
-  if (!selectedFile) {
-    preview.style.display = 'none';
-    area.classList.remove('has-file');
-    area.innerHTML = '+ Add image (optional)';
-    return;
-  }
-  area.classList.add('has-file');
-  area.innerHTML = '';
-  area.appendChild(preview);
-  preview.style.display = 'block';
-  img.src = URL.createObjectURL(selectedFile);
+  grid.innerHTML = '';
+  const remaining = MAX_IMAGES - selectedFiles.length;
+
+  area.classList.toggle('has-file', selectedFiles.length > 0);
+  area.classList.toggle('disabled', remaining === 0);
+  const label = area.querySelector('.upload-label');
+  label.textContent = remaining === 0
+    ? 'Max 4 images reached'
+    : `+ Add images (${remaining} left)`;
+
+  selectedFiles.forEach((file, idx) => {
+    const div = document.createElement('div');
+    div.className = 'file-preview';
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    div.appendChild(img);
+    const btn = document.createElement('button');
+    btn.className = 'remove';
+    btn.innerHTML = '&times;';
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      selectedFiles.splice(idx, 1);
+      updateFilePreview();
+    };
+    div.appendChild(btn);
+    grid.appendChild(div);
+  });
 }
 
 function checkSubmitReady() {
   const text = tweetText.value.trim();
   const valid = /unsr!/i.test(text);
-  submitBtn.disabled = !valid;
+  submitBtn.disabled = !valid || rateLimited;
 }
+
+let rateLimited = false;
+let rateResetAt = null;
 
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
@@ -347,10 +373,31 @@ async function checkStatus() {
     const r = await fetch('/api/status');
     const data = await r.json();
     dot.className = 'status-dot ' + (data.logged_in ? 'online' : 'offline');
-    text.textContent = data.logged_in ? 'Active' : 'Something went wrong, please report to @rektorunsri';
+    rateLimited = !!data.rate_limited;
+    rateResetAt = data.reset_at || null;
+
+    if (data.logged_in && !data.rate_limited) {
+      text.textContent = data.remaining + ' remaining';
+      document.getElementById('composeArea').classList.remove('hidden');
+      document.getElementById('rateLimitMsg')?.classList.add('hidden');
+    } else if (data.rate_limited) {
+      const t = new Date(data.reset_at * 1000);
+      const now = new Date();
+      const waitMin = Math.ceil((t - now) / 60000);
+      text.textContent = 'Cooldown ' + waitMin + 'm \u2022 0/5';
+      document.getElementById('composeArea').classList.add('hidden');
+      document.getElementById('rateLimitMsg')?.classList.remove('hidden');
+      const msg = document.getElementById('rateLimitMsg');
+      if (msg) {
+        const h = t.getHours().toString().padStart(2,'0');
+        const m = t.getMinutes().toString().padStart(2,'0');
+        msg.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#71767b"><div style="font-size:2rem;margin-bottom:12px">&#9200;</div><div style="font-size:1rem;font-weight:600;color:#e7e9ea;margin-bottom:8px">You\'ve used all 5 confessions</div><div style="font-size:0.9rem">Next available at <strong>' + h + ':' + m + '</strong> (~' + waitMin + ' min)</div></div>';
+      }
+    } else {
+      text.textContent = 'Something went wrong, please report to @rektorunsri';
+    }
   } catch {
     dot.className = 'status-dot offline';
-    text.textContent = 'Something went wrong, please report to @rektorunsri';
   }
   checkSubmitReady();
 }
@@ -361,17 +408,17 @@ tweetText.addEventListener('input', () => {
   checkSubmitReady();
 });
 
-document.getElementById('fileInput').addEventListener('change', (e) => {
-  if (e.target.files.length > 0) {
-    selectedFile = e.target.files[0];
-    updateFilePreview();
-  }
-  e.target.value = '';
+document.getElementById('uploadArea').addEventListener('click', () => {
+  if (selectedFiles.length >= MAX_IMAGES) return;
+  document.getElementById('fileInput').click();
 });
 
-document.getElementById('removeFile').addEventListener('click', () => {
-  selectedFile = null;
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  const remaining = MAX_IMAGES - selectedFiles.length;
+  selectedFiles = selectedFiles.concat(files.slice(0, remaining));
   updateFilePreview();
+  e.target.value = '';
 });
 
 document.getElementById('newBtn').addEventListener('click', resetForm);
@@ -380,7 +427,7 @@ function resetForm() {
   tweetText.value = '';
   document.getElementById('result').className = 'result';
   document.getElementById('result').style.display = 'none';
-  selectedFile = null;
+  selectedFiles = [];
   updateFilePreview();
   updateTweetCount();
   validateMsg.className = 'validate-msg';
@@ -399,7 +446,9 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
 
   const formData = new FormData();
   formData.append('text', text);
-  if (selectedFile) formData.append('image', selectedFile);
+  for (const file of selectedFiles) {
+    formData.append('images', file);
+  }
 
   try {
     const r = await fetch('/api/tweet-sync', { method: 'POST', body: formData });
@@ -407,6 +456,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     hideLoading();
 
     const result = document.getElementById('result');
+    const retryBtn = document.getElementById('retryBtn');
     if (data.success) {
       let html = 'Tweet sent successfully!';
       if (data.urls && data.urls.length > 0) {
@@ -419,20 +469,58 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       }
       result.className = 'result success';
       result.innerHTML = html;
+      retryBtn.classList.add('hidden');
     } else {
+      const msg = friendlyError(data);
       result.className = 'result error';
-      result.textContent = 'Error: ' + (data.error || 'Failed');
+      result.innerHTML = msg;
+      retryBtn.classList.add('hidden');
+      if (data.rate_limited) {
+        rateLimited = true;
+        rateResetAt = data.reset_at;
+        checkSubmitReady();
+        checkStatus();
+      }
     }
+    submitBtn.disabled = false;
+    showDone();
     submitBtn.disabled = false;
     showDone();
   } catch (err) {
     hideLoading();
     submitBtn.disabled = false;
     document.getElementById('result').className = 'result error';
-    document.getElementById('result').textContent = 'Failed: ' + err.message;
+    document.getElementById('result').textContent = 'Connection error. Check your internet and try again.';
+    document.getElementById('retryBtn').classList.remove('hidden');
     showDone();
   }
 });
+
+document.getElementById('retryBtn').addEventListener('click', () => {
+  selectedFiles = [];
+  updateFilePreview();
+  showCompose();
+  checkSubmitReady();
+});
+
+function friendlyError(data) {
+  const msg = data.error || '';
+  if (data.rate_limited) {
+    const t = new Date(data.reset_at * 1000);
+    const now = new Date();
+    const waitMin = Math.ceil((t - now) / 60000);
+    const h = t.getHours().toString().padStart(2,'0');
+    const m = t.getMinutes().toString().padStart(2,'0');
+    return 'You\'ve used all 5 confessions for this hour.<br>Next available at <strong>' + h + ':' + m + '</strong> (~' + waitMin + ' min).';
+  }
+  if (!msg) return 'Something went wrong. Please try again.';
+  if (msg.includes('duplicate')) return 'This tweet looks like a duplicate.';
+  if (msg.includes('timeout') || msg.includes('Timeout')) return 'Request timed out. Please try again.';
+  if (msg.includes('closed') || msg.includes('crash')) return 'Server is busy. Please try again.';
+  if (msg.includes('login') || msg.includes('auth')) return 'Session expired. Please contact admin.';
+  if (msg.includes('Could not find')) return 'Could not post. X.com layout may have changed.';
+  return msg.length > 120 ? 'Something went wrong. Please try again.' : msg;
+}
 
 checkStatus();
 setInterval(checkStatus, 30000);

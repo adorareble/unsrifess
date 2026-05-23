@@ -1,5 +1,7 @@
 import os
 import time
+import json
+import logging
 from playwright.sync_api import sync_playwright
 
 STATE_FILE = os.path.join(
@@ -52,7 +54,6 @@ class TwitterClient:
     def is_logged_in(self):
         if not os.path.exists(self.state_file):
             return False
-        import json, time
         try:
             with open(self.state_file, encoding="utf-8") as f:
                 data = json.load(f)
@@ -63,7 +64,6 @@ class TwitterClient:
                     return True
             return False
         except Exception as e:
-            import logging
             logging.error(f"is_logged_in error: {e}")
             return False
 
@@ -73,21 +73,12 @@ class TwitterClient:
                 headless=False,
                 args=[
                     "--disable-blink-features=AutomationControlled",
-                    "--single-process",
-                    "--no-zygote",
-                    "--disable-extensions",
-                    "--disable-background-networking",
-                    "--disable-sync",
-                    "--disable-translate",
                     "--disable-dev-shm-usage",
-                    "--no-first-run",
-                    "--disable-default-apps",
-                    "--js-flags=--max-old-space-size=256",
                 ],
             )
             context = browser.new_context()
             page = context.new_page()
-            page.goto("https://x.com/login", wait_until="domcontentloaded", timeout=60000)
+            page.goto("https://x.com/login", wait_until="domcontentloaded", timeout=120000)
 
             print("\n=== Browser opened for login ===")
             print("Log in to X/Twitter manually in the browser window.")
@@ -104,13 +95,12 @@ class TwitterClient:
                 context.storage_state(path=self.state_file)
                 print(f"Session saved to {self.state_file}")
             except Exception as e:
-                import logging
                 logging.exception(f"Login failed: {e}")
                 raise
             finally:
                 browser.close()
 
-    def post_tweet(self, text, image_path=None, progress_callback=None):
+    def post_tweet(self, text, image_paths=None, progress_callback=None):
         if not text or not text.strip():
             return {"success": False, "error": "Text is empty"}
 
@@ -120,11 +110,12 @@ class TwitterClient:
                 "error": "Not logged in. Run setup_login.py first.",
             }
 
-        import json
+        if image_paths is None:
+            image_paths = []
+
         with open(self.state_file, encoding="utf-8") as f:
             state_data = json.load(f)
         saved_cookies = state_data.get("cookies", [])
-        saved_origin = state_data.get("origins", [])
 
         chunks = split_into_chunks(text.strip())
 
@@ -132,7 +123,7 @@ class TwitterClient:
         for attempt in range(max_retries):
             try:
                 return self._post_tweet_attempt(
-                    chunks, saved_cookies, saved_origin,
+                    chunks, saved_cookies,
                     image_paths, progress_callback
                 )
             except Exception as e:
@@ -141,7 +132,7 @@ class TwitterClient:
                     continue
                 raise
 
-    def _post_tweet_attempt(self, chunks, saved_cookies, saved_origin, image_paths, progress_callback):
+    def _post_tweet_attempt(self, chunks, saved_cookies, image_paths, progress_callback):
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=True,
@@ -162,9 +153,16 @@ class TwitterClient:
                     "--js-flags=--max-old-space-size=256",
                 ],
             )
-            context = browser.new_context(viewport={"width": 1280, "height": 600})
+            context = browser.new_context(
+                viewport={"width": 1280, "height": 600},
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            )
             context.add_cookies(saved_cookies)
             page = context.new_page()
+            page.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                Object.defineProperty(navigator, 'plugins', { get: () => [1,2,3,4,5] });
+            """)
             tweet_urls = []
             prev_tweet_url = None
 
@@ -176,8 +174,8 @@ class TwitterClient:
                             f"Posting tweet {i + 1} of {len(chunks)}..."
                         )
 
-                    img = image_path if i == 0 and image_path else None
-                    url = self._post_one(page, chunk, img, prev_tweet_url)
+                    imgs = image_paths if i == 0 and image_paths else None
+                    url = self._post_one(page, chunk, imgs, prev_tweet_url)
                     if url:
                         tweet_urls.append(url)
                         prev_tweet_url = url
@@ -190,7 +188,6 @@ class TwitterClient:
 
                 return {"success": True, "urls": tweet_urls}
             except Exception as e:
-                import logging
                 logging.exception(f"post_tweet failed: {e}")
                 if progress_callback:
                     progress_callback(0, 0, f"Error: {e}")
@@ -198,14 +195,19 @@ class TwitterClient:
             finally:
                 browser.close()
 
-    def _post_one(self, page, text, image_path=None, reply_to_url=None):
-        tweet_id = [None]
+    def _post_one(self, page, text, image_paths=None, reply_to_url=None):
+        tweet_url = [None]
+        tweet_error = [None]
 
         def capture_id(response):
             if "CreateTweet" not in response.url:
                 return
             try:
                 data = response.json()
+                errors = data.get("errors")
+                if errors:
+                    tweet_error[0] = errors[0].get("message", "X blocked the tweet")
+                    return
                 result = (
                     data.get("data", {})
                     .get("create_tweet", {})
@@ -214,7 +216,7 @@ class TwitterClient:
                 )
                 rid = result.get("rest_id")
                 if rid:
-                    tweet_id[0] = rid
+                    tweet_url[0] = rid
             except Exception:
                 pass
 
@@ -253,12 +255,15 @@ class TwitterClient:
             time.sleep(1)
             page.keyboard.type(text, delay=10)
 
-            if image_path:
-                self._upload_image(page, image_path)
+            if image_paths:
+                for fp in image_paths:
+                    self._upload_image(page, fp)
 
-            tweet_id[0] = None
+            tweet_url[0] = None
 
             submit_btn = self._find_submit_button(page)
+            submit_btn.hover()
+            time.sleep(0.5 + (time.time() % 1))
             submit_btn.click()
 
             try:
@@ -270,13 +275,22 @@ class TwitterClient:
             except Exception:
                 pass
 
-            time.sleep(2)
+            for _ in range(15):
+                if tweet_url[0] is not None:
+                    break
+                if tweet_error[0] is not None:
+                    raise Exception(tweet_error[0])
+                time.sleep(1)
 
-            tid = tweet_id[0]
+            tid = tweet_url[0]
             if tid:
                 username = self._get_username(page)
                 if username:
                     return f"https://x.com/{username}/status/{tid}"
+
+            if tweet_error[0]:
+                raise Exception(tweet_error[0])
+
             return None
         finally:
             page.remove_listener("response", capture_id)
