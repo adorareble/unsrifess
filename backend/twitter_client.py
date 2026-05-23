@@ -209,14 +209,17 @@ class TwitterClient:
 
                 if not posted:
                     page.goto("https://x.com/compose/post", wait_until="domcontentloaded", timeout=30000)
-                    time.sleep(2)
+                    page.wait_for_load_state("networkidle", timeout=30000)
+                    time.sleep(3)
 
             textbox = page.locator(
                 '[data-testid="tweetTextarea_0"]'
             ).first
-            if not textbox.is_visible(timeout=5000):
+            try:
+                textbox.wait_for(state="visible", timeout=15000)
+            except Exception:
                 textbox = page.locator('div[role="textbox"]').first
-            textbox.wait_for(state="visible", timeout=10000)
+                textbox.wait_for(state="visible", timeout=10000)
             textbox.click()
             page.keyboard.type(text, delay=10)
 
