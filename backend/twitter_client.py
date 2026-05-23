@@ -51,34 +51,17 @@ class TwitterClient:
     def is_logged_in(self):
         if not os.path.exists(self.state_file):
             return False
+        import json, time
         try:
-            with sync_playwright() as p:
-                browser = p.chromium.launch(
-                    headless=True,
-                    args=[
-                        "--disable-blink-features=AutomationControlled",
-                        "--no-sandbox",
-                        "--disable-gpu",
-                        "--disable-dev-shm-usage",
-                    ],
-                )
-                context = browser.new_context(storage_state=self.state_file)
-                page = context.new_page()
-                page.goto("https://x.com", wait_until="domcontentloaded", timeout=60000)
-                logged = False
-                try:
-                    page.wait_for_selector(
-                        'a[data-testid="AppTabBar_Profile_Link"]',
-                        timeout=15000,
-                    )
-                    logged = True
-                except Exception:
-                    pass
-                browser.close()
-                return logged
-        except Exception as e:
-            import logging
-            logging.error(f"is_logged_in failed: {e}")
+            with open(self.state_file, encoding="utf-8") as f:
+                data = json.load(f)
+            cookies = data.get("cookies", [])
+            now = time.time()
+            for c in cookies:
+                if c.get("name") == "auth_token" and c.get("expires", 0) > now:
+                    return True
+            return False
+        except Exception:
             return False
 
     def login(self):
