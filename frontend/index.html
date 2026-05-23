@@ -278,6 +278,7 @@ function hideLoading() {
 }
 
 function showDone() {
+  isDone = true;
   document.getElementById('composeArea').classList.add('hidden');
   document.getElementById('doneArea').classList.remove('hidden');
 }
@@ -365,6 +366,7 @@ function checkSubmitReady() {
 
 let rateLimited = false;
 let rateResetAt = null;
+let isDone = false;
 
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
@@ -378,8 +380,10 @@ async function checkStatus() {
 
     if (data.logged_in && !data.rate_limited) {
       text.textContent = data.remaining + ' remaining';
-      document.getElementById('composeArea').classList.remove('hidden');
-      document.getElementById('rateLimitMsg')?.classList.add('hidden');
+      if (!isDone) {
+        document.getElementById('composeArea').classList.remove('hidden');
+        document.getElementById('rateLimitMsg')?.classList.add('hidden');
+      }
     } else if (data.rate_limited) {
       const t = new Date(data.reset_at * 1000);
       const now = new Date();
@@ -424,6 +428,7 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 document.getElementById('newBtn').addEventListener('click', resetForm);
 
 function resetForm() {
+  isDone = false;
   if (rateLimited) { checkStatus(); return; }
   tweetText.value = '';
   document.getElementById('result').className = 'result';
