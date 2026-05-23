@@ -1,6 +1,7 @@
 import os
 import sys
 import uuid
+import base64
 import asyncio
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -10,6 +11,17 @@ sys.path.insert(0, os.path.dirname(__file__))
 from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
 from twitter_client import TwitterClient
+
+STATE_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "twitter_state.json")
+
+state_b64 = os.environ.get("TWITTER_STATE_B64")
+if state_b64:
+    try:
+        decoded = base64.b64decode(state_b64).decode("utf-8")
+        with open(STATE_FILE, "w", encoding="utf-8") as f:
+            f.write(decoded)
+    except Exception:
+        pass
 
 app = FastAPI(title="TwitterTools")
 client = TwitterClient()
