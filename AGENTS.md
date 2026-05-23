@@ -44,14 +44,38 @@ temp_images/           # Temp upload files (gitignored)
 - **Headless**: posting pake `headless=True`. Login pake `headless=False` (browser visible).
 - **Gak ada dependencies lain**: no database, no npm, no build step.
 
-## Deployment (Render.com Free Tier)
+## Deployment (Leapcell — serverless)
 1. Push repo ke GitHub.
-2. Di Render Dashboard → New Web Service → connect repo.
-3. Render otomatis baca `render.yaml`.
-4. Build & deploy. Butuh kartu kredit buat verifikasi akun (gratis).
-5. Upload `twitter_state.json` via Render Shell atau upload manual.
+2. Di Leapcell Dashboard → New Service → connect repo (branch `main`).
+3. **Env vars**:
+   - `TWITTER_STATE_GZ` — base64(gzip(twitter_state.json)). Masukin dgn `Generate-TwitterStateGz.ps1`.
+   - `STATE_DIR=/tmp`, `TEMP_DIR=/tmp/temp_images`
+   - `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1`
+4. **Build command**:
+   ```
+   pip install -r requirements.txt && playwright install-deps chromium && playwright install chromium
+   ```
+5. **Start command**: `uvicorn backend.main:app --host 0.0.0.0 --port 8000`
+6. **Serving port**: 8000
 
-**Catatan**: free tier Render spin down setelah 15 menit idle. Request pertama bakal lambat (cold start ~30-60 detik).
+### Kirim session via env var
+`twitter_state.json` gak bisa di-commit (public repo). Packing:
+```powershell
+# Generate-TwitterStateGz.ps1
+$content = Get-Content -Raw twitter_state.json
+$bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+$ms = New-Object System.IO.MemoryStream
+$gzip = New-Object System.IO.Compression.GzipStream($ms, [System.IO.Compression.CompressionMode]::Compress, $true)
+$gzip.Write($bytes, 0, $bytes.Count); $gzip.Close()
+[Convert]::ToBase64String($ms.ToArray()) | Set-Clipboard
+```
+
+Limit env var total 3KB → gzip dulu biar muat (~1.4KB).
+
+## Arsitektur serverless
+- **Gak pake task polling** — in-memory `tasks` dict gak persist antar request. Pake endpoint sync `/api/tweet-sync` langsung.
+- **Frontend** (`index.html`) panggil `/api/tweet-sync`, loading sampe selesai.
+- **Cold start** — request pertama lambat (~30-60 detik) karena Playwright + Chromium startup. Pastiin timeout cukup.
 
 ## Catatan
 - Jangan commit tanpa explicit request.
