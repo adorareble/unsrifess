@@ -129,3 +129,28 @@ async def task_status(task_id: str):
     if t is None:
         return {"status": "not_found"}
     return t
+
+
+@app.post("/api/tweet-sync")
+async def tweet_sync(
+    text: str = Form(...),
+    image: UploadFile = File(default=None),
+):
+    saved_path = None
+    if image and image.filename:
+        ext = os.path.splitext(image.filename)[1] or ".jpg"
+        filename = f"{uuid.uuid4().hex}{ext}"
+        saved_path = os.path.join(TEMP_DIR, filename)
+        content = await image.read()
+        with open(saved_path, "wb") as f:
+            f.write(content)
+
+    result = await asyncio.to_thread(client.post_tweet, text, saved_path)
+
+    if saved_path:
+        try:
+            os.remove(saved_path)
+        except Exception:
+            pass
+
+    return result
