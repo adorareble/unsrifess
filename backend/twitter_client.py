@@ -129,8 +129,6 @@ class TwitterClient:
                     "--no-sandbox",
                     "--disable-gpu",
                     "--disable-dev-shm-usage",
-                    "--single-process",
-                    "--no-zygote",
                     "--disable-extensions",
                     "--disable-background-networking",
                     "--disable-sync",
@@ -142,7 +140,7 @@ class TwitterClient:
             )
             context = browser.new_context(
                 storage_state=self.state_file,
-                viewport={"width": 1280, "height": 720},
+                viewport={"width": 1280, "height": 600},
             )
             page = context.new_page()
             tweet_urls = []
@@ -210,24 +208,27 @@ class TwitterClient:
                 page.goto(
                     "https://x.com/home", wait_until="domcontentloaded", timeout=90000
                 )
-                time.sleep(5)
+                time.sleep(8)
 
-            for attempt in range(2):
-                textbox = page.locator('[data-testid="tweetTextarea_0"]').first
+            selectors = [
+                '[data-testid="tweetTextarea_0"]',
+                'div[role="textbox"]',
+                '[data-testid="tweetTextarea_1"]',
+            ]
+            textbox = None
+            for sel in selectors:
                 try:
-                    textbox.wait_for(state="visible", timeout=30000)
-                    textbox.click()
-                    time.sleep(1)
+                    tb = page.locator(sel).first
+                    tb.wait_for(state="visible", timeout=15000)
+                    textbox = tb
                     break
                 except Exception:
-                    if attempt == 0:
-                        page.reload(wait_until="domcontentloaded", timeout=60000)
-                        time.sleep(5)
-                    else:
-                        textbox = page.locator('div[role="textbox"]').first
-                        textbox.wait_for(state="visible", timeout=30000)
-                        textbox.click()
-                        time.sleep(1)
+                    continue
+            if not textbox:
+                raise Exception("Could not find tweet textbox")
+
+            textbox.click()
+            time.sleep(1)
             page.keyboard.type(text, delay=10)
 
             if image_paths:
