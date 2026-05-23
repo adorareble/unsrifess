@@ -59,6 +59,12 @@ def add_watermark(image_path):
 
         tx = (img.width - tw) // 2
         ty = (img.height - th) // 2
+        outline_range = max(1, font_size // 20)
+        for ox in range(-outline_range, outline_range + 1):
+            for oy in range(-outline_range, outline_range + 1):
+                if ox == 0 and oy == 0:
+                    continue
+                draw.text((tx + ox, ty + oy), WATERMARK_TEXT, font=font, fill=(0, 0, 0, 153))
         draw.text((tx, ty), WATERMARK_TEXT, font=font, fill=(255, 255, 255, 102))
 
         img = Image.alpha_composite(img, overlay).convert("RGB")

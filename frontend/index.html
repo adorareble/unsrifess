@@ -141,10 +141,11 @@
   .result {
     margin-top: 16px; padding: 16px; border-radius: 12px;
     font-size: 0.95rem; text-align: center; display: none;
+    overflow-wrap: break-word; word-break: break-word;
   }
   .result.success { display: block; background: #00321c; color: #00ba7c; border: 1px solid #00ba7c; }
   .result.error { display: block; background: #2c0a0e; color: #f4212e; border: 1px solid #f4212e; }
-  .result a { color: #1d9bf0; }
+  .result a { color: #1d9bf0; overflow-wrap: break-word; word-break: break-all; }
   .result .url-list { margin-top: 8px; list-style: none; }
   .result .url-list li { margin-bottom: 4px; }
   .hidden { display: none !important; }
