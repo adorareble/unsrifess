@@ -110,7 +110,7 @@ class TwitterClient:
             finally:
                 browser.close()
 
-    def post_tweet(self, text, image_path=None, progress_callback=None):
+    def post_tweet(self, text, image_paths=None, progress_callback=None):
         if not text or not text.strip():
             return {"success": False, "error": "Text is empty"}
 
@@ -156,8 +156,8 @@ class TwitterClient:
                             f"Posting tweet {i + 1} of {len(chunks)}..."
                         )
 
-                    img = image_path if i == 0 and image_path else None
-                    url = self._post_one(page, chunk, img, prev_tweet_url)
+                    imgs = image_paths if i == 0 and image_paths else None
+                    url = self._post_one(page, chunk, imgs, prev_tweet_url)
                     if url:
                         tweet_urls.append(url)
                         prev_tweet_url = url
@@ -178,7 +178,7 @@ class TwitterClient:
             finally:
                 browser.close()
 
-    def _post_one(self, page, text, image_path=None, reply_to_url=None):
+    def _post_one(self, page, text, image_paths=None, reply_to_url=None):
         tweet_id = [None]
 
         def capture_id(response):
@@ -230,8 +230,9 @@ class TwitterClient:
                         time.sleep(1)
             page.keyboard.type(text, delay=10)
 
-            if image_path:
-                self._upload_image(page, image_path)
+            if image_paths:
+                for fp in image_paths:
+                    self._upload_image(page, fp)
 
             tweet_id[0] = None
 

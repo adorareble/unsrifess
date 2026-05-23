@@ -73,16 +73,20 @@
   }
   .upload-area:hover { border-color: #1d9bf0; color: #1d9bf0; background: rgba(29,155,240,0.04); }
   .upload-area.has-file { border-color: #00ba7c; }
+  .file-grid {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
+    justify-content: center;
+  }
   .file-preview {
-    margin: 0 auto; width: 120px; height: 120px;
-    border-radius: 12px; overflow: hidden; border: 1px solid #2f3336;
-    position: relative;
+    width: 90px; height: 90px;
+    border-radius: 10px; overflow: hidden; border: 1px solid #2f3336;
+    position: relative; flex-shrink: 0;
   }
   .file-preview img { width: 100%; height: 100%; object-fit: cover; }
   .file-preview .remove {
-    position: absolute; top: 4px; right: 4px; width: 26px; height: 26px;
+    position: absolute; top: 2px; right: 2px; width: 22px; height: 22px;
     background: rgba(0,0,0,0.75); border: none; border-radius: 50%;
-    color: #fff; font-size: 0.9rem; cursor: pointer; line-height: 26px;
+    color: #fff; font-size: 0.75rem; cursor: pointer; line-height: 22px;
     text-align: center; transition: background 0.2s;
   }
   .file-preview .remove:hover { background: rgba(244,33,46,0.8); }
@@ -193,14 +197,11 @@
       <div class="tweet-count info" id="tweetCount"></div>
       <div class="validate-msg" id="validateMsg"></div>
 
-      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-        + Add image (optional)
-        <div class="file-preview" id="filePreview" style="display:none">
-          <img id="previewImg">
-          <button type="button" class="remove" id="removeFile">&times;</button>
-        </div>
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-label">+ Add images (max 4)</div>
+        <div class="file-grid" id="fileGrid"></div>
       </div>
-      <input type="file" id="fileInput" accept="image/*">
+      <input type="file" id="fileInput" accept="image/*" multiple>
 
       <button class="btn btn-primary" id="submitBtn" disabled>Send</button>
     </div>
@@ -216,7 +217,8 @@
 
 <script>
 const MAX_CHARS = 280;
-let selectedFile = null;
+const MAX_IMAGES = 4;
+let selectedFiles = [];
 
 const tweetText = document.getElementById('tweetText');
 const tweetCount = document.getElementById('tweetCount');
@@ -318,20 +320,32 @@ function updateTweetCount() {
 }
 
 function updateFilePreview() {
-  const preview = document.getElementById('filePreview');
+  const grid = document.getElementById('fileGrid');
   const area = document.getElementById('uploadArea');
-  const img = document.getElementById('previewImg');
-  if (!selectedFile) {
-    preview.style.display = 'none';
-    area.classList.remove('has-file');
-    area.innerHTML = '+ Add image (optional)';
-    return;
-  }
-  area.classList.add('has-file');
-  area.innerHTML = '';
-  area.appendChild(preview);
-  preview.style.display = 'block';
-  img.src = URL.createObjectURL(selectedFile);
+  grid.innerHTML = '';
+  const remaining = MAX_IMAGES - selectedFiles.length;
+  area.classList.toggle('has-file', selectedFiles.length > 0);
+  area.style.opacity = remaining === 0 ? '0.5' : '1';
+  area.style.cursor = remaining === 0 ? 'not-allowed' : 'pointer';
+  const label = area.querySelector('.upload-label') || (() => { const s = document.createElement('div'); s.className = 'upload-label'; area.prepend(s); return s; })();
+  label.textContent = remaining === 0 ? 'Max 4 images reached' : `+ Add images (${remaining} left)`;
+  selectedFiles.forEach((file, idx) => {
+    const div = document.createElement('div');
+    div.className = 'file-preview';
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    div.appendChild(img);
+    const btn = document.createElement('button');
+    btn.className = 'remove';
+    btn.innerHTML = '&times;';
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      selectedFiles.splice(idx, 1);
+      updateFilePreview();
+    };
+    div.appendChild(btn);
+    grid.appendChild(div);
+  });
 }
 
 function checkSubmitReady() {
@@ -361,17 +375,17 @@ tweetText.addEventListener('input', () => {
   checkSubmitReady();
 });
 
-document.getElementById('fileInput').addEventListener('change', (e) => {
-  if (e.target.files.length > 0) {
-    selectedFile = e.target.files[0];
-    updateFilePreview();
-  }
-  e.target.value = '';
+document.getElementById('uploadArea').addEventListener('click', () => {
+  if (selectedFiles.length >= MAX_IMAGES) return;
+  document.getElementById('fileInput').click();
 });
 
-document.getElementById('removeFile').addEventListener('click', () => {
-  selectedFile = null;
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const files = Array.from(e.target.files);
+  const remaining = MAX_IMAGES - selectedFiles.length;
+  selectedFiles = selectedFiles.concat(files.slice(0, remaining));
   updateFilePreview();
+  e.target.value = '';
 });
 
 document.getElementById('newBtn').addEventListener('click', resetForm);
@@ -380,7 +394,7 @@ function resetForm() {
   tweetText.value = '';
   document.getElementById('result').className = 'result';
   document.getElementById('result').style.display = 'none';
-  selectedFile = null;
+  selectedFiles = [];
   updateFilePreview();
   updateTweetCount();
   validateMsg.className = 'validate-msg';
@@ -399,7 +413,9 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
 
   const formData = new FormData();
   formData.append('text', text);
-  if (selectedFile) formData.append('image', selectedFile);
+  for (const file of selectedFiles) {
+    formData.append('images', file);
+  }
 
   try {
     const r = await fetch('/api/tweet-sync', { method: 'POST', body: formData });

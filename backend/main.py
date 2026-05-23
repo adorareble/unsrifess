@@ -12,6 +12,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse
 from twitter_client import TwitterClient
+from PIL import Image, ImageDraw, ImageFont
+import math
 
 STATE_DIR = os.environ.get("STATE_DIR", os.path.dirname(os.path.dirname(__file__)))
 STATE_FILE = os.path.join(STATE_DIR, "twitter_state.json")
@@ -27,6 +29,35 @@ if state_gz_b64:
         print(f"STATE_FILE written to {STATE_FILE} ({len(decoded)} bytes)", flush=True)
     except Exception as e:
         print(f"STATE_FILE write failed: {e}", flush=True)
+
+WATERMARK_TEXT = "@unsrifess"
+
+
+def add_watermark(image_path):
+    try:
+        img = Image.open(image_path).convert("RGBA")
+        overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        font_size = max(24, int(math.sqrt(img.width * img.height) * 0.045))
+        try:
+            font = ImageFont.truetype("arial.ttf", font_size)
+        except Exception:
+            font = ImageFont.load_default()
+
+        bbox = draw.textbbox((0, 0), WATERMARK_TEXT, font=font)
+        tw = bbox[2] - bbox[0]
+        th = bbox[3] - bbox[1]
+
+        tx = (img.width - tw) // 2
+        ty = (img.height - th) // 2
+        draw.text((tx, ty), WATERMARK_TEXT, font=font, fill=(255, 255, 255, 40))
+
+        img = Image.alpha_composite(img, overlay).convert("RGB")
+        img.save(image_path, quality=92)
+    except Exception as e:
+        print(f"Watermark failed: {e}", flush=True)
+
 
 app = FastAPI(title="TwitterTools")
 client = TwitterClient()
@@ -49,7 +80,7 @@ def set_task(task_id, data):
         tasks[task_id] = data
 
 
-def run_tweet_task(task_id, text, image_path):
+def run_tweet_task(task_id, text, saved_paths):
     try:
         def progress(current, total, msg):
             set_task(task_id, {
@@ -60,7 +91,7 @@ def run_tweet_task(task_id, text, image_path):
             })
 
         set_task(task_id, {"status": "running", "progress": "Starting..."})
-        result = client.post_tweet(text, image_path, progress_callback=progress)
+        result = client.post_tweet(text, saved_paths, progress_callback=progress)
 
         if result["success"]:
             set_task(task_id, {
@@ -79,11 +110,12 @@ def run_tweet_task(task_id, text, image_path):
             "progress": str(e),
         })
     finally:
-        if image_path:
-            try:
-                os.remove(image_path)
-            except Exception:
-                pass
+        if saved_paths:
+            for p in saved_paths:
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -104,21 +136,25 @@ async def status():
 @app.post("/api/tweet")
 async def tweet(
     text: str = Form(...),
-    image: UploadFile = File(default=None),
+    images: list[UploadFile] = File(default=None),
 ):
-    saved_path = None
-    if image and image.filename:
-        ext = os.path.splitext(image.filename)[1] or ".jpg"
-        filename = f"{uuid.uuid4().hex}{ext}"
-        saved_path = os.path.join(TEMP_DIR, filename)
-        content = await image.read()
-        with open(saved_path, "wb") as f:
-            f.write(content)
+    saved_paths = []
+    if images:
+        for img in images:
+            if img and img.filename:
+                ext = os.path.splitext(img.filename)[1] or ".jpg"
+                filename = f"{uuid.uuid4().hex}{ext}"
+                saved_path = os.path.join(TEMP_DIR, filename)
+                content = await img.read()
+                with open(saved_path, "wb") as f:
+                    f.write(content)
+                add_watermark(saved_path)
+                saved_paths.append(saved_path)
 
     task_id = uuid.uuid4().hex
     set_task(task_id, {"status": "pending", "progress": "Queued..."})
 
-    executor.submit(run_tweet_task, task_id, text, saved_path)
+    executor.submit(run_tweet_task, task_id, text, saved_paths)
 
     return {"task_id": task_id}
 
@@ -134,25 +170,29 @@ async def task_status(task_id: str):
 @app.post("/api/tweet-sync")
 async def tweet_sync(
     text: str = Form(...),
-    image: UploadFile = File(default=None),
+    images: list[UploadFile] = File(default=None),
 ):
-    saved_path = None
+    saved_paths = []
     try:
-        if image and image.filename:
-            ext = os.path.splitext(image.filename)[1] or ".jpg"
-            filename = f"{uuid.uuid4().hex}{ext}"
-            saved_path = os.path.join(TEMP_DIR, filename)
-            content = await image.read()
-            with open(saved_path, "wb") as f:
-                f.write(content)
+        if images:
+            for img in images:
+                if img and img.filename:
+                    ext = os.path.splitext(img.filename)[1] or ".jpg"
+                    filename = f"{uuid.uuid4().hex}{ext}"
+                    saved_path = os.path.join(TEMP_DIR, filename)
+                    content = await img.read()
+                    with open(saved_path, "wb") as f:
+                        f.write(content)
+                    add_watermark(saved_path)
+                    saved_paths.append(saved_path)
 
-        result = await asyncio.to_thread(client.post_tweet, text, saved_path)
+        result = await asyncio.to_thread(client.post_tweet, text, saved_paths)
         return result
     except Exception as e:
         return {"success": False, "error": str(e)}
     finally:
-        if saved_path:
+        for p in saved_paths:
             try:
-                os.remove(saved_path)
+                os.remove(p)
             except Exception:
                 pass
