@@ -1,5 +1,6 @@
 import os
 import sys
+import gzip
 import uuid
 import base64
 import asyncio
@@ -15,11 +16,12 @@ from twitter_client import TwitterClient
 STATE_DIR = os.environ.get("STATE_DIR", os.path.dirname(os.path.dirname(__file__)))
 STATE_FILE = os.path.join(STATE_DIR, "twitter_state.json")
 
-state_b64 = os.environ.get("TWITTER_STATE_B64")
-if state_b64:
+state_gz_b64 = os.environ.get("TWITTER_STATE_GZ")
+if state_gz_b64:
     try:
         os.makedirs(STATE_DIR, exist_ok=True)
-        decoded = base64.b64decode(state_b64).decode("utf-8")
+        compressed = base64.b64decode(state_gz_b64)
+        decoded = gzip.decompress(compressed).decode("utf-8")
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             f.write(decoded)
         print(f"STATE_FILE written to {STATE_FILE} ({len(decoded)} bytes)", flush=True)
