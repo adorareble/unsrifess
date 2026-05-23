@@ -40,10 +40,18 @@ def add_watermark(image_path):
         draw = ImageDraw.Draw(overlay)
 
         font_size = max(24, int(math.sqrt(img.width * img.height) * 0.045))
-        try:
-            font = ImageFont.truetype("arial.ttf", font_size)
-        except Exception:
-            font = ImageFont.load_default()
+        font = None
+        for fp in ["arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/TTF/DejaVuSans.ttf"]:
+            try:
+                font = ImageFont.truetype(fp, font_size)
+                break
+            except Exception:
+                continue
+        if font is None:
+            try:
+                font = ImageFont.load_default(font_size)
+            except Exception:
+                font = ImageFont.load_default()
 
         bbox = draw.textbbox((0, 0), WATERMARK_TEXT, font=font)
         tw = bbox[2] - bbox[0]
