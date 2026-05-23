@@ -68,7 +68,19 @@ class TwitterClient:
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=False,
-                args=["--disable-blink-features=AutomationControlled"],
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--single-process",
+                    "--no-zygote",
+                    "--disable-extensions",
+                    "--disable-background-networking",
+                    "--disable-sync",
+                    "--disable-translate",
+                    "--disable-dev-shm-usage",
+                    "--no-first-run",
+                    "--disable-default-apps",
+                    "--js-flags=--max-old-space-size=256",
+                ],
             )
             context = browser.new_context()
             page = context.new_page()
@@ -114,6 +126,15 @@ class TwitterClient:
                     "--no-sandbox",
                     "--disable-gpu",
                     "--disable-dev-shm-usage",
+                    "--single-process",
+                    "--no-zygote",
+                    "--disable-extensions",
+                    "--disable-background-networking",
+                    "--disable-sync",
+                    "--disable-translate",
+                    "--no-first-run",
+                    "--disable-default-apps",
+                    "--js-flags=--max-old-space-size=256",
                 ],
             )
             context = browser.new_context(
