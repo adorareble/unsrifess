@@ -120,7 +120,28 @@ class TwitterClient:
                 "error": "Not logged in. Run setup_login.py first.",
             }
 
+        import json
+        with open(self.state_file, encoding="utf-8") as f:
+            state_data = json.load(f)
+        saved_cookies = state_data.get("cookies", [])
+        saved_origin = state_data.get("origins", [])
+
         chunks = split_into_chunks(text.strip())
+
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                return self._post_tweet_attempt(
+                    chunks, saved_cookies, saved_origin,
+                    image_paths, progress_callback
+                )
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    time.sleep(3)
+                    continue
+                raise
+
+    def _post_tweet_attempt(self, chunks, saved_cookies, saved_origin, image_paths, progress_callback):
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=True,
@@ -129,19 +150,20 @@ class TwitterClient:
                     "--no-sandbox",
                     "--disable-gpu",
                     "--disable-dev-shm-usage",
-                    "--disable-extensions",
+                    "--single-process",
                     "--disable-background-networking",
                     "--disable-sync",
                     "--disable-translate",
                     "--no-first-run",
                     "--disable-default-apps",
+                    "--disable-component-update",
+                    "--no-crash-upload",
+                    "--no-crash-diagnostics",
                     "--js-flags=--max-old-space-size=256",
                 ],
             )
-            context = browser.new_context(
-                storage_state=self.state_file,
-                viewport={"width": 1280, "height": 600},
-            )
+            context = browser.new_context(viewport={"width": 1280, "height": 600})
+            context.add_cookies(saved_cookies)
             page = context.new_page()
             tweet_urls = []
             prev_tweet_url = None
