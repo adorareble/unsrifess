@@ -179,48 +179,29 @@ class TwitterClient:
         try:
             if reply_to_url:
                 page.goto(reply_to_url, wait_until="domcontentloaded", timeout=60000)
+                page.wait_for_load_state("networkidle", timeout=30000)
                 time.sleep(3)
                 page.keyboard.press("r")
                 time.sleep(2)
             else:
                 page.goto(
-                    "https://x.com", wait_until="domcontentloaded", timeout=60000
+                    "https://x.com/home", wait_until="domcontentloaded", timeout=60000
                 )
                 page.wait_for_load_state("networkidle", timeout=30000)
-                time.sleep(2)
-
-                post_btn = page.locator(
-                    'a[data-testid="SideNav_NewTweet_Button"]'
-                ).first
-                posted = False
-                for sel in [
-                    'a[data-testid="SideNav_NewTweet_Button"]',
-                    'a[href="/compose/post"]',
-                    'div[data-testid="SideNav_NewTweet_Button"]',
-                ]:
-                    try:
-                        btn = page.locator(sel).first
-                        if btn.is_visible(timeout=3000):
-                            btn.click()
-                            posted = True
-                            break
-                    except Exception:
-                        continue
-
-                if not posted:
-                    page.goto("https://x.com/compose/post", wait_until="domcontentloaded", timeout=30000)
-                    page.wait_for_load_state("networkidle", timeout=30000)
-                    time.sleep(3)
+                time.sleep(3)
 
             textbox = page.locator(
                 '[data-testid="tweetTextarea_0"]'
             ).first
             try:
                 textbox.wait_for(state="visible", timeout=15000)
+                textbox.click()
+                time.sleep(1)
             except Exception:
                 textbox = page.locator('div[role="textbox"]').first
-                textbox.wait_for(state="visible", timeout=10000)
-            textbox.click()
+                textbox.wait_for(state="visible", timeout=15000)
+                textbox.click()
+                time.sleep(1)
             page.keyboard.type(text, delay=10)
 
             if image_path:
