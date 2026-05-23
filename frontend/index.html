@@ -424,6 +424,7 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 document.getElementById('newBtn').addEventListener('click', resetForm);
 
 function resetForm() {
+  if (rateLimited) { checkStatus(); return; }
   tweetText.value = '';
   document.getElementById('result').className = 'result';
   document.getElementById('result').style.display = 'none';
@@ -478,14 +479,11 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       if (data.rate_limited) {
         rateLimited = true;
         rateResetAt = data.reset_at;
-        checkSubmitReady();
-        checkStatus();
       }
     }
     submitBtn.disabled = false;
     showDone();
-    submitBtn.disabled = false;
-    showDone();
+    checkStatus();
   } catch (err) {
     hideLoading();
     submitBtn.disabled = false;
