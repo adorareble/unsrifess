@@ -3,7 +3,8 @@ import time
 from playwright.sync_api import sync_playwright
 
 STATE_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)), "twitter_state.json"
+    os.environ.get("STATE_DIR", os.path.dirname(os.path.dirname(__file__))),
+    "twitter_state.json"
 )
 MAX_CHARS = 280
 

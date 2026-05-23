@@ -27,7 +27,7 @@ app = FastAPI(title="TwitterTools")
 client = TwitterClient()
 executor = ThreadPoolExecutor(max_workers=2)
 
-TEMP_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "temp_images")
+TEMP_DIR = os.environ.get("TEMP_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "temp_images"))
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 tasks = {}
