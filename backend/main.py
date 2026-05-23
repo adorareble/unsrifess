@@ -22,8 +22,9 @@ if state_b64:
         decoded = base64.b64decode(state_b64).decode("utf-8")
         with open(STATE_FILE, "w", encoding="utf-8") as f:
             f.write(decoded)
-    except Exception:
-        pass
+        print(f"STATE_FILE written to {STATE_FILE} ({len(decoded)} bytes)", flush=True)
+    except Exception as e:
+        print(f"STATE_FILE write failed: {e}", flush=True)
 
 app = FastAPI(title="TwitterTools")
 client = TwitterClient()

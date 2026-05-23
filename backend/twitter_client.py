@@ -62,7 +62,9 @@ class TwitterClient:
                 if c.get("name") == "auth_token" and c.get("expires", 0) > now:
                     return True
             return False
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.error(f"is_logged_in error: {e}")
             return False
 
     def login(self):
