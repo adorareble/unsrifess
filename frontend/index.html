@@ -34,12 +34,6 @@
   .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
   .status-dot.online { background: #00ba7c; box-shadow: 0 0 8px rgba(0,186,124,0.4); }
   .status-dot.offline { background: #f4212e; }
-  .status-badge {
-    margin-left: auto;
-    padding: 2px 10px; border-radius: 999px;
-    font-size: 0.7rem; font-weight: 600;
-    border: 1px solid #2f3336;
-  }
   .keyword-hint {
     display: flex; align-items: center; gap: 6px;
     margin-bottom: 12px; font-size: 0.8rem;
@@ -185,12 +179,19 @@
       <div class="progress-track">
         <div class="progress-bar" id="progressBar"></div>
       </div>
-      <div style="color:#4a4b4e;font-size:0.75rem;margin-top:8px">
-        Closing the browser won't cancel the process
-      </div>
     </div>
 
     <div id="composeArea">
+      <div id="offlineBanner" class="hidden" style="background:#16181c;border:1px solid #2f3336;border-radius:10px;padding:40px 20px;margin-bottom:12px;text-align:center;font-size:1rem;color:#71767b">
+        <div style="font-size:1.2rem;font-weight:600;margin-bottom:6px;color:#e7e9ea">Feature is currently offline</div>
+        Check back later
+      </div>
+      <div id="limitBanner" class="hidden" style="background:#16181c;border:1px solid #2f3336;border-radius:10px;padding:40px 20px;margin-bottom:12px;text-align:center;font-size:1rem;color:#71767b">
+        <div style="font-size:1.2rem;font-weight:600;margin-bottom:6px;color:#e7e9ea">Daily limit reached</div>
+        <div style="font-size:0.85rem" id="limitResetText"></div>
+      </div>
+
+      <div id="composeForm">
       <div class="keyword-hint">
         <span>&#9432;</span>
         <span>Your message must contain <code style="color: #f4c430;">unsr!</code> to be sent.</span>
@@ -198,7 +199,10 @@
 
       <textarea id="tweetText" placeholder="What would you like to share?" maxlength="3000"></textarea>
       <div class="tweet-count info" id="tweetCount"></div>
-      <div class="validate-msg" id="validateMsg"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+        <div class="validate-msg" id="validateMsg"></div>
+        <div style="font-size:0.8rem;color:#71767b" id="dailyRemaining"></div>
+      </div>
 
       <div class="upload-area" id="uploadArea">
         <div class="upload-label">+ Add images (max 4)</div>
@@ -207,9 +211,8 @@
       <input type="file" id="fileInput" accept="image/*" multiple>
 
       <button class="btn btn-primary" id="submitBtn" disabled>Send</button>
+      </div>
     </div>
-
-    <div id="rateLimitMsg" class="hidden"></div>
 
     <div id="doneArea" class="hidden">
       <div class="result" id="result"></div>
@@ -254,7 +257,6 @@ function estimateTweets(text) {
 
 function showCompose() {
   document.getElementById('composeArea').classList.remove('hidden');
-  document.getElementById('rateLimitMsg')?.classList.add('hidden');
   document.getElementById('doneArea').classList.add('hidden');
 }
 
@@ -288,6 +290,13 @@ function updateValidation() {
   const text = tweetText.value;
   const hasKeyword = /unsr!/i.test(text);
   const isEmpty = text.trim().length === 0;
+
+  if (dailyRemaining <= 0) {
+    validateMsg.className = 'validate-msg error';
+    validateMsg.textContent = 'Daily limit reached. Try again tomorrow.';
+    tweetText.classList.add('error');
+    return false;
+  }
 
   if (isEmpty) {
     validateMsg.className = 'validate-msg';
@@ -362,72 +371,36 @@ function updateFilePreview() {
 function checkSubmitReady() {
   const text = tweetText.value.trim();
   const valid = /unsr!/i.test(text);
-  submitBtn.disabled = !valid || rateLimited;
+  submitBtn.disabled = !valid || dailyRemaining <= 0 || !featureOnline;
 }
 
-let rateLimited = false;
-let rateResetAt = null;
 let isDone = false;
-
-(function restoreRate() {
-  const saved = localStorage.getItem('unsr_reset_at');
-  if (saved) {
-    const t = parseFloat(saved);
-    if (t > Date.now() / 1000) {
-      rateLimited = true;
-      rateResetAt = t;
-    }
-  }
-})();
-
-function saveResetAt(t) {
-  if (t && t > 0) {
-    localStorage.setItem('unsr_reset_at', t.toString());
-  }
-}
-
-function showCooldown(resetAt) {
-  const t = new Date(resetAt * 1000);
-  const now = new Date();
-  const waitMin = Math.ceil((t - now) / 60000);
-  document.getElementById('statusText').textContent = 'Cooldown ' + waitMin + 'm \u2022 0/5';
-  document.getElementById('composeArea').classList.add('hidden');
-  document.getElementById('rateLimitMsg')?.classList.remove('hidden');
-  const msg = document.getElementById('rateLimitMsg');
-  if (msg) {
-    const h = t.getHours().toString().padStart(2,'0');
-    const m = t.getMinutes().toString().padStart(2,'0');
-    msg.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#71767b"><div style="font-size:2rem;margin-bottom:12px">&#9200;</div><div style="font-size:1rem;font-weight:600;color:#e7e9ea;margin-bottom:8px">You\'ve used all 5 confessions</div><div style="font-size:0.9rem">Next available at <strong>' + h + ':' + m + '</strong> (~' + waitMin + ' min)</div></div>';
-  }
-}
+let dailyRemaining = 10;
+let featureOnline = true;
 
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
+  let resetsAt = '';
   try {
     const r = await fetch('/api/status');
     const data = await r.json();
+    dailyRemaining = data.daily_remaining || 0;
+    featureOnline = data.online !== false;
+    resetsAt = data.resets_at || '';
     dot.className = 'status-dot ' + (data.logged_in ? 'online' : 'offline');
-    rateLimited = !!data.rate_limited;
-    rateResetAt = data.reset_at || null;
-    saveResetAt(data.reset_at);
-
-    if (rateLimited) {
-      showCooldown(data.reset_at);
-    } else {
-      text.textContent = data.remaining + ' remaining';
-      const saved = localStorage.getItem('unsr_reset_at');
-      if (saved && parseFloat(saved) > Date.now() / 1000 && !isDone) {
-        rateLimited = true;
-        rateResetAt = parseFloat(saved);
-        showCooldown(rateResetAt);
-      } else if (!isDone) {
-        document.getElementById('composeArea').classList.remove('hidden');
-        document.getElementById('rateLimitMsg')?.classList.add('hidden');
-      }
-    }
+    text.textContent = data.logged_in ? 'Connected' : 'Session expired';
   } catch {
     dot.className = 'status-dot offline';
+    text.textContent = 'Offline';
+  }
+  document.getElementById('dailyRemaining').textContent =
+    dailyRemaining + ' tweet' + (dailyRemaining === 1 ? '' : 's') + ' remaining today';
+  document.getElementById('offlineBanner').classList.toggle('hidden', featureOnline);
+  document.getElementById('composeForm').classList.toggle('hidden', !featureOnline || dailyRemaining <= 0);
+  document.getElementById('limitBanner').classList.toggle('hidden', !(featureOnline && dailyRemaining <= 0));
+  if (dailyRemaining <= 0 && resetsAt) {
+    document.getElementById('limitResetText').textContent = 'Reset ' + resetsAt;
   }
   checkSubmitReady();
 }
@@ -455,7 +428,6 @@ document.getElementById('newBtn').addEventListener('click', resetForm);
 
 function resetForm() {
   isDone = false;
-  if (rateLimited) { checkStatus(); return; }
   tweetText.value = '';
   document.getElementById('result').className = 'result';
   document.getElementById('result').style.display = 'none';
@@ -472,6 +444,18 @@ function resetForm() {
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const text = tweetText.value.trim();
   if (!text || !/unsr!/i.test(text)) return;
+  if (dailyRemaining <= 0) {
+    document.getElementById('result').className = 'result error';
+    document.getElementById('result').textContent = 'Daily limit reached. Try again tomorrow.';
+    showDone();
+    return;
+  }
+  if (!featureOnline) {
+    document.getElementById('result').className = 'result error';
+    document.getElementById('result').textContent = 'Feature is offline.';
+    showDone();
+    return;
+  }
 
   showLoading();
   submitBtn.disabled = true;
@@ -507,13 +491,8 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       result.className = 'result error';
       result.innerHTML = msg;
       retryBtn.classList.add('hidden');
-      if (data.rate_limited) {
-        rateLimited = true;
-        rateResetAt = data.reset_at;
-      }
     }
     submitBtn.disabled = false;
-    if (data.reset_at) saveResetAt(data.reset_at);
     checkStatus();
     showDone();
   } catch (err) {
@@ -535,20 +514,10 @@ document.getElementById('retryBtn').addEventListener('click', () => {
 
 function friendlyError(data) {
   const msg = data.error || '';
-  if (data.rate_limited) {
-    const t = new Date(data.reset_at * 1000);
-    const now = new Date();
-    const waitMin = Math.ceil((t - now) / 60000);
-    const h = t.getHours().toString().padStart(2,'0');
-    const m = t.getMinutes().toString().padStart(2,'0');
-    return 'You\'ve used all 5 confessions for this hour.<br>Next available at <strong>' + h + ':' + m + '</strong> (~' + waitMin + ' min).';
-  }
   if (!msg) return 'Something went wrong. Please try again.';
   if (msg.includes('duplicate')) return 'This tweet looks like a duplicate.';
   if (msg.includes('timeout') || msg.includes('Timeout')) return 'Request timed out. Please try again.';
-  if (msg.includes('closed') || msg.includes('crash')) return 'Server is busy. Please try again.';
   if (msg.includes('login') || msg.includes('auth')) return 'Session expired. Please contact admin.';
-  if (msg.includes('Could not find')) return 'Could not post. X.com layout may have changed.';
   return msg.length > 120 ? 'Something went wrong. Please try again.' : msg;
 }
 

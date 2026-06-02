@@ -1,5 +1,5 @@
 fastapi
 uvicorn[standard]
-playwright
+twikit @ git+https://github.com/unclecode/twikit.git
 python-multipart
 Pillow

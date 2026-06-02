@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Unsr!fess</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #000; color: #e7e9ea; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .container { width: 100%; max-width: 480px; padding: 20px; }
+  h1 {
+    font-size: 1.3rem; font-weight: 700; margin-bottom: 4px;
+    background: linear-gradient(135deg, #1d9bf0, #8b5cf6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle { font-size: 0.8rem; color: #4a4b4e; margin-bottom: 20px; }
+  .card {
+    background: #16181c; border: 1px solid #2f3336; border-radius: 20px;
+    padding: 24px;
+  }
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid #2f3336;
+  }
+  .stat-row:last-of-type { border-bottom: none; }
+  .stat-label { font-size: 0.9rem; color: #71767b; }
+  .stat-value { font-size: 1.2rem; font-weight: 600; }
+  .stat-value.green { color: #00ba7c; }
+  .stat-value.yellow { color: #f4c430; }
+  .stat-value.red { color: #f4212e; }
+  .btn {
+    width: 100%; padding: 12px; border: none; border-radius: 9999px;
+    color: #fff; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; margin-top: 14px;
+  }
+  .btn-danger { background: #f4212e; }
+  .btn-danger:hover { background: #c8102e; }
+  .btn-primary { background: #1d9bf0; }
+  .btn-primary:hover { background: #1a8cd8; }
+  .btn-green { background: #00ba7c; }
+  .btn-green:hover { background: #009d68; }
+  .input-group {
+    display: flex; gap: 10px; margin-top: 14px; align-items: center;
+  }
+  .input-group input {
+    flex: 1; background: transparent; border: 1px solid #2f3336;
+    border-radius: 9999px; color: #e7e9ea; font-size: 0.95rem;
+    padding: 10px 16px; outline: none; font-family: inherit;
+  }
+  .input-group input:focus { border-color: #1d9bf0; }
+  .input-group .btn { width: auto; margin-top: 0; padding: 10px 20px; white-space: nowrap; }
+  .msg {
+    font-size: 0.85rem; min-height: 1.2em; margin-top: 10px;
+    text-align: center;
+  }
+  .msg.ok { color: #00ba7c; }
+  .msg.err { color: #f4212e; }
+  a.back {
+    display: block; text-align: center; margin-top: 20px;
+    color: #71767b; font-size: 0.85rem; text-decoration: none;
+  }
+  a.back:hover { color: #1d9bf0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Admin Panel</h1>
+  <div class="subtitle">Daily limit controls</div>
+
+  <div class="card">
+    <div class="stat-row">
+      <span class="stat-label">Today's count</span>
+      <span class="stat-value" id="statCount">-</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Remaining</span>
+      <span class="stat-value" id="statRemaining">-</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Daily limit</span>
+      <span class="stat-value" id="statLimit">-</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">Status</span>
+      <span class="stat-value" id="statOnline">-</span>
+    </div>
+
+    <button class="btn btn-danger" id="resetBtn">Reset counter to 0</button>
+
+    <div class="input-group">
+      <input type="number" id="limitInput" min="1" value="10" placeholder="New limit">
+      <button class="btn btn-primary" id="setBtn">Set limit</button>
+    </div>
+
+    <button class="btn" id="toggleBtn">Toggle</button>
+
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <a class="back" href="/">&larr; Back</a>
+</div>
+
+<script>
+async function refresh() {
+  try {
+    const r = await fetch('/api/status');
+    const data = await r.json();
+    document.getElementById('statCount').textContent = data.daily_limit - data.daily_remaining;
+    document.getElementById('statRemaining').textContent = data.daily_remaining;
+    document.getElementById('statLimit').textContent = data.daily_limit;
+    const onlineEl = document.getElementById('statOnline');
+    onlineEl.textContent = data.online ? 'Online' : 'Offline';
+    onlineEl.className = 'stat-value ' + (data.online ? 'green' : 'red');
+    const toggleBtn = document.getElementById('toggleBtn');
+    toggleBtn.textContent = data.online ? 'Set Offline' : 'Set Online';
+    toggleBtn.className = 'btn ' + (data.online ? 'btn-danger' : 'btn-green');
+    const remEl = document.getElementById('statRemaining');
+    if (data.daily_remaining === 0) remEl.className = 'stat-value red';
+    else if (data.daily_remaining <= 3) remEl.className = 'stat-value yellow';
+    else remEl.className = 'stat-value green';
+  } catch {
+    document.getElementById('msg').className = 'msg err';
+    document.getElementById('msg').textContent = 'Failed to fetch status';
+  }
+}
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  if (!confirm('Reset today\'s counter to 0?')) return;
+  try {
+    const r = await fetch('/api/reset-limit', { method: 'POST' });
+    const data = await r.json();
+    if (data.success) {
+      document.getElementById('msg').className = 'msg ok';
+      document.getElementById('msg').textContent = 'Counter reset to 0. Remaining: ' + data.daily_remaining;
+      refresh();
+    }
+  } catch {
+    document.getElementById('msg').className = 'msg err';
+    document.getElementById('msg').textContent = 'Reset failed';
+  }
+});
+
+document.getElementById('setBtn').addEventListener('click', async () => {
+  const val = document.getElementById('limitInput').value;
+  if (!val || parseInt(val) < 1) {
+    document.getElementById('msg').className = 'msg err';
+    document.getElementById('msg').textContent = 'Enter a valid limit (min 1)';
+    return;
+  }
+  try {
+    const form = new FormData();
+    form.append('value', val);
+    const r = await fetch('/api/set-limit', { method: 'POST', body: form });
+    const data = await r.json();
+    if (data.success) {
+      document.getElementById('limitInput').value = data.daily_limit;
+      document.getElementById('msg').className = 'msg ok';
+      document.getElementById('msg').textContent = 'Limit set to ' + data.daily_limit + '. Remaining: ' + data.daily_remaining;
+      refresh();
+    }
+  } catch {
+    document.getElementById('msg').className = 'msg err';
+    document.getElementById('msg').textContent = 'Failed to set limit';
+  }
+});
+
+document.getElementById('toggleBtn').addEventListener('click', async () => {
+  const currentOnline = document.getElementById('statOnline').textContent === 'Online';
+  try {
+    const form = new FormData();
+    form.append('value', currentOnline ? 'false' : 'true');
+    const r = await fetch('/api/set-online', { method: 'POST', body: form });
+    const data = await r.json();
+    if (data.success) {
+      document.getElementById('msg').className = 'msg ok';
+      document.getElementById('msg').textContent = data.online ? 'Feature is now Online' : 'Feature is now Offline';
+      refresh();
+    }
+  } catch {
+    document.getElementById('msg').className = 'msg err';
+    document.getElementById('msg').textContent = 'Failed to toggle status';
+  }
+});
+
+refresh();
+</script>
+</body>
+</html>
