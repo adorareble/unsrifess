@@ -3,5 +3,6 @@ temp_images/
 __pycache__/
 *.pyc
 .env
+.env.example
 
 unsrifess/

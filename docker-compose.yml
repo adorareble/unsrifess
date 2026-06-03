@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: unsrifess-db
+    environment:
+      POSTGRES_DB: unsrifess
+      POSTGRES_USER: unsrifess
+      POSTGRES_PASSWORD: unsrifess
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+
+volumes:
+  pgdata:

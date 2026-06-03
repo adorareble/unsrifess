@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Dashboard — Unsr!fess</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #000; color: #e7e9ea; font-size: 14px;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px; border-bottom: 1px solid #2f3336;
+    background: #0a0a0a; position: sticky; top: 0; z-index: 50;
+  }
+  .topbar h1 { font-size: 0.95rem; font-weight: 700; }
+  .topbar h1 span { color: #71767b; font-weight: 400; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; }
+  .topbar-right .admin-name { color: #1d9bf0; }
+  .topbar-right .role-badge {
+    font-size: 0.65rem; padding: 1px 6px; border-radius: 9999px;
+    background: rgba(29,155,240,0.15); color: #1d9bf0; text-transform: uppercase;
+  }
+  .topbar-right .role-badge.super { background: rgba(244,196,48,0.15); color: #f4c430; }
+  .logout-btn {
+    background: transparent; border: 1px solid #2f3336; color: #e7e9ea;
+    padding: 4px 12px; border-radius: 9999px; cursor: pointer; font-size: 0.75rem;
+  }
+  .logout-btn:hover { border-color: #f4212e; color: #f4212e; }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 12px 16px; }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px; margin-bottom: 12px;
+  }
+  .stat-card {
+    background: #16181c; border: 1px solid #2f3336; border-radius: 8px;
+    padding: 10px; text-align: center;
+  }
+  .stat-card .num { font-size: 1.3rem; font-weight: 700; }
+  .stat-card .label { font-size: 0.7rem; color: #71767b; margin-top: 2px; }
+  .stat-card .num.pending { color: #f4c430; }
+  .stat-card .num.approved { color: #00ba7c; }
+  .stat-card .num.rejected { color: #f4212e; }
+  .stat-card .num.total { color: #1d9bf0; }
+  .stat-card .num.online { color: #00ba7c; }
+  .stat-card .num.offline { color: #f4212e; }
+  .stat-card.clickable { cursor: pointer; transition: background 0.15s; }
+  .stat-card.clickable:hover { background: #1d1f23; }
+
+  .tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 1px solid #2f3336; }
+  .tab {
+    padding: 8px 14px; cursor: pointer; font-size: 0.82rem; font-weight: 500;
+    color: #71767b; border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .tab:hover { color: #e7e9ea; background: rgba(239,243,244,0.03); }
+  .tab.active { color: #1d9bf0; border-bottom-color: #1d9bf0; }
+  .tab .badge {
+    display: inline-block; margin-left: 4px; font-size: 0.65rem;
+    padding: 0 5px; border-radius: 9999px; background: #1d9bf0; color: #fff;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .queue-card {
+    background: #16181c; border: 1px solid #2f3336; border-radius: 8px;
+    padding: 12px; margin-bottom: 8px;
+  }
+  .queue-card .meta { font-size: 0.7rem; color: #71767b; margin-bottom: 6px; }
+  .queue-card .text {
+    font-size: 0.85rem; line-height: 1.4; margin-bottom: 8px;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .queue-card .actions { display: flex; gap: 6px; }
+  .queue-card .actions .btn {
+    padding: 6px 14px; border: none; border-radius: 9999px;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  }
+  .btn-approve { background: #00ba7c; color: #fff; }
+  .btn-approve:hover { background: #009d68; }
+  .btn-reject { background: #f4212e; color: #fff; }
+  .btn-reject:hover { background: #c8102e; }
+  .btn-reject-cancel { background: transparent; border: 1px solid #2f3336; color: #e7e9ea; }
+  .reject-box { margin-top: 8px; }
+  .reject-box input {
+    width: 100%; background: transparent; border: 1px solid #2f3336;
+    border-radius: 6px; color: #e7e9ea; font-size: 0.8rem;
+    padding: 6px 10px; outline: none; font-family: inherit; margin-bottom: 6px;
+  }
+  .reject-box input:focus { border-color: #1d9bf0; }
+  .empty-state { text-align: center; padding: 40px 16px; color: #71767b; font-size: 0.85rem; }
+
+  .filter-bar {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center;
+  }
+  .filter-bar select, .filter-bar input {
+    background: #16181c; border: 1px solid #2f3336; border-radius: 6px;
+    color: #e7e9ea; padding: 6px 10px; font-size: 0.8rem; outline: none; font-family: inherit;
+  }
+  .filter-bar select:focus, .filter-bar input:focus { border-color: #1d9bf0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #2f3336; }
+  th { color: #71767b; font-weight: 500; }
+  td { color: #e7e9ea; }
+  .status-badge {
+    display: inline-block; padding: 1px 8px; border-radius: 9999px;
+    font-size: 0.7rem; font-weight: 600;
+  }
+  .status-pending { background: rgba(244,196,48,0.15); color: #f4c430; }
+  .status-approved { background: rgba(0,186,124,0.15); color: #00ba7c; }
+  .status-rejected { background: rgba(244,33,46,0.15); color: #f4212e; }
+  .status-deleted { background: rgba(113,118,123,0.15); color: #71767b; }
+  .text-preview { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .keyword-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .keyword-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 9999px; font-size: 0.8rem;
+    background: rgba(29,155,240,0.1); border: 1px solid rgba(29,155,240,0.2);
+  }
+  .keyword-tag .del {
+    cursor: pointer; color: #f4212e; font-weight: 700; font-size: 0.9rem; line-height: 1;
+  }
+  .keyword-tag .del:hover { color: #c8102e; }
+  .add-keyword-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+  .pagination {
+    display: flex; gap: 6px; justify-content: center; margin-top: 12px;
+  }
+  .pagination button {
+    background: #16181c; border: 1px solid #2f3336; border-radius: 6px;
+    color: #e7e9ea; padding: 4px 12px; cursor: pointer; font-size: 0.8rem;
+  }
+  .pagination button:hover { border-color: #1d9bf0; }
+  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pagination .page-info { color: #71767b; font-size: 0.8rem; align-self: center; }
+
+  .btn-small {
+    padding: 3px 10px; border: none; border-radius: 5px;
+    font-size: 0.73rem; font-weight: 600; cursor: pointer; color: #fff;
+  }
+  .btn-small.danger { background: #f4212e; }
+  .btn-small.danger:hover { background: #c8102e; }
+  .btn-small.primary { background: #1d9bf0; }
+  .btn-small.primary:hover { background: #1a8cd8; }
+
+  .msg { font-size: 0.8rem; min-height: 1.2em; margin-top: 6px; }
+  .msg.ok { color: #00ba7c; }
+  .msg.err { color: #f4212e; }
+
+  @media (max-width: 768px) {
+    .container { padding: 8px 10px; }
+    .topbar { padding: 6px 10px; }
+    .tab { padding: 6px 10px; font-size: 0.75rem; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    table { font-size: 0.7rem; }
+    th, td { padding: 4px 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Unsr!fess <span>Panel</span></h1>
+  <div class="topbar-right">
+    <span class="admin-name" id="adminName"></span>
+    <span class="role-badge" id="roleBadge"></span>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="stats" id="statsRow"></div>
+
+  <div class="tabs" id="tabBar">
+    <div class="tab active" data-tab="queue" onclick="switchTab('queue')">Queue <span class="badge" id="queueBadge">0</span></div>
+    <div class="tab" data-tab="history" onclick="switchTab('history')">History</div>
+    <div class="tab" data-tab="keywords" onclick="switchTab('keywords')">Keywords</div>
+    <div class="tab" data-tab="admins" onclick="switchTab('admins')">Admins</div>
+    <div class="tab" data-tab="activity" onclick="switchTab('activity')">Activity</div>
+    <div class="tab" data-tab="settings" onclick="switchTab('settings')">Settings</div>
+  </div>
+
+  <div id="tabQueue" class="tab-content active"></div>
+  <div id="tabHistory" class="tab-content"></div>
+  <div id="tabKeywords" class="tab-content"></div>
+  <div id="tabAdmins" class="tab-content"></div>
+  <div id="tabActivity" class="tab-content"></div>
+  <div id="tabSettings" class="tab-content"></div>
+</div>
+
+<script>
+const TOKEN = localStorage.getItem('panel_token');
+const ADMIN = JSON.parse(localStorage.getItem('panel_admin') || '{}');
+
+if (!TOKEN) { window.location.href = '/panel/login'; }
+
+const headers = { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' };
+
+document.getElementById('adminName').textContent = ADMIN.display_name || ADMIN.username;
+const badge = document.getElementById('roleBadge');
+badge.textContent = ADMIN.role || 'admin';
+if (ADMIN.role === 'superadmin') badge.classList.add('super');
+
+function logout() {
+  localStorage.removeItem('panel_token');
+  localStorage.removeItem('panel_admin');
+  window.location.href = '/panel/login';
+}
+
+async function loadSettings() {
+  const el = document.getElementById('tabSettings');
+  const currentName = ADMIN.display_name || ADMIN.username;
+  el.innerHTML = `
+    <div style="max-width:400px;margin:0 auto;padding:24px 0">
+      <h3 style="margin:0 0 16px;font-size:1rem;color:#e7e9ea">Settings</h3>
+      <div style="background:#1d1f23;border-radius:8px;padding:16px;margin-bottom:16px">
+        <div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:10px">Display Name</div>
+        <div style="display:flex;gap:8px">
+          <input id="dnInput" value="${escHtml(currentName)}" style="flex:1;background:#16181c;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 14px;font-size:0.85rem;outline:none">
+          <button class="btn-small primary" onclick="changeDisplayName()" style="padding:10px 16px;font-size:0.85rem">Save</button>
+        </div>
+        <div id="dnMsg" style="font-size:0.85rem;margin-top:8px"></div>
+      </div>
+      <div style="background:#1d1f23;border-radius:8px;padding:16px">
+        <div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:10px">Change Password</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <input id="pwOld" type="password" placeholder="Current password" style="background:#16181c;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 14px;font-size:0.85rem;outline:none">
+          <input id="pwNew" type="password" placeholder="New password" style="background:#16181c;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 14px;font-size:0.85rem;outline:none">
+          <button class="btn-small primary" onclick="changePassword()" style="padding:10px;font-size:0.85rem">Save</button>
+          <div id="pwMsg" style="font-size:0.85rem"></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function changeDisplayName() {
+  const name = document.getElementById('dnInput').value.trim();
+  const msg = document.getElementById('dnMsg');
+  if (!name) { msg.style.color = '#f4212e'; msg.textContent = 'Name cannot be empty'; return; }
+  try {
+    const form = new URLSearchParams();
+    form.append('display_name', name);
+    const r = await api('/panel/api/change-display-name', {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+    const d = await r.json();
+    if (d.success) {
+      ADMIN.display_name = d.display_name;
+      localStorage.setItem('panel_admin', JSON.stringify(ADMIN));
+      document.getElementById('adminName').textContent = d.display_name;
+      msg.style.color = '#00ba7c'; msg.textContent = 'Display name updated';
+    } else {
+      msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed';
+    }
+  } catch(e) {
+    msg.style.color = '#f4212e'; msg.textContent = 'Connection error';
+  }
+}
+
+async function changePassword() {
+  const oldPw = document.getElementById('pwOld').value;
+  const newPw = document.getElementById('pwNew').value;
+  const msg = document.getElementById('pwMsg');
+  if (!oldPw || !newPw) { msg.style.color = '#f4212e'; msg.textContent = 'Fill both fields'; return; }
+  if (newPw.length < 6) { msg.style.color = '#f4212e'; msg.textContent = 'Min 6 characters'; return; }
+  try {
+    const form = new URLSearchParams();
+    form.append('old_password', oldPw);
+    form.append('new_password', newPw);
+    const r = await api('/panel/api/change-password', {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+    const d = await r.json();
+    if (d.success) {
+      msg.style.color = '#00ba7c'; msg.textContent = 'Password changed successfully';
+      document.getElementById('pwOld').value = '';
+      document.getElementById('pwNew').value = '';
+    } else {
+      msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed';
+    }
+  } catch(e) {
+    msg.style.color = '#f4212e'; msg.textContent = 'Connection error';
+  }
+}
+
+const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+function wib(dateStr) {
+  const d = new Date(dateStr + (dateStr.endsWith('Z') ? '' : 'Z'));
+  d.setMinutes(d.getMinutes() + d.getTimezoneOffset() + 420);
+  const pad = n => String(n).padStart(2, '0');
+  return d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear()
+    + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + ' WIB';
+}
+
+function api(path, opts = {}) {
+  return fetch(path, { ...opts, headers: { ...headers, ...opts.headers } }).then(r => {
+    if (r.status === 401) { logout(); throw new Error('Unauthorized'); }
+    return r;
+  });
+}
+
+async function loadStats() {
+  try {
+    const r = await api('/panel/api/stats');
+    const d = await r.json();
+    const isSuper = ADMIN.role === 'superadmin';
+    let online = d.online;
+    if (online === undefined) {
+      try { const sr = await fetch('/api/status'); online = (await sr.json()).online; }
+      catch(_) { online = true; }
+    } else {
+      online = online !== false;
+    }
+    document.getElementById('statsRow').innerHTML = `
+      <div class="stat-card"><div class="num pending">${d.pending_count}</div><div class="label">Pending</div></div>
+      <div class="stat-card"><div class="num approved">${d.approved_today}</div><div class="label">Approved Today</div></div>
+      <div class="stat-card"><div class="num rejected">${d.rejected_today}</div><div class="label">Rejected Today</div></div>
+      <div class="stat-card"><div class="num total">${d.total_tweets}</div><div class="label">Total Tweets</div></div>
+      <div class="stat-card${isSuper ? ' clickable' : ''}" id="statusCard"><div class="num ${online ? 'online' : 'offline'}">${online ? 'Online' : 'Offline'}</div><div class="label">${isSuper ? 'Toggle on/off' : 'Status'}</div></div>
+      ${isSuper ? `<div class="stat-card clickable" id="bypassCard"><div class="num ${d.bypass ? 'online' : 'offline'}">${d.bypass ? 'Bypass ON' : 'Bypass OFF'}</div><div class="label">Auto-approve</div></div>` : ''}
+    `;
+    if (isSuper) {
+      document.getElementById('statusCard').onclick = toggleOnline;
+      document.getElementById('bypassCard').onclick = toggleBypass;
+    }
+    document.getElementById('queueBadge').textContent = d.pending_count;
+  } catch(_) {}
+}
+
+async function toggleOnline() {
+  const card = document.getElementById('statusCard');
+  const num = card.querySelector('.num');
+  const isOnline = (num.textContent || '').trim() === 'Online';
+  const newState = !isOnline;
+  num.textContent = newState ? 'Online' : 'Offline';
+  num.className = 'num ' + (newState ? 'online' : 'offline');
+  try {
+    await api('/panel/api/set-online', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: newState ? 'value=1' : 'value=0',
+    });
+  } catch(_) {}
+  loadStats();
+}
+
+async function toggleBypass() {
+  const card = document.getElementById('bypassCard');
+  const num = card.querySelector('.num');
+  const isOn = (num.textContent || '').trim() === 'Bypass ON';
+  const newState = !isOn;
+  num.textContent = newState ? 'Bypass ON' : 'Bypass OFF';
+  num.className = 'num ' + (newState ? 'online' : 'offline');
+  try {
+    await api('/panel/api/set-bypass', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: newState ? 'value=1' : 'value=0',
+    });
+  } catch(_) {}
+  loadStats();
+}
+
+// ─── Queue Tab ─────────────────────────────────────────
+let queuePage = 1;
+
+async function loadQueue() {
+  const el = document.getElementById('tabQueue');
+  try {
+    const r = await api(`/panel/api/tweets/pending?page=${queuePage}&limit=20`);
+    const d = await r.json();
+    const tweets = d.tweets || [];
+    document.getElementById('queueBadge').textContent = tweets.length;
+
+    if (tweets.length === 0) {
+      el.innerHTML = '<div class="empty-state">No pending tweets</div>';
+      return;
+    }
+
+    let html = '';
+    for (const t of tweets) {
+      html += `
+        <div class="queue-card" id="qt-${t.id}">
+          <div class="meta">
+            #${t.id} &middot; ${wib(t.submitted_at)}
+            ${t.submitted_by ? '&middot; IP: ' + t.submitted_by : ''}
+            ${t.chunk_count > 1 ? '&middot; ' + t.chunk_count + ' tweets' : ''}
+          </div>
+          <div class="text">${escHtml(t.original_text)}</div>
+          <div class="actions" id="qa-${t.id}">
+            <button class="btn btn-approve" onclick="approveTweet('${t.id}')">Approve</button>
+            <button class="btn btn-reject" onclick="showReject('${t.id}')">Reject</button>
+          </div>
+          <div class="reject-box" id="rb-${t.id}" style="display:none">
+            <input type="text" id="rr-${t.id}" placeholder="Reason (optional)">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-reject" style="flex:1" onclick="rejectTweet('${t.id}')">Confirm Reject</button>
+              <button class="btn btn-reject-cancel" onclick="hideReject('${t.id}')">Cancel</button>
+            </div>
+          </div>
+        </div>`;
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load queue</div>';
+  }
+}
+
+function showReject(id) {
+  document.getElementById('qa-' + id).style.display = 'none';
+  document.getElementById('rb-' + id).style.display = 'block';
+}
+
+function hideReject(id) {
+  document.getElementById('qa-' + id).style.display = 'flex';
+  document.getElementById('rb-' + id).style.display = 'none';
+}
+
+async function approveTweet(id) {
+  try {
+    const r = await api('/panel/api/tweets/' + id + '/approve', { method: 'POST' });
+    const d = await r.json();
+    if (d.success) {
+      const card = document.getElementById('qt-' + id);
+      if (card) card.style.display = 'none';
+      loadStats();
+    } else {
+      alert(d.error || 'Approve failed');
+    }
+  } catch(e) {
+    alert('Connection error');
+  }
+}
+
+async function rejectTweet(id) {
+  const reason = document.getElementById('rr-' + id).value;
+  try {
+    const form = new URLSearchParams();
+    form.append('reason', reason);
+    const r = await api('/panel/api/tweets/' + id + '/reject', {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+    const d = await r.json();
+    if (d.success) {
+      const card = document.getElementById('qt-' + id);
+      if (card) card.style.display = 'none';
+      loadStats();
+    } else {
+      alert(d.detail || 'Reject failed');
+    }
+  } catch(e) {
+    alert('Connection error');
+  }
+}
+
+// ─── History Tab ───────────────────────────────────────
+let historyPage = 1;
+
+async function loadHistory() {
+  const el = document.getElementById('tabHistory');
+  const status = document.getElementById('hf-status')?.value || '';
+  const admin = document.getElementById('hf-admin')?.value || '';
+  const search = document.getElementById('hf-search')?.value || '';
+
+  let params = `page=${historyPage}&limit=30`;
+  if (status) params += `&status=${status}`;
+  if (admin) params += `&admin_id=${admin}`;
+  if (search) params += `&search=${encodeURIComponent(search)}`;
+
+  try {
+    const r = await api(`/panel/api/tweets?${params}`);
+    const d = await r.json();
+    const tweets = d.tweets || [];
+
+    let filterHtml = `
+      <div class="filter-bar">
+        <select id="hf-status" onchange="historyPage=1;loadHistory()">
+          <option value="">All status</option>
+          <option value="pending" ${status==='pending'?'selected':''}>Pending</option>
+          <option value="approved" ${status==='approved'?'selected':''}>Approved</option>
+          <option value="rejected" ${status==='rejected'?'selected':''}>Rejected</option>
+          <option value="deleted" ${status==='deleted'?'selected':''}>Deleted</option>
+        </select>
+        <input id="hf-search" placeholder="Search text..." value="${escHtml(search)}"
+               onkeydown="if(event.key==='Enter'){historyPage=1;loadHistory()}">
+        <button class="btn-small primary" onclick="historyPage=1;loadHistory()">Filter</button>
+      </div>`;
+
+    if (tweets.length === 0) {
+      el.innerHTML = filterHtml + '<div class="empty-state">No tweets found</div>';
+      return;
+    }
+
+    let rows = '';
+    for (const t of tweets) {
+      const statusClass = 'status-' + t.status;
+      const urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : [];
+      rows += `<tr>
+        <td>${t.id}</td>
+        <td><span class="status-badge ${statusClass}">${t.status}</span></td>
+        <td class="text-preview" title="${escHtml(t.original_text)}">${escHtml(t.original_text)}</td>
+        <td>${t.chunk_count || 1}</td>
+        <td>${wib(t.submitted_at)}</td>
+        <td>${t.reviewer_name || '-'}</td>
+        <td>${urls.length ? urls.map(u => `<a href="${u}" target="_blank" style="color:#1d9bf0;font-size:0.75rem">link</a>`).join(' ') : '-'}</td>
+        <td>${t.reject_reason ? escHtml(t.reject_reason) : '-'}</td>
+        <td>${ADMIN.role === 'superadmin' && t.status === 'approved' ? `<button class="btn-small danger" onclick="deleteTweet('${t.id}')">Delete</button>` : ''}</td>
+      </tr>`;
+    }
+
+    el.innerHTML = filterHtml + `
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Status</th><th>Text</th><th>Chunks</th><th>Submitted</th>
+            <th>Reviewer</th><th>URLs</th><th>Reason</th><th>${ADMIN.role==='superadmin'?'Action':''}</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button onclick="historyPage--;loadHistory()" ${historyPage<=1?'disabled':''}>Prev</button>
+        <span class="page-info">Page ${historyPage}</span>
+        <button onclick="historyPage++;loadHistory()">Next</button>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load history</div>';
+  }
+}
+
+async function deleteTweet(id) {
+  if (!confirm('Delete tweet #' + id + ' from X? This cannot be undone.')) return;
+  try {
+    const r = await api('/panel/api/tweets/' + id, { method: 'DELETE' });
+    const d = await r.json();
+    if (d.success) { loadHistory(); loadStats(); }
+    else { alert(d.detail || 'Delete failed'); }
+  } catch(e) { alert('Connection error'); }
+}
+
+// ─── Keywords Tab ──────────────────────────────────────
+async function loadKeywords() {
+  const el = document.getElementById('tabKeywords');
+  try {
+    const r = await api('/panel/api/keywords');
+    const keywords = await r.json();
+
+    const listHtml = keywords.length
+      ? keywords.map(k =>
+          `<span class="keyword-tag">
+            ${escHtml(k.keyword)}
+            <span class="del" onclick="removeKeyword('${k.id}')">&times;</span>
+          </span>`).join('')
+      : '<div class="empty-state">No keyword filters</div>';
+
+    el.innerHTML = `
+      <div style="margin-bottom:16px;font-size:0.85rem;color:#71767b">
+        Tweets containing any of these keywords will be automatically rejected.
+      </div>
+      <div class="keyword-list">${listHtml}</div>
+      <div class="add-keyword-form">
+        <input id="kwInput" placeholder="keyword1, keyword2, ..."
+               style="flex:1;background:#16181c;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 14px;font-size:0.85rem;outline:none"
+               onkeydown="if(event.key==='Enter')addKeyword()">
+        <button class="btn-small primary" onclick="addKeyword()" style="padding:10px 20px">Add</button>
+      </div>
+      <div class="msg" id="kwMsg"></div>`;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load keywords</div>';
+  }
+}
+
+async function addKeyword() {
+  const input = document.getElementById('kwInput');
+  const val = input.value.trim();
+  if (!val) return;
+  const msg = document.getElementById('kwMsg');
+  try {
+    const form = new URLSearchParams();
+    form.append('keywords', val);
+    const r = await api('/panel/api/keywords', {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+    const d = await r.json();
+    if (d.success) {
+      input.value = '';
+      msg.className = 'msg ok';
+      msg.textContent = d.added.length + ' keyword(s) added';
+      loadKeywords();
+    }
+  } catch(e) {
+    msg.className = 'msg err';
+    msg.textContent = 'Failed to add keyword';
+  }
+}
+
+async function removeKeyword(id) {
+  if (!confirm('Remove this keyword filter?')) return;
+  try {
+    await api('/panel/api/keywords/' + id, { method: 'DELETE' });
+    loadKeywords();
+  } catch(e) {}
+}
+
+// ─── Admins Tab ─────────────────────────────────────────
+async function loadAdmins() {
+  const el = document.getElementById('tabAdmins');
+  if (ADMIN.role !== 'superadmin') {
+    el.innerHTML = '<div class="empty-state">Superadmin access required</div>';
+    return;
+  }
+
+  try {
+    const r = await api('/panel/api/admins');
+    const admins = await r.json();
+
+    let rows = '';
+    for (const a of admins) {
+      const lastLogin = a.last_login ? wib(a.last_login) : '-';
+      rows += `<tr>
+        <td>${a.id}</td>
+        <td>${escHtml(a.username)}</td>
+        <td>${escHtml(a.display_name)}</td>
+        <td><span class="status-badge ${a.role==='superadmin'?'status-approved':'status-pending'}">${a.role}</span></td>
+        <td>${a.is_active ? '<span style="color:#00ba7c">Active</span>' : '<span style="color:#71767b">Inactive</span>'}</td>
+        <td>${wib(a.created_at)}</td>
+        <td>${lastLogin}</td>
+        <td>${a.id !== ADMIN.id ? (a.is_active ? `<button class="btn-small danger" onclick="deactivateAdmin('${a.id}')">Deactivate</button>` : `<button class="btn-small primary" onclick="activateAdmin('${a.id}')">Reactivate</button>`) : '-'}</td>
+      </tr>`;
+    }
+ 
+    let createForm = `
+      <div style="margin-top:16px;padding:12px;background:#1d1f23;border-radius:8px">
+        <div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">Create New Admin</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="au" placeholder="Username" style="flex:1;min-width:120px;background:#16181c;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">
+          <input id="ap" type="password" placeholder="Password" style="flex:1;min-width:120px;background:#16181c;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">
+          <input id="an" placeholder="Display Name" style="flex:1;min-width:120px;background:#16181c;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">
+          <button class="btn-small primary" onclick="createAdmin()" style="padding:8px 16px">Create</button>
+        </div>
+        <div class="msg" id="adminMsg"></div>
+      </div>`;
+
+    el.innerHTML = createForm + `
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>ID</th><th>Username</th><th>Display Name</th><th>Role</th><th>Status</th><th>Created</th><th>Last Login</th><th>Action</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load admins</div>';
+  }
+}
+
+async function activateAdmin(id) {
+  try {
+    const r = await api('/panel/api/admins/' + id + '/activate', { method: 'POST' });
+    const d = await r.json();
+    if (!d.success) alert(d.detail || 'Failed');
+    loadAdmins();
+  } catch(e) {
+    alert('Failed to reactivate admin');
+  }
+}
+
+async function deactivateAdmin(id) {
+  if (!confirm('Deactivate admin #' + id + '?')) return;
+  try {
+    const r = await api('/panel/api/admins/' + id + '/deactivate', { method: 'POST' });
+    const d = await r.json();
+    if (!d.success) alert(d.detail || 'Failed');
+    loadAdmins();
+  } catch(e) {
+    alert('Failed to deactivate admin');
+  }
+}
+
+async function createAdmin() {
+  const username = document.getElementById('au').value.trim();
+  const password = document.getElementById('ap').value;
+  const displayName = document.getElementById('an').value.trim();
+  const msg = document.getElementById('adminMsg');
+  if (!username || !password || !displayName) {
+    msg.className = 'msg err';
+    msg.textContent = 'All fields required';
+    return;
+  }
+  try {
+    const form = new URLSearchParams();
+    form.append('username', username);
+    form.append('password', password);
+    form.append('display_name', displayName);
+    const r = await api('/panel/api/register', {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+    const d = await r.json();
+    if (d.success) {
+      document.getElementById('au').value = '';
+      document.getElementById('ap').value = '';
+      document.getElementById('an').value = '';
+      msg.className = 'msg ok';
+      msg.textContent = 'Admin created';
+      loadAdmins();
+    } else {
+      msg.className = 'msg err';
+      msg.textContent = d.detail || 'Failed to create admin';
+    }
+  } catch(e) {
+    msg.className = 'msg err';
+    msg.textContent = 'Connection error';
+  }
+}
+
+// ─── Activity Tab ───────────────────────────────────────
+let activityPage = 1;
+
+async function loadActivity() {
+  const el = document.getElementById('tabActivity');
+  try {
+    const params = new URLSearchParams();
+    params.set('page', activityPage);
+    params.set('limit', '50');
+    const actionFilter = document.getElementById('af-action');
+    if (actionFilter && actionFilter.value) params.set('action', actionFilter.value);
+
+    const r = await api('/panel/api/activity?' + params.toString());
+    const d = await r.json();
+    const activities = d.activities || [];
+
+    let filterHtml = `
+      <div class="filter-bar">
+        <select id="af-action" onchange="activityPage=1;loadActivity()">
+          <option value="">All actions</option>
+          <option value="approve" ${actionFilter?.value==='approve'?'selected':''}>Approve</option>
+          <option value="reject" ${actionFilter?.value==='reject'?'selected':''}>Reject</option>
+          <option value="delete" ${actionFilter?.value==='delete'?'selected':''}>Delete</option>
+          <option value="login" ${actionFilter?.value==='login'?'selected':''}>Login</option>
+          <option value="create_admin" ${actionFilter?.value==='create_admin'?'selected':''}>Create Admin</option>
+          <option value="deactivate_admin" ${actionFilter?.value==='deactivate_admin'?'selected':''}>Deactivate Admin</option>
+          <option value="activate_admin" ${actionFilter?.value==='activate_admin'?'selected':''}>Activate Admin</option>
+          <option value="add_keyword" ${actionFilter?.value==='add_keyword'?'selected':''}>Add Keyword</option>
+          <option value="remove_keyword" ${actionFilter?.value==='remove_keyword'?'selected':''}>Remove Keyword</option>
+          <option value="set_online" ${actionFilter?.value==='set_online'?'selected':''}>Set Online</option>
+          <option value="set_bypass" ${actionFilter?.value==='set_bypass'?'selected':''}>Set Bypass</option>
+        </select>
+      </div>`;
+
+    if (activities.length === 0) {
+      el.innerHTML = filterHtml + '<div class="empty-state">No activity found</div>';
+      return;
+    }
+
+    let rows = '';
+    for (const a of activities) {
+      rows += `<tr>
+        <td>${escHtml(a.admin_name || 'Admin #' + a.admin_id)}</td>
+        <td><span class="status-badge status-pending">${a.action}</span></td>
+        <td>${a.target_type ? a.target_type + ' #' + a.target_id : '-'}</td>
+        <td>${a.details ? escHtml(a.details) : '-'}</td>
+        <td>${wib(a.created_at)}</td>
+      </tr>`;
+    }
+
+    const totalPages = Math.ceil(d.total / 50);
+
+    el.innerHTML = filterHtml + `
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Admin</th><th>Action</th><th>Target</th><th>Details</th><th>Time</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button onclick="activityPage--;loadActivity()" ${activityPage<=1?'disabled':''}>Prev</button>
+        <span class="page-info">Page ${activityPage} of ${totalPages}</span>
+        <button onclick="activityPage++;loadActivity()" ${activityPage>=totalPages?'disabled':''}>Next</button>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load activity</div>';
+  }
+}
+
+// ─── Tab Switching ──────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${name}"]`).classList.add('active');
+  document.getElementById('tab' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+
+  if (name === 'queue') loadQueue();
+  if (name === 'history') loadHistory();
+  if (name === 'keywords') loadKeywords();
+  if (name === 'admins') loadAdmins();
+  if (name === 'activity') loadActivity();
+  if (name === 'settings') loadSettings();
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ─── Auto-refresh queue every 15s ────────────────────
+loadStats();
+loadQueue();
+setInterval(() => {
+  const active = document.querySelector('.tab-content.active');
+  if (active && active.id === 'tabQueue') loadQueue();
+  loadStats();
+}, 15000);
+</script>
+</body>
+</html>

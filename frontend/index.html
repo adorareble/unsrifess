@@ -54,16 +54,16 @@
   textarea:focus { border-color: #1d9bf0; box-shadow: 0 0 0 2px rgba(29,155,240,0.15); }
   textarea.error { border-color: #f4212e; box-shadow: 0 0 0 2px rgba(244,33,46,0.15); }
   .tweet-count {
-    margin-top: 6px; font-size: 0.85rem; font-weight: 500;
+    font-size: 0.82rem; font-weight: 500;
     min-height: 1.2em;
   }
   .tweet-count.over { color: #f4212e; }
   .tweet-count.ok { color: #00ba7c; }
   .tweet-count.info { color: #71767b; }
   .upload-area {
-    border: 1px dashed #2f3336; border-radius: 12px; padding: 14px;
-    text-align: center; margin-top: 12px; cursor: pointer; color: #71767b;
-    transition: all 0.2s; font-size: 0.9rem;
+    border: 1px dashed #2f3336; border-radius: 12px; padding: 10px;
+    text-align: center; margin-top: 6px; cursor: pointer; color: #71767b;
+    transition: all 0.2s; font-size: 0.85rem;
   }
   .upload-area:hover { border-color: #1d9bf0; color: #1d9bf0; background: rgba(29,155,240,0.04); }
   .upload-area.has-file { border-color: #00ba7c; }
@@ -97,8 +97,8 @@
   .btn-success { background: #00ba7c; }
   .btn-success:hover { background: #009d68; }
   .validate-msg {
-    font-size: 0.82rem; min-height: 1.2em; margin-top: 6px;
-    padding: 0 4px; transition: all 0.2s;
+    font-size: 0.8rem; min-height: 0; margin: 0;
+    padding: 0 2px; transition: all 0.2s;
   }
   .validate-msg.error { color: #f4212e; }
   .validate-msg.ok { color: #00ba7c; }
@@ -186,10 +186,7 @@
         <div style="font-size:1.2rem;font-weight:600;margin-bottom:6px;color:#e7e9ea">Feature is currently offline</div>
         Check back later
       </div>
-      <div id="limitBanner" class="hidden" style="background:#16181c;border:1px solid #2f3336;border-radius:10px;padding:40px 20px;margin-bottom:12px;text-align:center;font-size:1rem;color:#71767b">
-        <div style="font-size:1.2rem;font-weight:600;margin-bottom:6px;color:#e7e9ea">Daily limit reached</div>
-        <div style="font-size:0.85rem" id="limitResetText"></div>
-      </div>
+
 
       <div id="composeForm">
       <div class="keyword-hint">
@@ -199,10 +196,7 @@
 
       <textarea id="tweetText" placeholder="What would you like to share?" maxlength="3000"></textarea>
       <div class="tweet-count info" id="tweetCount"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-        <div class="validate-msg" id="validateMsg"></div>
-        <div style="font-size:0.8rem;color:#71767b" id="dailyRemaining"></div>
-      </div>
+      <div class="validate-msg" id="validateMsg"></div>
 
       <div class="upload-area" id="uploadArea">
         <div class="upload-label">+ Add images (max 4)</div>
@@ -291,13 +285,6 @@ function updateValidation() {
   const hasKeyword = /unsr!/i.test(text);
   const isEmpty = text.trim().length === 0;
 
-  if (dailyRemaining <= 0) {
-    validateMsg.className = 'validate-msg error';
-    validateMsg.textContent = 'Daily limit reached. Try again tomorrow.';
-    tweetText.classList.add('error');
-    return false;
-  }
-
   if (isEmpty) {
     validateMsg.className = 'validate-msg';
     validateMsg.textContent = '';
@@ -371,37 +358,27 @@ function updateFilePreview() {
 function checkSubmitReady() {
   const text = tweetText.value.trim();
   const valid = /unsr!/i.test(text);
-  submitBtn.disabled = !valid || dailyRemaining <= 0 || !featureOnline;
+  submitBtn.disabled = !valid || !featureOnline;
 }
 
 let isDone = false;
-let dailyRemaining = 10;
 let featureOnline = true;
 
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
-  let resetsAt = '';
   try {
     const r = await fetch('/api/status');
     const data = await r.json();
-    dailyRemaining = data.daily_remaining || 0;
     featureOnline = data.online !== false;
-    resetsAt = data.resets_at || '';
     dot.className = 'status-dot ' + (data.logged_in ? 'online' : 'offline');
     text.textContent = data.logged_in ? 'Connected' : 'Session expired';
   } catch {
     dot.className = 'status-dot offline';
     text.textContent = 'Offline';
   }
-  document.getElementById('dailyRemaining').textContent =
-    dailyRemaining + ' tweet' + (dailyRemaining === 1 ? '' : 's') + ' remaining today';
   document.getElementById('offlineBanner').classList.toggle('hidden', featureOnline);
-  document.getElementById('composeForm').classList.toggle('hidden', !featureOnline || dailyRemaining <= 0);
-  document.getElementById('limitBanner').classList.toggle('hidden', !(featureOnline && dailyRemaining <= 0));
-  if (dailyRemaining <= 0 && resetsAt) {
-    document.getElementById('limitResetText').textContent = 'Reset ' + resetsAt;
-  }
+  document.getElementById('composeForm').classList.toggle('hidden', !featureOnline);
   checkSubmitReady();
 }
 
@@ -444,12 +421,6 @@ function resetForm() {
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const text = tweetText.value.trim();
   if (!text || !/unsr!/i.test(text)) return;
-  if (dailyRemaining <= 0) {
-    document.getElementById('result').className = 'result error';
-    document.getElementById('result').textContent = 'Daily limit reached. Try again tomorrow.';
-    showDone();
-    return;
-  }
   if (!featureOnline) {
     document.getElementById('result').className = 'result error';
     document.getElementById('result').textContent = 'Feature is offline.';
@@ -474,17 +445,18 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     const result = document.getElementById('result');
     const retryBtn = document.getElementById('retryBtn');
     if (data.success) {
-      let html = 'Tweet sent successfully!';
-      if (data.urls && data.urls.length > 0) {
-        html = '<ul class="url-list">';
-        data.urls.forEach((url, i) => {
-          const label = data.urls.length > 1 ? 'Tweet ' + (i + 1) + ': ' : '';
-          html += '<li>' + label + '<a href="' + url + '" target="_blank">' + url + '</a></li>';
-        });
-        html += '</ul>';
+      if (data.status === 'rejected') {
+        result.className = 'result error';
+        result.textContent = data.reason || 'Your message was rejected by automatic filters.';
+      } else if (data.status === 'approved') {
+        result.className = 'result success';
+        result.innerHTML = '<div style="font-size:1.1rem;font-weight:600;margin-bottom:4px">Posted</div>'
+          + (data.tweet_url ? '<a href="' + data.tweet_url + '" target="_blank" style="color:#1d9bf0;font-size:0.85rem">' + data.tweet_url + '</a>' : '');
+      } else {
+        result.className = 'result success';
+        result.innerHTML = '<div style="font-size:1.1rem;font-weight:600;margin-bottom:4px">Submitted for review</div>'
+          + '<div style="font-size:0.85rem;color:#71767b">Your confession will be posted after an admin reviews it.</div>';
       }
-      result.className = 'result success';
-      result.innerHTML = html;
       retryBtn.classList.add('hidden');
     } else {
       const msg = friendlyError(data);

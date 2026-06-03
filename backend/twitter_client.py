@@ -1,6 +1,5 @@
 import os
 import json
-import datetime
 import logging
 from twikit import Client
 
@@ -8,11 +7,6 @@ STATE_FILE = os.path.join(
     os.environ.get("STATE_DIR", os.path.dirname(os.path.dirname(__file__))),
     "twitter_state.json"
 )
-COUNTER_FILE = os.path.join(
-    os.environ.get("STATE_DIR", os.path.dirname(os.path.dirname(__file__))),
-    "daily_counter.json"
-)
-DAILY_LIMIT = 10
 MAX_CHARS = 280
 
 
@@ -71,7 +65,6 @@ class TwitterClient:
                 cookies = {c["name"]: c["value"] for c in data["cookies"]}
             else:
                 cookies = data
-            # Remove IP-bound Cloudflare cookie to avoid CookieConflict
             cookies.pop("__cf_bm", None)
             with open(self.state_file, "w") as f:
                 json.dump(cookies, f, indent=2)
@@ -111,90 +104,7 @@ class TwitterClient:
 
         return asyncio.run(_login())
 
-    def _counter_path(self):
-        return COUNTER_FILE
-
-    def _read_counter(self):
-        try:
-            with open(self._counter_path()) as f:
-                data = json.load(f)
-            today = datetime.date.today().isoformat()
-            if data.get("date") == today:
-                return data.get("count", 0)
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass
-        return 0
-
-    def _write_counter(self, count, limit=None, online=None):
-        data = {"date": datetime.date.today().isoformat(), "count": count}
-        if limit is not None:
-            data["limit"] = limit
-        else:
-            stored = self._read_counter_data()
-            if "limit" in stored:
-                data["limit"] = stored["limit"]
-        if online is not None:
-            data["online"] = online
-        else:
-            stored = self._read_counter_data()
-            if "online" in stored:
-                data["online"] = stored["online"]
-        with open(self._counter_path(), "w") as f:
-            json.dump(data, f)
-
-    def _read_counter_data(self):
-        try:
-            with open(self._counter_path()) as f:
-                return json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return {}
-
-    def _get_limit(self):
-        data = self._read_counter_data()
-        return data.get("limit", DAILY_LIMIT)
-
-    def daily_remaining(self):
-        return max(0, self._get_limit() - self._read_counter())
-
-    def daily_limit(self):
-        return self._get_limit()
-
-    def next_reset(self):
-        now = datetime.datetime.now()
-        tomorrow = now + datetime.timedelta(days=1)
-        reset = tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
-        bulan = ["January","February","March","April","May","June",
-                 "July","August","September","October","November","December"]
-        return f"{reset.day} {bulan[reset.month-1]} {reset.year}, {reset.hour:02d}:{reset.minute:02d} WIB"
-
-    def reset_daily_counter(self):
-        limit = self._get_limit()
-        self._write_counter(0, limit=limit)
-
-    def set_daily_limit(self, value):
-        value = max(1, int(value))
-        data = self._read_counter_data()
-        data["limit"] = value
-        if "date" not in data:
-            data["date"] = datetime.date.today().isoformat()
-            data["count"] = 0
-        with open(self._counter_path(), "w") as f:
-            json.dump(data, f)
-
-    def is_online(self):
-        data = self._read_counter_data()
-        return data.get("online", True)
-
-    def set_online(self, value):
-        data = self._read_counter_data()
-        data["online"] = bool(value)
-        with open(self._counter_path(), "w") as f:
-            json.dump(data, f)
-
     async def post_tweet(self, text, image_paths=None, progress_callback=None):
-        if not self.is_online():
-            return {"success": False, "error": "Feature is currently offline."}
-
         if not text or not text.strip():
             return {"success": False, "error": "Text is empty"}
 
@@ -206,7 +116,6 @@ class TwitterClient:
 
         with open(self.state_file) as f:
             cookies = json.load(f)
-        # Remove Cloudflare bot cookie to avoid httpx CookieConflict
         cookies.pop("__cf_bm", None)
         self._client.set_cookies(cookies, clear_cookies=True)
 
@@ -215,18 +124,6 @@ class TwitterClient:
 
         chunks = split_into_chunks(text.strip())
         tweet_urls = []
-
-        needed = len(chunks)
-        remaining = self.daily_remaining()
-        if needed > remaining:
-            msg = (
-                f"Daily limit ({self._get_limit()} tweets) reached. "
-                f"Need {needed} tweet(s) but only {remaining} remaining today."
-            )
-            logging.warning(msg)
-            if progress_callback:
-                progress_callback(0, 0, f"Error: {msg}")
-            return {"success": False, "error": msg}
 
         try:
             media_ids = []
@@ -259,7 +156,6 @@ class TwitterClient:
                 tweet = await self._client.create_tweet(**kwargs)
                 tweet_urls.append(f"https://x.com/{tweet.user.screen_name}/status/{tweet.id}")
                 reply_to_id = tweet.id
-                self._write_counter(self._read_counter() + 1)
 
                 if i < len(chunks) - 1:
                     import asyncio
@@ -278,4 +174,5 @@ class TwitterClient:
             logging.exception(f"post_tweet failed: {e}")
             if progress_callback:
                 progress_callback(0, 0, f"Error: {err_msg}")
+            return {"success": False, "error": err_msg}
             return {"success": False, "error": err_msg}

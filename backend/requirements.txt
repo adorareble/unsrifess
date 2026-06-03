@@ -3,3 +3,8 @@ uvicorn[standard]
 twikit @ git+https://github.com/unclecode/twikit.git
 python-multipart
 Pillow
+
+asyncpg
+PyJWT
+bcrypt
+python-dotenv
