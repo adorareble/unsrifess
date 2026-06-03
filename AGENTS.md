@@ -1,82 +1,132 @@
-# AGENTS.md — TwitterTools
+# AGENTS.md — Unsr!fess
 
-Unofficial X/Twitter tweet poster. Playwright browser automation + FastAPI web app.
-No official Twitter API — session disimpan via `storageState`.
+Unofficial X/Twitter anonymous confession platform. Twikit (scraping) + FastAPI + PostgreSQL.
+Moderated: submissions go through admin approval before being posted to X.
 
 ## Stack
-- **Python 3.10+** — FastAPI, Uvicorn, Playwright
+- **Python 3.10+** — FastAPI, Uvicorn, twikit, Pillow
+- **PostgreSQL** — via Docker (local) or native (VPS)
+- **asyncpg** — PostgreSQL async driver (no ORM)
+- **PyJWT** — admin auth tokens
+- **bcrypt** — password hashing
+- **Vanilla HTML/CSS/JS** — frontend, no build step
 
 ## Setup
-```powershell
-pip install -r backend/requirements.txt
-playwright install chromium
+
+### 1. Start PostgreSQL
+```bash
+docker compose up -d
+```
+This creates the `unsrifess` database and runs `scripts/init_db.sql` automatically.
+
+### 2. Install dependencies
+```bash
+pip install -r requirements.txt
 ```
 
-## Login (sekali — admin)
-```powershell
+### 3. Setup `.env`
+Copy `.env.example` to `.env` and adjust if needed.
+
+### 4. Create superadmin (first time)
+```bash
+python create_admin.py
+```
+
+Create additional admins later from the panel dashboard (superadmin only).
+
+### 5. Login to X (session cookies)
+```bash
 python setup_login.py
 ```
-Browser terbuka → login manual ke x.com → session tersimpan di `twitter_state.json`.
+Opens browser, log in to X.com, session saved to `twitter_state.json`.
 
-## Dev server
-```powershell
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+### 6. Dev server
+```bash
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## Struktur
+## Architecture
+
+### Moderation Flow
 ```
-backend/
-  main.py              # FastAPI routes
-  twitter_client.py    # Playwright wrapper (login, tweet, thread, upload)
-  requirements.txt
-frontend/
-  index.html           # Compose form + char counter + image preview
-setup_login.py         # One-time login script
-twitter_state.json     # Generated (gitignored)
-temp_images/           # Temp upload files (gitignored)
-```
+User → POST /api/tweet-sync
+  ├─ keyword match? → auto REJECTED
+  ├─ bypass ON? → auto post to X via twikit → status APPROVED
+  └─ no match & bypass OFF → PENDING
 
-## Arsitektur & quirks
-- **Thread splitting**: teks >280 chars dipotong per kalimat/paragraf, dipost sebagai reply chain via Playwright.
-- **Image upload**: Playwright `expect_file_chooser` → `set_files` ke compose dialog.
-- **Tweet URL**: di-capture dari response GraphQL `/CreateTweet` (intercept `page.on("response")`).
-- **Session**: `storageState` Playwright simpan cookies + localStorage. Kalau expired → re-run `setup_login.py`.
-- **Headless**: posting pake `headless=True`. Login pake `headless=False` (browser visible).
-- **Gak ada dependencies lain**: no database, no npm, no build step.
-
-## Deployment (Leapcell — serverless)
-1. Push repo ke GitHub.
-2. Di Leapcell Dashboard → New Service → connect repo (branch `main`).
-3. **Env vars**:
-   - `TWITTER_STATE_GZ` — base64(gzip(twitter_state.json)). Masukin dgn `Generate-TwitterStateGz.ps1`.
-   - `STATE_DIR=/tmp`, `TEMP_DIR=/tmp/temp_images`
-   - `PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=1`
-4. **Build command**:
-   ```
-   pip install -r requirements.txt && playwright install-deps chromium && playwright install chromium
-   ```
-5. **Start command**: `uvicorn backend.main:app --host 0.0.0.0 --port 8000`
-6. **Serving port**: 8000
-
-### Kirim session via env var
-`twitter_state.json` gak bisa di-commit (public repo). Packing:
-```powershell
-# Generate-TwitterStateGz.ps1
-$content = Get-Content -Raw twitter_state.json
-$bytes = [System.Text.Encoding]::UTF8.GetBytes($content)
-$ms = New-Object System.IO.MemoryStream
-$gzip = New-Object System.IO.Compression.GzipStream($ms, [System.IO.Compression.CompressionMode]::Compress, $true)
-$gzip.Write($bytes, 0, $bytes.Count); $gzip.Close()
-[Convert]::ToBase64String($ms.ToArray()) | Set-Clipboard
+Admin → /panel/dashboard
+  ├─ Approve → post to X via twikit → status APPROVED
+  ├─ Reject  → freetext reason → status REJECTED
+  └─ Delete  → (superadmin) delete from X → status DELETED
 ```
 
-Limit env var total 3KB → gzip dulu biar muat (~1.4KB).
+### Paths
+| Path | Description |
+|------|-------------|
+| `/` | Public compose form |
+| `/panel/login` | Admin login |
+| `/panel/dashboard` | Admin dashboard (6 tabs — Queue, History, Keywords, Admins, Activity, Settings) |
 
-## Arsitektur serverless
-- **Gak pake task polling** — in-memory `tasks` dict gak persist antar request. Pake endpoint sync `/api/tweet-sync` langsung.
-- **Frontend** (`index.html`) panggil `/api/tweet-sync`, loading sampe selesai.
-- **Cold start** — request pertama lambat (~30-60 detik) karena Playwright + Chromium startup. Pastiin timeout cukup.
+### Database (PostgreSQL)
+| Table | Purpose |
+|-------|---------|
+| `admins` | Multi-admin (superadmin + admin roles) |
+| `tweets` | Full history + moderation state |
+| `keyword_filters` | Auto-reject keyword filters |
+| `activity_log` | All admin actions audit trail |
+| `settings` | Key-value store (online toggle, bypass mode, etc.) — init: `online=true` |
+
+### API Endpoints
+
+**Public:**
+- `GET /api/status` — session + online status
+- `POST /api/tweet-sync` — submit confession (saved as pending)
+
+**Panel Auth (`/panel/api/`):**
+- `POST login` — returns JWT token
+- `POST register` — create admin (superadmin only)
+- `GET me` — current admin info
+- `GET admins` — list admins (superadmin only)
+- `POST admins/{id}/deactivate` — deactivate admin (superadmin only)
+- `POST admins/{id}/activate` — reactivate admin (superadmin only)
+- `POST change-password` — change own password
+- `POST change-display-name` — change own display name
+
+**Moderation:**
+- `GET tweets` — filter by status, admin, search, date
+- `GET tweets/pending` — pending queue
+- `POST tweets/{id}/approve` — post to X
+- `POST tweets/{id}/reject` — `{reason}`
+- `DELETE tweets/{id}` — delete from X (superadmin only)
+
+**Keywords:**
+- `GET keywords`
+- `POST keywords` — `{keywords: "word1,word2"}`
+- `DELETE keywords/{id}`
+
+**Activity:**
+- `GET activity` — filter by admin, action, page
+
+**Stats:**
+- `GET stats` — pending, approved/rejected today, total, active admins
+
+**Settings:**
+- `POST /panel/api/set-online` — toggle online/offline (all admins)
+- `POST /panel/api/set-bypass` — toggle bypass mode (superadmin only)
+
+## Konvensi
+- Kotlin-style braces (`\n{`), no space after function keyword.
+- All code in English (variables, comments, commit messages).
+- Backend Python: 4 spaces indent.
+- Frontend: 2 spaces indent, double quotes for HTML, single for JS.
+- **Tidak ada commit tanpa explicit request.**
 
 ## Catatan
-- Jangan commit tanpa explicit request.
-- Update `AGENTS.md` kalau ada keputusan arsitektur penting.
+- `twitter_state.json` is gitignored — session cookies for X.
+- `temp_images/` is gitignored — uploaded images cleaned up after approve/reject.
+- `admin.html` legacy — now redirects to `/panel/dashboard`.
+- Panel uses JWT stored in localStorage — expires in 24 hours.
+- `get_current_admin` checks `is_active` on every request — deactivated admins get kicked out immediately.
+- `login()` method removed from `twitter_client.py` — use `setup_login.py` with Playwright instead.
+- Only Postgres-related files: `docker-compose.yml`, `scripts/init_db.sql`, `backend/database.py`.
+- No database server other than PostgreSQL — no SQLite, no Redis.

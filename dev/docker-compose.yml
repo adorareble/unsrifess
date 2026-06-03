@@ -1,0 +1,35 @@
+services:
+  app:
+    build: ..
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8001:8000"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - temp_images:/app/temp_images
+      - ./twitter_state.json:/app/twitter_state.json
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: x_unsrifess_dev
+      POSTGRES_USER: unsrifess
+      POSTGRES_PASSWORD: unsrifess
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unsrifess -d x_unsrifess_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  temp_images:
