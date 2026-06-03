@@ -275,7 +275,6 @@ function hideLoading() {
 }
 
 function showDone() {
-  isDone = true;
   document.getElementById('composeArea').classList.add('hidden');
   document.getElementById('doneArea').classList.remove('hidden');
 }
@@ -361,7 +360,6 @@ function checkSubmitReady() {
   submitBtn.disabled = !valid || !featureOnline;
 }
 
-let isDone = false;
 let featureOnline = true;
 
 async function checkStatus() {
@@ -404,7 +402,6 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 document.getElementById('newBtn').addEventListener('click', resetForm);
 
 function resetForm() {
-  isDone = false;
   tweetText.value = '';
   document.getElementById('result').className = 'result';
   document.getElementById('result').style.display = '';

@@ -1,5 +1,6 @@
 import os
 import json
+import asyncio
 import logging
 from twikit import Client
 
@@ -83,27 +84,6 @@ class TwitterClient:
         except Exception:
             return False
 
-    def login(self):
-        import asyncio
-
-        username = input("Username/Email/Phone: ").strip()
-        email = input("Email (optional, press Enter to skip): ").strip()
-        password = input("Password: ").strip()
-
-        async def _login():
-            try:
-                kwargs = {"auth_info_1": username, "password": password}
-                if email:
-                    kwargs["auth_info_2"] = email
-                await self._client.login(**kwargs, cookies_file=self.state_file, enable_ui_metrics=True)
-                print(f"Login successful! Session saved to {self.state_file}")
-                return True
-            except Exception as e:
-                print(f"Login failed: {e}")
-                return False
-
-        return asyncio.run(_login())
-
     async def post_tweet(self, text, image_paths=None, progress_callback=None):
         if not text or not text.strip():
             return {"success": False, "error": "Text is empty"}
@@ -158,8 +138,6 @@ class TwitterClient:
                 reply_to_id = tweet.id
 
                 if i < len(chunks) - 1:
-                    import asyncio
-
                     await asyncio.sleep(2)
 
             if progress_callback:
@@ -174,5 +152,4 @@ class TwitterClient:
             logging.exception(f"post_tweet failed: {e}")
             if progress_callback:
                 progress_callback(0, 0, f"Error: {err_msg}")
-            return {"success": False, "error": err_msg}
             return {"success": False, "error": err_msg}

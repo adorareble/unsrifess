@@ -147,7 +147,6 @@ async def tweet_sync(
                     add_watermark(saved_path)
                     saved_paths.append(saved_path)
 
-        image_paths_json = json.dumps(saved_paths) if saved_paths else None
         chunks = split_into_chunks(text.strip())
         chunk_count = len(chunks)
 
@@ -216,7 +215,6 @@ async def panel_login_api(username: str = Form(...), password: str = Form(...)):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     if not admin["is_active"]:
         raise HTTPException(status_code=403, detail="Account deactivated, contact superadmin")
-    from database import get_pool
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute("UPDATE admins SET last_login = NOW() WHERE id = $1", admin["id"])
