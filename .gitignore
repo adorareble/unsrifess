@@ -1,4 +1,6 @@
 twitter_state.json
+twitter_state_dev.json
+twitter_state_prod.json
 temp_images/
 __pycache__/
 *.pyc
