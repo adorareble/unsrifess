@@ -72,6 +72,27 @@ app = FastAPI(title="TwitterTools")
 client = TwitterClient()
 
 
+@app.exception_handler(404)
+async def not_found(request: Request, exc):
+    return HTMLResponse("""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 — Unsr!fess</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f0f0f;color:#e0e0e0;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem}
+  .c h1{font-size:6rem;font-weight:800;color:#e74c3c;line-height:1;margin-bottom:.5rem}
+  .c p{font-size:1.2rem;color:#888;margin-bottom:2rem}
+  .c a{display:inline-block;padding:.75rem 2rem;background:#e74c3c;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;transition:background .2s}
+  .c a:hover{background:#c0392b}
+</style>
+</head>
+<body><div class="c"><h1>404</h1><p>Not Found</p><a href="/">Back to Home</a></div></body>
+</html>""", status_code=404)
+
+
 @app.on_event("startup")
 async def startup():
     try:
