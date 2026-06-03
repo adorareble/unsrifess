@@ -82,14 +82,37 @@ async def not_found(request: Request, exc):
 <title>404 — Unsr!fess</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f0f0f;color:#e0e0e0;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:2rem}
-  .c h1{font-size:6rem;font-weight:800;color:#e74c3c;line-height:1;margin-bottom:.5rem}
-  .c p{font-size:1.2rem;color:#888;margin-bottom:2rem}
-  .c a{display:inline-block;padding:.75rem 2rem;background:#e74c3c;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;transition:background .2s}
-  .c a:hover{background:#c0392b}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#000;color:#e7e9ea;min-height:100vh;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  .card{
+    background:#16181c;border:1px solid #2f3336;border-radius:20px;
+    padding:40px;text-align:center;max-width:460px;width:100%;
+  }
+  .code{
+    font-size:6rem;font-weight:800;line-height:1;
+    background:linear-gradient(135deg,#1d9bf0,#8b5cf6);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;margin-bottom:.25rem;
+  }
+  .msg{font-size:1.2rem;color:#71767b;margin-bottom:2rem}
+  .btn{
+    display:inline-block;padding:13px 32px;border:none;border-radius:9999px;
+    background:#1d9bf0;color:#fff;font-size:1rem;font-weight:700;
+    text-decoration:none;transition:background .2s;
+  }
+  .btn:hover{background:#1a8cd8}
 </style>
 </head>
-<body><div class="c"><h1>404</h1><p>Not Found</p><a href="/">Back to Home</a></div></body>
+<body>
+  <div class="card">
+    <div class="code">404</div>
+    <div class="msg">Not Found</div>
+    <a class="btn" href="/">Back to Home</a>
+  </div>
+</body>
 </html>""", status_code=404)
 
 
