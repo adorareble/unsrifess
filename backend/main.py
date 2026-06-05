@@ -9,7 +9,7 @@ import secrets
 sys.path.insert(0, os.path.dirname(__file__))
 
 from fastapi import FastAPI, Form, Query, UploadFile, File, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, RedirectResponse
 from twitter_client import TwitterClient, split_into_chunks
 from database import (
     init_db, get_pool, close_pool, create_tweet, get_pending_tweets, get_tweets, get_tweet,
@@ -172,16 +172,10 @@ async def index():
         return f.read()
 
 
-@app.get("/adorareble", response_class=HTMLResponse)
-async def admin_redirect():
-    html_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "frontend", "admin.html"
-    )
-    with open(html_path, encoding="utf-8") as f:
-        return f.read()
+@app.get("/panel")
+async def panel_root():
+    return RedirectResponse(url="/panel/dashboard")
 
-
-# ─── Public API ─────────────────────────────────────────────
 
 @app.get("/api/status")
 async def status(request: Request):
