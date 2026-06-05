@@ -34,6 +34,7 @@ async def init_db():
     async with pool.acquire() as conn:
         await conn.execute(sql)
         await conn.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_login TIMESTAMP")
+        await conn.execute("ALTER TABLE tweets ADD COLUMN IF NOT EXISTS tracking_token VARCHAR(32)")
 
 
 async def create_admin(username, password, display_name, role="admin"):
@@ -95,16 +96,17 @@ async def activate_admin(admin_id: int):
         await conn.execute("UPDATE admins SET is_active = TRUE WHERE id = $1", admin_id)
 
 
-async def create_tweet(original_text, image_paths, submitted_by, chunk_count=0):
+async def create_tweet(original_text, image_paths, submitted_by, chunk_count=0, tracking_token=None):
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "INSERT INTO tweets (original_text, image_paths, submitted_by, chunk_count) "
-            "VALUES ($1, $2, $3, $4) RETURNING id, status, submitted_at",
+            "INSERT INTO tweets (original_text, image_paths, submitted_by, chunk_count, tracking_token) "
+            "VALUES ($1, $2, $3, $4, $5) RETURNING id, status, submitted_at",
             original_text,
             json.dumps(image_paths) if image_paths else None,
             submitted_by,
             chunk_count,
+            tracking_token,
         )
         return dict(row)
 
@@ -148,21 +150,22 @@ async def approve_tweet(tweet_id: int, admin_id: int, tweet_urls):
             return dict(row) if row else None
 
 
-async def delete_tweet(tweet_id: int, admin_id: int):
+async def delete_tweet(tweet_id: int, admin_id: int, reason: str = None):
     pool = await get_pool()
     async with pool.acquire() as conn:
         async with conn.transaction():
             row = await conn.fetchrow(
-                "UPDATE tweets SET status = 'deleted', reviewed_by = $1, reviewed_at = NOW() "
+                "UPDATE tweets SET status = 'deleted', reviewed_by = $1, reviewed_at = NOW(), "
+                "reject_reason = COALESCE($3::text, reject_reason) "
                 "WHERE id = $2 AND status = 'approved' "
                 "RETURNING id, status, tweet_urls",
-                admin_id, tweet_id,
+                admin_id, tweet_id, reason,
             )
             if row:
                 await conn.execute(
                     "INSERT INTO activity_log (admin_id, action, target_type, target_id, details) "
-                    "VALUES ($1, $2, $3, $4, NULL)",
-                    admin_id, "delete", "tweet", str(tweet_id),
+                    "VALUES ($1, $2, $3, $4, $5)",
+                    admin_id, "delete", "tweet", str(tweet_id), reason,
                 )
             return dict(row) if row else None
 
@@ -354,3 +357,28 @@ async def set_setting(key, value):
             "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
             key, value,
         )
+
+
+async def get_tweet_by_token(tracking_token: str):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM tweets WHERE tracking_token = $1", tracking_token
+        )
+        return dict(row) if row else None
+
+
+async def get_peak_hours():
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT "
+            "  EXTRACT(DOW FROM (submitted_at::timestamptz AT TIME ZONE 'Asia/Jakarta'))::int AS day, "
+            "  EXTRACT(HOUR FROM (submitted_at::timestamptz AT TIME ZONE 'Asia/Jakarta'))::int AS hour, "
+            "  COUNT(*)::int AS count "
+            "FROM tweets "
+            "WHERE submitted_at >= NOW() - INTERVAL '30 days' "
+            "GROUP BY day, hour "
+            "ORDER BY day, hour"
+        )
+        return [dict(r) for r in rows]

@@ -4,11 +4,12 @@ import uuid
 import math
 import json
 import asyncio
+import secrets
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from fastapi import FastAPI, Form, UploadFile, File, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, Form, Query, UploadFile, File, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from twitter_client import TwitterClient, split_into_chunks
 from database import (
     init_db, get_pool, close_pool, create_tweet, get_pending_tweets, get_tweets, get_tweet,
@@ -17,6 +18,7 @@ from database import (
     add_keyword, remove_keyword, get_keywords, check_keywords,
     log_activity, get_activity, get_superadmin,
     get_setting, set_setting,
+    get_tweet_by_token, get_peak_hours,
 )
 from auth import (
     hash_password, verify_password, create_token,
@@ -66,6 +68,27 @@ def add_watermark(image_path):
         img.save(image_path, quality=92)
     except Exception as e:
         print(f"Watermark failed: {e}", flush=True)
+
+
+MAX_IMAGE_DIMENSION = 1920
+JPEG_QUALITY = 80
+
+
+def compress_image(image_path):
+    try:
+        from PIL import Image
+        img = Image.open(image_path)
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+
+        w, h = img.size
+        if max(w, h) > MAX_IMAGE_DIMENSION:
+            ratio = MAX_IMAGE_DIMENSION / max(w, h)
+            img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+
+        img.save(image_path, "JPEG", quality=JPEG_QUALITY, optimize=True)
+    except Exception as e:
+        print(f"Compress failed: {e}", flush=True)
 
 
 app = FastAPI(title="TwitterTools")
@@ -168,6 +191,23 @@ async def status():
     }
 
 
+@app.get("/api/status/{tracking_token}")
+async def status_by_token(tracking_token: str):
+    tweet = await get_tweet_by_token(tracking_token)
+    if not tweet:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    result = {
+        "status": tweet["status"],
+        "submitted_at": str(tweet["submitted_at"]),
+    }
+    if tweet["status"] == "approved" and tweet["tweet_urls"]:
+        urls = json.loads(tweet["tweet_urls"]) if isinstance(tweet["tweet_urls"], str) else tweet["tweet_urls"]
+        result["tweet_urls"] = urls
+    if tweet["status"] == "rejected" and tweet["reject_reason"]:
+        result["reason"] = tweet["reject_reason"]
+    return result
+
+
 @app.post("/api/tweet-sync")
 async def tweet_sync(
     request: Request,
@@ -176,6 +216,10 @@ async def tweet_sync(
 ):
     if not text or not text.strip():
         return {"success": False, "error": "Text is empty"}
+
+    online = await get_setting("online")
+    if online == "false":
+        return {"success": False, "error": "Submission is currently closed."}
 
     saved_paths = []
     try:
@@ -188,23 +232,26 @@ async def tweet_sync(
                     content = await img.read()
                     with open(saved_path, "wb") as f:
                         f.write(content)
+                    compress_image(saved_path)
                     add_watermark(saved_path)
                     saved_paths.append(saved_path)
 
         chunks = split_into_chunks(text.strip())
         chunk_count = len(chunks)
+        tracking_token = secrets.token_hex(16)
 
         matched = await check_keywords(text)
         if matched:
-            tweet = await create_tweet(text.strip(), saved_paths, get_client_ip(request), chunk_count)
+            tweet = await create_tweet(text.strip(), saved_paths, get_client_ip(request), chunk_count, tracking_token)
             await reject_tweet(tweet["id"], None, f"Auto-rejected: matched keyword '{matched}'", matched)
             return {
                 "success": True,
                 "status": "rejected",
                 "reason": f"Your message was automatically rejected (matched filter).",
+                "tracking_token": tracking_token,
             }
 
-        tweet = await create_tweet(text.strip(), saved_paths, get_client_ip(request), chunk_count)
+        tweet = await create_tweet(text.strip(), saved_paths, get_client_ip(request), chunk_count, tracking_token)
 
         bypass = await get_setting("bypass")
         if bypass == "true":
@@ -213,14 +260,9 @@ async def tweet_sync(
                 result = await client.post_tweet(text.strip(), saved_paths)
                 if result and result.get("success"):
                     await approve_tweet(tweet["id"], superadmin["id"], result["urls"])
-                    for p in saved_paths:
-                        try:
-                            os.remove(p)
-                        except Exception:
-                            pass
-                    return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None}
+                    return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "tracking_token": tracking_token}
 
-        return {"success": True, "status": "pending", "message": "Your confession has been submitted for review."}
+        return {"success": True, "status": "pending", "message": "Your confession has been submitted for review.", "tracking_token": tracking_token}
     except Exception as e:
         for p in saved_paths:
             try:
@@ -378,6 +420,15 @@ async def panel_pending_tweets(
     return {"tweets": tweets, "total": len(tweets)}
 
 
+@app.get("/panel/api/images/{filename}")
+async def panel_serve_image(filename: str, _: dict = Depends(get_current_admin)):
+    safe_name = os.path.basename(filename)
+    file_path = os.path.join(TEMP_DIR, safe_name)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(file_path)
+
+
 @app.post("/panel/api/tweets/{tweet_id}/approve")
 async def panel_approve_tweet(tweet_id: int, admin: dict = Depends(get_current_admin)):
     tweet = await get_tweet(tweet_id)
@@ -399,11 +450,6 @@ async def panel_approve_tweet(tweet_id: int, admin: dict = Depends(get_current_a
 
     if result.get("success"):
         updated = await approve_tweet(tweet_id, admin["id"], result["urls"])
-        for p in image_paths:
-            try:
-                os.remove(p)
-            except Exception:
-                pass
         return {"success": True, "urls": result["urls"]}
     else:
         return result
@@ -424,17 +470,15 @@ async def panel_reject_tweet(
     updated = await reject_tweet(tweet_id, admin["id"], reason)
     if not updated:
         raise HTTPException(status_code=400, detail="Failed to reject tweet")
-    image_paths = json.loads(tweet["image_paths"]) if tweet.get("image_paths") else []
-    for p in image_paths:
-        try:
-            os.remove(p)
-        except Exception:
-            pass
     return {"success": True}
 
 
 @app.delete("/panel/api/tweets/{tweet_id}")
-async def panel_delete_tweet(tweet_id: int, admin: dict = Depends(require_superadmin)):
+async def panel_delete_tweet(
+    tweet_id: int,
+    reason: str = Query(None),
+    admin: dict = Depends(require_superadmin),
+):
     tweet = await get_tweet(tweet_id)
     if not tweet:
         raise HTTPException(status_code=404, detail="Tweet not found")
@@ -451,7 +495,7 @@ async def panel_delete_tweet(tweet_id: int, admin: dict = Depends(require_supera
         except Exception:
             pass
 
-    updated = await delete_tweet(tweet_id, admin["id"])
+    updated = await delete_tweet(tweet_id, admin["id"], reason)
     return {"success": True}
 
 
@@ -509,6 +553,11 @@ async def panel_stats(_: dict = Depends(get_current_admin)):
     online = await get_setting("online")
     bypass = await get_setting("bypass")
     return {**stats, "active_admins": len(active_admins), "online": online != "false", "bypass": bypass != "false"}
+
+
+@app.get("/panel/api/stats/peak-hours")
+async def panel_peak_hours(_: dict = Depends(get_current_admin)):
+    return await get_peak_hours()
 
 
 # ─── Settings API (auth required) ─────────────────────────────

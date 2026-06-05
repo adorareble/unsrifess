@@ -40,9 +40,13 @@ def decode_token(token: str) -> dict | None:
 
 async def get_current_admin(request: Request):
     auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
+    token = ""
+    if auth.startswith("Bearer "):
+        token = auth[7:]
+    else:
+        token = request.query_params.get("token", "")
+    if not token:
         raise HTTPException(status_code=401, detail="Missing or invalid token")
-    token = auth[7:]
     payload = decode_token(token)
     if payload is None:
         raise HTTPException(status_code=401, detail="Token expired or invalid")

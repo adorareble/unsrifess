@@ -8,10 +8,10 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #000; color: #e7e9ea; min-height: 100vh;
+    background: #0e0e12; color: #e7e9ea; min-height: 100vh;
     display: flex; align-items: center; justify-content: center;
   }
-  .container { width: 100%; max-width: 600px; padding: 20px; }
+  .container { width: 100%; max-width: 560px; padding: 20px; }
   .header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 16px;
@@ -22,176 +22,212 @@
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .header .subtitle { font-size: 0.75rem; color: #4a4b4e; -webkit-text-fill-color: #4a4b4e; }
+  .header .subtitle { font-size: 0.75rem; color: #71767b; }
+  .status-bar {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.8rem; color: #71767b;
+  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .status-dot.online { background: #00ba7c; }
+  .status-dot.offline { background: #f4212e; }
+
   .card {
-    background: #16181c; border: 1px solid #2f3336; border-radius: 20px;
+    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 16px;
     padding: 20px;
   }
-  .status-bar {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
-    font-size: 0.85rem; color: #71767b;
-  }
-  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .status-dot.online { background: #00ba7c; box-shadow: 0 0 8px rgba(0,186,124,0.4); }
-  .status-dot.offline { background: #f4212e; }
   .keyword-hint {
     display: flex; align-items: center; gap: 6px;
     margin-bottom: 12px; font-size: 0.8rem;
-    padding: 8px 12px; border-radius: 8px;
-    background: rgba(29,155,240,0.08); border: 1px solid rgba(29,155,240,0.15);
+    padding: 10px 12px; border-radius: 10px;
+    background: rgba(29,155,240,0.06); border: 1px solid rgba(29,155,240,0.12);
     color: #1d9bf0;
   }
   .keyword-hint code {
-    background: rgba(29,155,240,0.15); padding: 1px 6px;
-    border-radius: 4px; font-weight: 600;
+    background: rgba(244,196,48,0.15); padding: 1px 6px;
+    border-radius: 4px; font-weight: 600; color: #f4c430;
   }
   textarea {
-    width: 100%; background: transparent; border: 1px solid #2f3336;
-    border-radius: 12px; color: #e7e9ea; font-size: 1rem;
-    padding: 14px; resize: vertical; min-height: 130px; font-family: inherit;
-    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%; background: #0e0e12; border: 1px solid #2a2a38;
+    border-radius: 10px; color: #e7e9ea; font-size: 0.95rem;
+    padding: 12px; resize: vertical; min-height: 120px; font-family: inherit;
+    outline: none;
   }
-  textarea:focus { border-color: #1d9bf0; box-shadow: 0 0 0 2px rgba(29,155,240,0.15); }
-  textarea.error { border-color: #f4212e; box-shadow: 0 0 0 2px rgba(244,33,46,0.15); }
+  textarea:focus { border-color: #1d9bf0; }
+  textarea.error { border-color: #f4212e; }
   .tweet-count {
-    font-size: 0.82rem; font-weight: 500;
-    min-height: 1.2em;
+    font-size: 0.8rem; font-weight: 500; min-height: 0; margin: 0;
   }
   .tweet-count.over { color: #f4212e; }
   .tweet-count.ok { color: #00ba7c; }
   .tweet-count.info { color: #71767b; }
-  .upload-area {
-    border: 1px dashed #2f3336; border-radius: 12px; padding: 10px;
-    text-align: center; margin-top: 6px; cursor: pointer; color: #71767b;
-    transition: all 0.2s; font-size: 0.85rem;
+  .validate-msg {
+    font-size: 0.8rem; min-height: 0; margin: 0; padding: 0;
   }
-  .upload-area:hover { border-color: #1d9bf0; color: #1d9bf0; background: rgba(29,155,240,0.04); }
+  .validate-msg.error { color: #f4212e; }
+  .validate-msg.ok { color: #00ba7c; }
+
+  .upload-area {
+    border: 1px dashed #2a2a38; border-radius: 10px; padding: 10px;
+    text-align: center; margin-top: 2px; cursor: pointer; color: #71767b;
+    font-size: 0.85rem;
+  }
+  .upload-area:hover { border-color: #1d9bf0; color: #1d9bf0; }
   .upload-area.has-file { border-color: #00ba7c; }
-  .upload-area.disabled { opacity: 0.5; cursor: not-allowed; }
-  .upload-area.disabled:hover { border-color: #2f3336; color: #71767b; background: none; }
+  .upload-area.disabled { opacity: 0.4; cursor: not-allowed; }
+  .upload-area.disabled:hover { border-color: #2a2a38; color: #71767b; }
   .file-grid {
     display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
     justify-content: center;
   }
   .file-preview {
-    width: 90px; height: 90px;
-    border-radius: 10px; overflow: hidden; border: 1px solid #2f3336;
-    position: relative; flex-shrink: 0;
+    width: 80px; height: 80px;
+    border-radius: 8px; overflow: hidden; border: 1px solid #2a2a38;
+    position: relative;
   }
   .file-preview img { width: 100%; height: 100%; object-fit: cover; }
   .file-preview .remove {
-    position: absolute; top: 2px; right: 2px; width: 22px; height: 22px;
-    background: rgba(0,0,0,0.75); border: none; border-radius: 50%;
-    color: #fff; font-size: 0.75rem; cursor: pointer; line-height: 22px;
-    text-align: center; transition: background 0.2s;
+    position: absolute; top: 2px; right: 2px; width: 20px; height: 20px;
+    background: rgba(0,0,0,0.7); border: none; border-radius: 50%;
+    color: #fff; font-size: 0.7rem; cursor: pointer; line-height: 20px;
+    text-align: center;
   }
   .file-preview .remove:hover { background: rgba(244,33,46,0.8); }
+
   .btn {
-    width: 100%; padding: 13px; border: none; border-radius: 9999px;
-    color: #fff; font-size: 1rem; font-weight: 700;
-    cursor: pointer; margin-top: 16px; transition: all 0.2s;
+    width: 100%; padding: 12px; border: none; border-radius: 10px;
+    color: #fff; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; margin-top: 14px;
   }
   .btn-primary { background: #1d9bf0; }
-  .btn-primary:hover:not(:disabled) { background: #1a8cd8; transform: translateY(-1px); }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-primary:hover:not(:disabled) { background: #1a8cd8; }
+  .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
   .btn-success { background: #00ba7c; }
   .btn-success:hover { background: #009d68; }
-  .validate-msg {
-    font-size: 0.8rem; min-height: 0; margin: 0;
-    padding: 0 2px; transition: all 0.2s;
+  .btn-outline {
+    background: transparent; border: 1px solid #2a2a38; color: #e7e9ea;
   }
-  .validate-msg.error { color: #f4212e; }
-  .validate-msg.ok { color: #00ba7c; }
+  .btn-outline:hover { background: rgba(239,243,244,0.04); }
+  .done-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .done-actions .btn { margin-top: 0; flex: 1; }
+
+  .result {
+    margin-top: 14px; padding: 14px; border-radius: 10px;
+    font-size: 0.9rem; text-align: center;
+    overflow-wrap: break-word; word-break: break-word;
+  }
+  .result.success { background: #0a2e1c; color: #00ba7c; border: 1px solid rgba(0,186,124,0.3); }
+  .result.error { background: #2c0a0e; color: #f4212e; border: 1px solid rgba(244,33,46,0.3); }
+  .result a { color: #1d9bf0; }
+  .result .url-list { margin-top: 8px; list-style: none; }
+  .result .url-list li { margin-bottom: 4px; }
+
+  .hidden { display: none !important; }
+  input[type="file"] { display: none; }
+
   .loading-overlay {
     position: absolute; inset: 0; z-index: 10;
-    border-radius: 20px; overflow: hidden;
+    border-radius: 16px; overflow: hidden;
     display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 20px;
-    background: rgba(22,24,28,0.92); backdrop-filter: blur(4px);
+    justify-content: center; gap: 16px;
+    background: rgba(14,14,18,0.92);
   }
   .card-wrap { position: relative; }
   .spinner {
-    width: 48px; height: 48px; border: 4px solid #2f3336;
+    width: 40px; height: 40px; border: 3px solid #2a2a38;
     border-top-color: #1d9bf0; border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+    animation: spin 0.7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { color: #e7e9ea; font-size: 0.95rem; font-weight: 500; }
-  .loading-detail { color: #71767b; font-size: 0.8rem; }
+  .loading-text { color: #e7e9ea; font-size: 0.9rem; font-weight: 500; }
   .progress-track {
-    width: 70%; height: 4px; background: #2f3336; border-radius: 2px;
+    width: 60%; height: 3px; background: #2a2a38; border-radius: 2px;
     overflow: hidden;
   }
   .progress-bar {
-    height: 100%; width: 0%; background: linear-gradient(90deg, #1d9bf0, #8b5cf6);
-    border-radius: 2px; transition: width 0.3s ease;
-    animation: progressPulse 1.5s ease-in-out infinite;
+    height: 100%; width: 0%; background: #1d9bf0;
+    border-radius: 2px; transition: width 0.3s;
   }
-  @keyframes progressPulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
+
+  /* ── Submissions Section ── */
+  .submissions { margin-top: 20px; }
+  .submissions h3 {
+    font-size: 0.85rem; color: #71767b; font-weight: 500; margin-bottom: 10px;
   }
-  .result {
-    margin-top: 16px; padding: 16px; border-radius: 12px;
-    font-size: 0.95rem; text-align: center; display: none;
-    overflow-wrap: break-word; word-break: break-word;
+  .submission-item {
+    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 10px;
+    padding: 12px; margin-bottom: 8px; cursor: pointer;
   }
-  .result.success { display: block; background: #00321c; color: #00ba7c; border: 1px solid #00ba7c; }
-  .result.error { display: block; background: #2c0a0e; color: #f4212e; border: 1px solid #f4212e; }
-  .result a { color: #1d9bf0; overflow-wrap: break-word; word-break: break-all; }
-  .result .url-list { margin-top: 8px; list-style: none; }
-  .result .url-list li { margin-bottom: 4px; }
-  .hidden { display: none !important; }
-  input[type="file"] { display: none; }
-  .done-actions { display: flex; gap: 10px; margin-top: 16px; }
-  .done-actions .btn { margin-top: 0; flex: 1; }
-  .btn-outline {
-    background: transparent; border: 1px solid #2f3336;
-    color: #e7e9ea;
+  .submission-item:hover { border-color: #1d9bf0; }
+  .submission-text {
+    font-size: 0.85rem; color: #e7e9ea; margin-bottom: 6px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .btn-outline:hover { background: rgba(239,243,244,0.05); }
+  .submission-meta {
+    display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #71767b;
+  }
+  .submission-status {
+    display: inline-block; padding: 1px 8px; border-radius: 10px;
+    font-size: 0.7rem; font-weight: 600;
+  }
+  .status-pending { background: rgba(244,196,48,0.12); color: #f4c430; }
+  .status-approved { background: rgba(0,186,124,0.12); color: #00ba7c; }
+  .status-rejected { background: rgba(244,33,46,0.12); color: #f4212e; }
+
+  /* ── Popup ── */
+  .popup-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.7); display: flex;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .popup-card {
+    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 16px;
+    padding: 24px; max-width: 400px; width: 100%; text-align: center;
+  }
+  .popup-icon { font-size: 2rem; margin-bottom: 12px; }
+  .popup-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+  .popup-msg { font-size: 0.85rem; color: #71767b; margin-bottom: 16px; line-height: 1.5; }
+  .popup-btn {
+    padding: 10px 28px; border: none; border-radius: 10px;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer; color: #fff;
+  }
+  .popup-btn-primary { background: #1d9bf0; }
+  .popup-btn-danger { background: #f4212e; }
+  .popup-btn-ghost { background: #2a2a38; color: #e7e9ea; }
+
   @media (max-width: 480px) {
     .container { padding: 12px; }
-    .card { padding: 16px; border-radius: 16px; }
+    .card { padding: 16px; }
     .header h1 { font-size: 1.2rem; }
+    .file-preview { width: 64px; height: 64px; }
   }
 </style>
 </head>
 <body>
 <div class="container">
-    <div class="header">
-      <div>
-        <h1>Unsr!fess</h1>
-        <div class="subtitle" id="subtitle">Confess anonymously on X</div>
-      </div>
-      <div class="status-bar" style="margin-bottom:0">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Checking...</span>
-      </div>
+  <div class="header">
+    <div>
+      <h1>Unsr!fess</h1>
+      <div class="subtitle">Confess anonymously on X</div>
     </div>
+    <div class="status-bar">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Checking...</span>
+    </div>
+  </div>
 
   <div class="card card-wrap">
     <div id="loadingOverlay" class="loading-overlay hidden">
       <div class="spinner"></div>
       <div class="loading-text">Posting...</div>
-      <div class="loading-detail" id="loadingDetail">Sending to X</div>
       <div class="progress-track">
         <div class="progress-bar" id="progressBar"></div>
       </div>
     </div>
 
     <div id="composeArea">
-      <div id="offlineBanner" class="hidden" style="background:#16181c;border:1px solid #2f3336;border-radius:10px;padding:40px 20px;margin-bottom:12px;text-align:center;font-size:1rem;color:#71767b">
-        <div style="font-size:1.2rem;font-weight:600;margin-bottom:6px;color:#e7e9ea">Feature is currently offline</div>
-        Check back later
-      </div>
-
-
-      <div id="composeForm">
       <div class="keyword-hint">
         <span>&#9432;</span>
-        <span>Your message must contain <code style="color: #f4c430;">unsr!</code> to be sent.</span>
+        <span>Your message must contain <code>unsr!</code> to be sent.</span>
       </div>
 
       <textarea id="tweetText" placeholder="What would you like to share?" maxlength="3000"></textarea>
@@ -205,23 +241,41 @@
       <input type="file" id="fileInput" accept="image/*" multiple>
 
       <button class="btn btn-primary" id="submitBtn" disabled>Send</button>
-      </div>
+    </div>
+
+    <div id="statusMsg" class="hidden" style="text-align:center;padding:40px 20px">
+      <div style="font-size:1.1rem;color:#e7e9ea;margin-bottom:8px">Submission is closed</div>
+      <p style="font-size:0.85rem;color:#71767b;margin:0">Please check back later.</p>
     </div>
 
     <div id="doneArea" class="hidden">
       <div class="result" id="result"></div>
       <div class="done-actions">
         <button class="btn btn-success" id="newBtn">New confession</button>
-        <button class="btn btn-outline hidden" id="retryBtn">Try again</button>
       </div>
     </div>
+  </div>
+
+  <div class="submissions" id="submissionsSection"></div>
+</div>
+
+<div class="popup-overlay hidden" id="popupOverlay" onclick="closePopup()">
+  <div class="popup-card" onclick="event.stopPropagation()">
+    <div class="popup-icon" id="popupIcon"></div>
+    <div class="popup-title" id="popupTitle"></div>
+    <div class="popup-msg" id="popupMsg"></div>
+    <button class="popup-btn popup-btn-primary" id="popupBtn" onclick="closePopup()">OK</button>
   </div>
 </div>
 
 <script>
 const MAX_CHARS = 280;
 const MAX_IMAGES = 4;
+const MAX_SUBMISSIONS = 10;
 let selectedFiles = [];
+let rateLimited = false;
+let rateResetAt = null;
+let isDone = false;
 
 const tweetText = document.getElementById('tweetText');
 const tweetCount = document.getElementById('tweetCount');
@@ -230,6 +284,110 @@ const submitBtn = document.getElementById('submitBtn');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const progressBar = document.getElementById('progressBar');
 
+// ── Popup ──
+function showPopup(icon, title, msg, btnText, btnClass) {
+  document.getElementById('popupIcon').textContent = icon;
+  document.getElementById('popupTitle').textContent = title;
+  document.getElementById('popupMsg').innerHTML = msg;
+  const btn = document.getElementById('popupBtn');
+  btn.textContent = btnText || 'OK';
+  btn.className = 'popup-btn ' + (btnClass || 'popup-btn-primary');
+  document.getElementById('popupOverlay').classList.remove('hidden');
+}
+function closePopup() {
+  document.getElementById('popupOverlay').classList.add('hidden');
+}
+
+// ── Submissions (localStorage) ──
+function getSubmissions() {
+  try { return JSON.parse(localStorage.getItem('unsr_submissions') || '[]'); }
+  catch { return []; }
+}
+function saveSubmission(token, text, status) {
+  const subs = getSubmissions();
+  subs.unshift({ token, text: text.substring(0, 80), date: new Date().toISOString(), status: status || 'pending' });
+  if (subs.length > MAX_SUBMISSIONS) subs.length = MAX_SUBMISSIONS;
+  localStorage.setItem('unsr_submissions', JSON.stringify(subs));
+}
+
+function renderSubmissions() {
+  const subs = getSubmissions();
+  const el = document.getElementById('submissionsSection');
+  if (subs.length === 0) { el.innerHTML = ''; return; }
+
+  let html = '<h3>Last 10 Confessions</h3>'
+    + '<div style="font-size:0.75rem;color:#71767b;margin:-8px 0 12px">Confessions you sent from this device</div>';
+  for (const s of subs) {
+    const statusClass = 'status-' + s.status;
+    const date = new Date(s.date);
+    const timeStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    html += `
+      <div class="submission-item" onclick="checkSubmission('${s.token || ''}')">
+        <div class="submission-text">${escHtml(s.text)}</div>
+        <div class="submission-meta">
+          <span class="submission-status ${statusClass}">${s.status}</span>
+          <span>${timeStr}</span>
+        </div>
+      </div>`;
+  }
+  el.innerHTML = html;
+}
+
+async function refreshStatuses() {
+  const subs = getSubmissions();
+  for (const s of subs) {
+    if (!s.token || s.status !== 'pending') continue;
+    try {
+      const r = await fetch('/api/status/' + encodeURIComponent(s.token));
+      if (r.ok) {
+        const d = await r.json();
+        if (d.status && d.status !== 'pending' && d.status !== s.status) {
+          s.status = d.status;
+          if (d.tweet_urls) s.urls = d.tweet_urls;
+          localStorage.setItem('unsr_submissions', JSON.stringify(subs));
+          renderSubmissions();
+          return;
+        }
+      }
+    } catch {}
+  }
+}
+
+async function checkSubmission(token) {
+  if (!token) { showPopup('⚠️', 'Error', 'Cannot check status.', 'Close', 'popup-btn-ghost'); return; }
+  try {
+    const r = await fetch('/api/status/' + encodeURIComponent(token));
+    if (!r.ok) { showPopup('⚠️', 'Not Found', 'Submission not found.', 'Close', 'popup-btn-ghost'); return; }
+    const d = await r.json();
+    if (d.status) {
+      const subs = getSubmissions();
+      const sub = subs.find(s => s.token === token);
+      if (sub) {
+        sub.status = d.status;
+        if (d.tweet_urls) sub.urls = d.tweet_urls;
+        if (d.reason) sub.reason = d.reason;
+        localStorage.setItem('unsr_submissions', JSON.stringify(subs));
+      }
+      renderSubmissions();
+      let msg = `Status: <strong>${d.status}</strong>`;
+      if (d.tweet_urls && d.tweet_urls.length) {
+        msg += '<br><br>';
+        d.tweet_urls.forEach((url, i) => {
+          const label = d.tweet_urls.length > 1 ? 'Tweet ' + (i+1) + ': ' : '';
+          msg += label + '<a href="' + url + '" target="_blank">' + url + '</a><br>';
+        });
+      }
+      if (d.reason) msg += '<br>Reason: ' + escHtml(d.reason);
+      showPopup('📋', 'Submission Status', msg, 'Close');
+    } else {
+      showPopup('⚠️', 'Error', 'Failed to check status.', 'Close', 'popup-btn-ghost');
+    }
+  } catch {
+    showPopup('⚠️', 'Connection Error', 'Check your internet.', 'Close', 'popup-btn-ghost');
+  }
+}
+
+// ── Tweet count & validation ──
 function estimateTweets(text) {
   const len = text.length;
   if (len === 0) return 0;
@@ -239,9 +397,9 @@ function estimateTweets(text) {
   while (remaining.length > 0) {
     count++;
     if (remaining.length <= MAX_CHARS) break;
-    let splitAt = remaining.lastIndexOf(". ", MAX_CHARS);
-    if (splitAt < 0) splitAt = remaining.lastIndexOf("\n", MAX_CHARS);
-    if (splitAt < 0) splitAt = remaining.lastIndexOf(" ", MAX_CHARS);
+    let splitAt = remaining.lastIndexOf('. ', MAX_CHARS);
+    if (splitAt < 0) splitAt = remaining.lastIndexOf('\n', MAX_CHARS);
+    if (splitAt < 0) splitAt = remaining.lastIndexOf(' ', MAX_CHARS);
     if (splitAt < 0) splitAt = MAX_CHARS;
     else splitAt++;
     remaining = remaining.slice(splitAt).trim();
@@ -249,11 +407,76 @@ function estimateTweets(text) {
   return count;
 }
 
-function showCompose() {
-  document.getElementById('composeArea').classList.remove('hidden');
-  document.getElementById('doneArea').classList.add('hidden');
+function updateValidation() {
+  const text = tweetText.value;
+  const hasKeyword = /unsr!/i.test(text);
+  const isEmpty = text.trim().length === 0;
+  if (isEmpty) {
+    validateMsg.className = 'validate-msg';
+    validateMsg.textContent = '';
+    tweetText.classList.remove('error');
+    return;
+  }
+  if (!hasKeyword) {
+    validateMsg.className = 'validate-msg error';
+    validateMsg.textContent = 'Must contain "unsr!" in your message';
+    tweetText.classList.add('error');
+  } else {
+    validateMsg.className = 'validate-msg ok';
+    validateMsg.textContent = '\u2713 Contains "unsr!"';
+    tweetText.classList.remove('error');
+  }
 }
 
+function updateTweetCount() {
+  const text = tweetText.value;
+  const el = tweetCount;
+  const len = text.length;
+  if (len === 0) {
+    el.className = 'tweet-count info';
+    el.textContent = '';
+  } else if (len > MAX_CHARS) {
+    const n = estimateTweets(text);
+    el.className = 'tweet-count over';
+    el.textContent = len + ' chars \u2192 ' + n + ' tweets';
+  } else {
+    el.className = 'tweet-count ok';
+    el.textContent = len + '/' + MAX_CHARS;
+  }
+}
+
+function checkSubmitReady() {
+  const text = tweetText.value.trim();
+  const valid = /unsr!/i.test(text);
+  submitBtn.disabled = !valid || rateLimited;
+}
+
+// ── File upload ──
+function updateFilePreview() {
+  const grid = document.getElementById('fileGrid');
+  const area = document.getElementById('uploadArea');
+  grid.innerHTML = '';
+  const remaining = MAX_IMAGES - selectedFiles.length;
+  area.classList.toggle('has-file', selectedFiles.length > 0);
+  area.classList.toggle('disabled', remaining === 0);
+  area.querySelector('.upload-label').textContent =
+    remaining === 0 ? 'Max 4 images reached' : '+ Add images (' + remaining + ' left)';
+  selectedFiles.forEach((file, idx) => {
+    const div = document.createElement('div');
+    div.className = 'file-preview';
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    div.appendChild(img);
+    const btn = document.createElement('button');
+    btn.className = 'remove';
+    btn.innerHTML = '&times;';
+    btn.onclick = (e) => { e.stopPropagation(); selectedFiles.splice(idx, 1); updateFilePreview(); };
+    div.appendChild(btn);
+    grid.appendChild(div);
+  });
+}
+
+// ── Loading ──
 function showLoading() {
   loadingOverlay.classList.remove('hidden');
   progressBar.style.width = '0%';
@@ -264,122 +487,74 @@ function showLoading() {
   }, 800);
   loadingOverlay._interval = interval;
 }
-
 function hideLoading() {
   clearInterval(loadingOverlay._interval);
   progressBar.style.width = '100%';
-  setTimeout(() => {
-    loadingOverlay.classList.add('hidden');
-    progressBar.style.width = '0%';
-  }, 300);
+  setTimeout(() => { loadingOverlay.classList.add('hidden'); progressBar.style.width = '0%'; }, 200);
 }
 
 function showDone() {
+  isDone = true;
   document.getElementById('composeArea').classList.add('hidden');
   document.getElementById('doneArea').classList.remove('hidden');
 }
 
-function updateValidation() {
-  const text = tweetText.value;
-  const hasKeyword = /unsr!/i.test(text);
-  const isEmpty = text.trim().length === 0;
-
-  if (isEmpty) {
-    validateMsg.className = 'validate-msg';
-    validateMsg.textContent = '';
-    tweetText.classList.remove('error');
-    return hasKeyword && !isEmpty;
-  }
-
-  if (!hasKeyword) {
-    validateMsg.className = 'validate-msg error';
-    validateMsg.textContent = 'Must contain "unsr!" in your message';
-    tweetText.classList.add('error');
-  } else {
-    validateMsg.className = 'validate-msg ok';
-    validateMsg.textContent = '\u2713 Contains "unsr!"';
-    tweetText.classList.remove('error');
-  }
-
-  return hasKeyword;
-}
-
-function updateTweetCount() {
-  const text = tweetText.value;
-  const el = tweetCount;
-  const len = text.length;
-
-  if (len === 0) {
-    el.className = 'tweet-count info';
-    el.textContent = '';
-  } else if (len > MAX_CHARS) {
-    const n = estimateTweets(text);
-    el.className = 'tweet-count over';
-    el.textContent = '\u26A0 ' + len + ' chars (\u2192 ' + n + ' tweets)';
-  } else {
-    el.className = 'tweet-count ok';
-    el.textContent = len + '/' + MAX_CHARS;
-  }
-}
-
-function updateFilePreview() {
-  const grid = document.getElementById('fileGrid');
-  const area = document.getElementById('uploadArea');
-  grid.innerHTML = '';
-  const remaining = MAX_IMAGES - selectedFiles.length;
-
-  area.classList.toggle('has-file', selectedFiles.length > 0);
-  area.classList.toggle('disabled', remaining === 0);
-  const label = area.querySelector('.upload-label');
-  label.textContent = remaining === 0
-    ? 'Max 4 images reached'
-    : `+ Add images (${remaining} left)`;
-
-  selectedFiles.forEach((file, idx) => {
-    const div = document.createElement('div');
-    div.className = 'file-preview';
-    const img = document.createElement('img');
-    img.src = URL.createObjectURL(file);
-    div.appendChild(img);
-    const btn = document.createElement('button');
-    btn.className = 'remove';
-    btn.innerHTML = '&times;';
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      selectedFiles.splice(idx, 1);
-      updateFilePreview();
-    };
-    div.appendChild(btn);
-    grid.appendChild(div);
-  });
-}
-
-function checkSubmitReady() {
-  const text = tweetText.value.trim();
-  const valid = /unsr!/i.test(text);
-  submitBtn.disabled = !valid || !featureOnline;
-}
-
-let featureOnline = true;
-
+// ── Status check ──
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
   try {
     const r = await fetch('/api/status');
     const data = await r.json();
-    featureOnline = data.online !== false;
-    dot.className = 'status-dot ' + (data.logged_in ? 'online' : 'offline');
-    text.textContent = data.logged_in ? 'Connected' : 'Session expired';
+    if (!data.online) {
+      dot.className = 'status-dot offline';
+      text.textContent = 'Closed';
+      document.getElementById('composeArea').classList.add('hidden');
+      document.getElementById('doneArea').classList.add('hidden');
+      const sm = document.getElementById('statusMsg');
+      sm.querySelector('div').textContent = 'Submission is closed';
+      sm.querySelector('p').textContent = 'Please check back later.';
+      sm.classList.remove('hidden');
+      submitBtn.disabled = true;
+    } else if (!data.logged_in) {
+      dot.className = 'status-dot offline';
+      text.textContent = 'Offline';
+      document.getElementById('composeArea').classList.add('hidden');
+      document.getElementById('doneArea').classList.add('hidden');
+      const sm = document.getElementById('statusMsg');
+      sm.querySelector('div').textContent = 'Twitter offline';
+      sm.querySelector('p').textContent = 'Twitter session is offline. Please try again later.';
+      sm.classList.remove('hidden');
+      submitBtn.disabled = true;
+    } else {
+      dot.className = 'status-dot online';
+      text.textContent = 'Online';
+      document.getElementById('composeArea').classList.remove('hidden');
+      document.getElementById('statusMsg').classList.add('hidden');
+      rateLimited = false;
+      checkSubmitReady();
+    }
   } catch {
     dot.className = 'status-dot offline';
     text.textContent = 'Offline';
+    document.getElementById('composeArea').classList.add('hidden');
+    document.getElementById('doneArea').classList.add('hidden');
+    const sm = document.getElementById('statusMsg');
+    sm.querySelector('div').textContent = 'Connection error';
+    sm.querySelector('p').textContent = 'Failed to check server status.';
+    sm.classList.remove('hidden');
+    submitBtn.disabled = true;
   }
-  document.getElementById('offlineBanner').classList.toggle('hidden', featureOnline);
-  document.getElementById('composeForm').classList.toggle('hidden', !featureOnline);
-  checkSubmitReady();
 }
 
+function escHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Event listeners ──
 tweetText.addEventListener('input', () => {
   updateTweetCount();
   updateValidation();
@@ -402,28 +577,24 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 document.getElementById('newBtn').addEventListener('click', resetForm);
 
 function resetForm() {
+  isDone = false;
   tweetText.value = '';
   document.getElementById('result').className = 'result';
-  document.getElementById('result').style.display = '';
+  document.getElementById('result').innerHTML = '';
   selectedFiles = [];
   updateFilePreview();
   updateTweetCount();
   validateMsg.className = 'validate-msg';
   validateMsg.textContent = '';
   tweetText.classList.remove('error');
-  showCompose();
+  document.getElementById('composeArea').classList.remove('hidden');
+  document.getElementById('doneArea').classList.add('hidden');
   checkSubmitReady();
 }
 
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const text = tweetText.value.trim();
   if (!text || !/unsr!/i.test(text)) return;
-  if (!featureOnline) {
-    document.getElementById('result').className = 'result error';
-    document.getElementById('result').textContent = 'Feature is offline.';
-    showDone();
-    return;
-  }
 
   showLoading();
   submitBtn.disabled = true;
@@ -440,58 +611,47 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     hideLoading();
 
     const result = document.getElementById('result');
-    const retryBtn = document.getElementById('retryBtn');
     if (data.success) {
+      if (data.tracking_token) {
+        saveSubmission(data.tracking_token, text, data.status);
+      }
+
       if (data.status === 'rejected') {
         result.className = 'result error';
-        result.textContent = data.reason || 'Your message was rejected by automatic filters.';
+        result.innerHTML = 'Your message was automatically rejected (matched filter).';
       } else if (data.status === 'approved') {
         result.className = 'result success';
-        result.innerHTML = '<div style="font-size:1.1rem;font-weight:600;margin-bottom:4px">Posted</div>'
-          + (data.tweet_url ? '<a href="' + data.tweet_url + '" target="_blank" style="color:#1d9bf0;font-size:0.85rem">' + data.tweet_url + '</a>' : '');
+        let html = 'Tweet sent successfully!';
+        if (data.tweet_url) {
+          html = '<a href="' + data.tweet_url + '" target="_blank">' + data.tweet_url + '</a>';
+        }
+        result.innerHTML = html;
       } else {
         result.className = 'result success';
-        result.innerHTML = '<div style="font-size:1.1rem;font-weight:600;margin-bottom:4px">Submitted for review</div>'
-          + '<div style="font-size:0.85rem;color:#71767b">Your confession will be posted after an admin reviews it.</div>';
+        result.innerHTML = 'Your confession has been submitted for review.';
       }
-      retryBtn.classList.add('hidden');
     } else {
-      const msg = friendlyError(data);
       result.className = 'result error';
-      result.innerHTML = msg;
-      retryBtn.classList.add('hidden');
+      result.textContent = data.error || 'Something went wrong. Please try again.';
     }
-    submitBtn.disabled = false;
+
+    renderSubmissions();
     checkStatus();
     showDone();
   } catch (err) {
     hideLoading();
     submitBtn.disabled = false;
-    document.getElementById('result').className = 'result error';
-    document.getElementById('result').textContent = 'Connection error. Check your internet and try again.';
-    document.getElementById('retryBtn').classList.remove('hidden');
+    showPopup('⚠️', 'Connection Error', 'Check your internet and try again.', 'OK', 'popup-btn-ghost');
     showDone();
   }
 });
 
-document.getElementById('retryBtn').addEventListener('click', () => {
-  selectedFiles = [];
-  updateFilePreview();
-  showCompose();
-  checkSubmitReady();
-});
-
-function friendlyError(data) {
-  const msg = data.error || '';
-  if (!msg) return 'Something went wrong. Please try again.';
-  if (msg.includes('duplicate')) return 'This tweet looks like a duplicate.';
-  if (msg.includes('timeout') || msg.includes('Timeout')) return 'Request timed out. Please try again.';
-  if (msg.includes('login') || msg.includes('auth')) return 'Session expired. Please contact admin.';
-  return msg.length > 120 ? 'Something went wrong. Please try again.' : msg;
-}
-
+// ── Init ──
 checkStatus();
+renderSubmissions();
+refreshStatuses();
 setInterval(checkStatus, 30000);
+setInterval(refreshStatuses, 20000);
 </script>
 </body>
 </html>
