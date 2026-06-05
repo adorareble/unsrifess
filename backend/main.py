@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import uuid
 import math
@@ -19,6 +19,7 @@ from database import (
     log_activity, get_activity, get_superadmin,
     get_setting, set_setting,
     get_tweet_by_token, get_peak_hours,
+    block_sender, unblock_sender, get_blocked_senders, is_sender_blocked,
 )
 from auth import (
     hash_password, verify_password, create_token,
@@ -183,11 +184,13 @@ async def admin_redirect():
 # ─── Public API ─────────────────────────────────────────────
 
 @app.get("/api/status")
-async def status():
+async def status(request: Request):
     online = await get_setting("online")
+    blocked = await is_sender_blocked(get_client_ip(request))
     return {
         "logged_in": client.is_logged_in(),
         "online": online != "false",
+        "blocked": bool(blocked),
     }
 
 
@@ -199,13 +202,23 @@ async def status_by_token(tracking_token: str):
     result = {
         "status": tweet["status"],
         "submitted_at": str(tweet["submitted_at"]),
+        "original_text": tweet["original_text"],
     }
     if tweet["status"] == "approved" and tweet["tweet_urls"]:
         urls = json.loads(tweet["tweet_urls"]) if isinstance(tweet["tweet_urls"], str) else tweet["tweet_urls"]
         result["tweet_urls"] = urls
-    if tweet["status"] == "rejected" and tweet["reject_reason"]:
+    if tweet["reject_reason"]:
         result["reason"] = tweet["reject_reason"]
     return result
+
+
+@app.get("/api/images/{filename}")
+async def public_serve_image(filename: str):
+    safe_name = os.path.basename(filename)
+    file_path = os.path.join(TEMP_DIR, safe_name)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Image not found")
+    return FileResponse(file_path)
 
 
 @app.post("/api/tweet-sync")
@@ -220,6 +233,9 @@ async def tweet_sync(
     online = await get_setting("online")
     if online == "false":
         return {"success": False, "error": "Submission is currently closed."}
+
+    if await is_sender_blocked(get_client_ip(request)):
+        return {"success": False, "blocked": True, "error": "You have been blocked."}
 
     saved_paths = []
     try:
@@ -467,7 +483,7 @@ async def panel_reject_tweet(
     if tweet["status"] != "pending":
         raise HTTPException(status_code=400, detail=f"Tweet is {tweet['status']}, not pending")
 
-    updated = await reject_tweet(tweet_id, admin["id"], reason)
+    updated = await reject_tweet(tweet_id, admin["id"], reason.strip() if reason else None)
     if not updated:
         raise HTTPException(status_code=400, detail="Failed to reject tweet")
     return {"success": True}
@@ -495,7 +511,7 @@ async def panel_delete_tweet(
         except Exception:
             pass
 
-    updated = await delete_tweet(tweet_id, admin["id"], reason)
+    updated = await delete_tweet(tweet_id, admin["id"], reason.strip() if reason else None)
     return {"success": True}
 
 
@@ -526,6 +542,31 @@ async def panel_add_keyword(
 async def panel_remove_keyword(keyword_id: int, admin: dict = Depends(get_current_admin)):
     await remove_keyword(keyword_id)
     await log_activity(admin["id"], "remove_keyword", "keyword", keyword_id)
+    return {"success": True}
+
+
+# ─── Panel Blocked Senders API ──────────────────────────────
+
+@app.get("/panel/api/blocked-senders")
+async def panel_get_blocked_senders(_: dict = Depends(get_current_admin)):
+    return await get_blocked_senders()
+
+
+@app.post("/panel/api/blocked-senders")
+async def panel_block_sender(
+    ip_address: str = Form(...),
+    reason: str = Form(""),
+    admin: dict = Depends(get_current_admin),
+):
+    blocked = await block_sender(ip_address, admin["id"], reason.strip() if reason else None)
+    await log_activity(admin["id"], "block_sender", "ip", ip_address, f"Blocked {ip_address}" + (f": {reason}" if reason else ""))
+    return {"success": True, "blocked": blocked}
+
+
+@app.delete("/panel/api/blocked-senders/{sender_id}")
+async def panel_unblock_sender(sender_id: int, admin: dict = Depends(get_current_admin)):
+    await unblock_sender(sender_id)
+    await log_activity(admin["id"], "unblock_sender", "blocked_senders", sender_id)
     return {"success": True}
 
 

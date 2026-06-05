@@ -48,4 +48,12 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS blocked_senders (
+    id          SERIAL PRIMARY KEY,
+    ip_address  VARCHAR(50) NOT NULL,
+    blocked_by  INT REFERENCES admins(id),
+    reason      TEXT,
+    created_at  TIMESTAMP DEFAULT NOW()
+);
+
 INSERT INTO settings (key, value) VALUES ('online', 'true') ON CONFLICT (key) DO NOTHING;

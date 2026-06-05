@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -155,23 +155,26 @@
   }
   .submission-item {
     background: #1a1a24; border: 1px solid #2a2a38; border-radius: 10px;
-    padding: 12px; margin-bottom: 8px; cursor: pointer;
+    padding: 12px; margin-bottom: 8px;
   }
   .submission-item:hover { border-color: #1d9bf0; }
   .submission-text {
     font-size: 0.85rem; color: #e7e9ea; margin-bottom: 6px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    white-space: pre-wrap; word-break: break-word;
   }
   .submission-meta {
     display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #71767b;
+    flex-wrap: wrap; min-width: 0;
   }
   .submission-status {
     display: inline-block; padding: 1px 8px; border-radius: 10px;
-    font-size: 0.7rem; font-weight: 600;
+    font-size: 0.7rem; font-weight: 600; white-space: nowrap;
   }
   .status-pending { background: rgba(244,196,48,0.12); color: #f4c430; }
   .status-approved { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .status-rejected { background: rgba(244,33,46,0.12); color: #f4212e; }
+  .status-deleted { background: rgba(113,118,123,0.12); color: #71767b; }
+  .reason-badge { display: inline-block; font-size: 0.75rem; word-break: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; }
 
   /* ── Popup ── */
   .popup-overlay {
@@ -248,6 +251,11 @@
       <p style="font-size:0.85rem;color:#71767b;margin:0">Please check back later.</p>
     </div>
 
+    <div id="blockedMsg" class="hidden" style="text-align:center;padding:40px 20px">
+      <div style="font-size:1.1rem;color:#f4212e;margin-bottom:8px">You have been blocked</div>
+      <p style="font-size:0.85rem;color:#71767b;margin:0">You are not allowed to send confessions.</p>
+    </div>
+
     <div id="doneArea" class="hidden">
       <div class="result" id="result"></div>
       <div class="done-actions">
@@ -303,9 +311,9 @@ function getSubmissions() {
   try { return JSON.parse(localStorage.getItem('unsr_submissions') || '[]'); }
   catch { return []; }
 }
-function saveSubmission(token, text, status) {
+function saveSubmission(token, text, status, urls, reason) {
   const subs = getSubmissions();
-  subs.unshift({ token, text: text.substring(0, 80), date: new Date().toISOString(), status: status || 'pending' });
+  subs.unshift({ token, text, date: new Date().toISOString(), status: status || 'pending', urls: urls || null, reason: reason || null });
   if (subs.length > MAX_SUBMISSIONS) subs.length = MAX_SUBMISSIONS;
   localStorage.setItem('unsr_submissions', JSON.stringify(subs));
 }
@@ -320,70 +328,59 @@ function renderSubmissions() {
   for (const s of subs) {
     const statusClass = 'status-' + s.status;
     const date = new Date(s.date);
-    const timeStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const timeStr = date.toLocaleDateString('id-ID', { year: 'numeric', day: 'numeric', month: 'short' })
+      + ' ' + String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0') + ':' + String(date.getSeconds()).padStart(2, '0');
+    const tweetLink = (s.status === 'approved' && s.urls && s.urls.length)
+      ? '<a href="' + s.urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>'
+      : '';
+    const reasonText = (s.status === 'rejected' || s.status === 'deleted') && s.reason
+      ? '<span class="reason-badge">' + escHtml(s.reason) + '</span>' : '';
+    const extraHtml = reasonText || tweetLink || '';
     html += `
-      <div class="submission-item" onclick="checkSubmission('${s.token || ''}')">
+      <div class="submission-item">
         <div class="submission-text">${escHtml(s.text)}</div>
+        <div class="submission-meta" style="margin-bottom:2px">
+          <span>${timeStr}</span>
+        </div>
         <div class="submission-meta">
           <span class="submission-status ${statusClass}">${s.status}</span>
-          <span>${timeStr}</span>
+          ${extraHtml}
         </div>
       </div>`;
   }
   el.innerHTML = html;
 }
 
+
+
 async function refreshStatuses() {
   const subs = getSubmissions();
   for (const s of subs) {
-    if (!s.token || s.status !== 'pending') continue;
+    if (!s.token) continue;
+    if (s.status === 'rejected' || s.status === 'deleted') {
+      if (s.reason) continue;
+    }
     try {
       const r = await fetch('/api/status/' + encodeURIComponent(s.token));
       if (r.ok) {
         const d = await r.json();
         if (d.status && d.status !== 'pending' && d.status !== s.status) {
           s.status = d.status;
+          if (d.original_text) s.text = d.original_text;
           if (d.tweet_urls) s.urls = d.tweet_urls;
+          if (d.reason) s.reason = d.reason;
+          localStorage.setItem('unsr_submissions', JSON.stringify(subs));
+          renderSubmissions();
+          return;
+        }
+        if (d.reason && !s.reason && (d.status === 'rejected' || d.status === 'deleted')) {
+          s.reason = d.reason;
           localStorage.setItem('unsr_submissions', JSON.stringify(subs));
           renderSubmissions();
           return;
         }
       }
     } catch {}
-  }
-}
-
-async function checkSubmission(token) {
-  if (!token) { showPopup('⚠️', 'Error', 'Cannot check status.', 'Close', 'popup-btn-ghost'); return; }
-  try {
-    const r = await fetch('/api/status/' + encodeURIComponent(token));
-    if (!r.ok) { showPopup('⚠️', 'Not Found', 'Submission not found.', 'Close', 'popup-btn-ghost'); return; }
-    const d = await r.json();
-    if (d.status) {
-      const subs = getSubmissions();
-      const sub = subs.find(s => s.token === token);
-      if (sub) {
-        sub.status = d.status;
-        if (d.tweet_urls) sub.urls = d.tweet_urls;
-        if (d.reason) sub.reason = d.reason;
-        localStorage.setItem('unsr_submissions', JSON.stringify(subs));
-      }
-      renderSubmissions();
-      let msg = `Status: <strong>${d.status}</strong>`;
-      if (d.tweet_urls && d.tweet_urls.length) {
-        msg += '<br><br>';
-        d.tweet_urls.forEach((url, i) => {
-          const label = d.tweet_urls.length > 1 ? 'Tweet ' + (i+1) + ': ' : '';
-          msg += label + '<a href="' + url + '" target="_blank">' + url + '</a><br>';
-        });
-      }
-      if (d.reason) msg += '<br>Reason: ' + escHtml(d.reason);
-      showPopup('📋', 'Submission Status', msg, 'Close');
-    } else {
-      showPopup('⚠️', 'Error', 'Failed to check status.', 'Close', 'popup-btn-ghost');
-    }
-  } catch {
-    showPopup('⚠️', 'Connection Error', 'Check your internet.', 'Close', 'popup-btn-ghost');
   }
 }
 
@@ -521,16 +518,27 @@ async function checkStatus() {
       text.textContent = 'Offline';
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
+      document.getElementById('blockedMsg').classList.add('hidden');
       const sm = document.getElementById('statusMsg');
       sm.querySelector('div').textContent = 'Twitter offline';
       sm.querySelector('p').textContent = 'Twitter session is offline. Please try again later.';
       sm.classList.remove('hidden');
       submitBtn.disabled = true;
+    } else if (data.blocked) {
+      dot.className = 'status-dot offline';
+      text.textContent = 'Blocked';
+      document.getElementById('composeArea').classList.add('hidden');
+      document.getElementById('doneArea').classList.add('hidden');
+      document.getElementById('statusMsg').classList.add('hidden');
+      document.getElementById('submissionsSection').innerHTML = '';
+      document.getElementById('blockedMsg').classList.remove('hidden');
+      submitBtn.disabled = true;
     } else {
       dot.className = 'status-dot online';
       text.textContent = 'Online';
-      document.getElementById('composeArea').classList.remove('hidden');
+      if (!isDone) document.getElementById('composeArea').classList.remove('hidden');
       document.getElementById('statusMsg').classList.add('hidden');
+      document.getElementById('blockedMsg').classList.add('hidden');
       rateLimited = false;
       checkSubmitReady();
     }
@@ -543,6 +551,7 @@ async function checkStatus() {
     sm.querySelector('div').textContent = 'Connection error';
     sm.querySelector('p').textContent = 'Failed to check server status.';
     sm.classList.remove('hidden');
+    document.getElementById('blockedMsg').classList.add('hidden');
     submitBtn.disabled = true;
   }
 }
@@ -613,7 +622,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     const result = document.getElementById('result');
     if (data.success) {
       if (data.tracking_token) {
-        saveSubmission(data.tracking_token, text, data.status);
+        saveSubmission(data.tracking_token, text, data.status, data.tweet_url ? [data.tweet_url] : null, data.reason);
       }
 
       if (data.status === 'rejected') {
@@ -630,6 +639,9 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
         result.className = 'result success';
         result.innerHTML = 'Your confession has been submitted for review.';
       }
+    } else if (data.blocked) {
+      checkStatus();
+      return;
     } else {
       result.className = 'result error';
       result.textContent = data.error || 'Something went wrong. Please try again.';

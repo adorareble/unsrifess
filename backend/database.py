@@ -1,4 +1,4 @@
-import os
+﻿import os
 import json
 import asyncpg
 from dotenv import load_dotenv
@@ -113,6 +113,8 @@ async def create_tweet(original_text, image_paths, submitted_by, chunk_count=0, 
 
 async def reject_tweet(tweet_id: int, admin_id: int, reason, matched_keyword=None):
     pool = await get_pool()
+    if reason is not None and isinstance(reason, str) and not reason.strip():
+        reason = None
     async with pool.acquire() as conn:
         async with conn.transaction():
             row = await conn.fetchrow(
@@ -364,6 +366,42 @@ async def get_tweet_by_token(tracking_token: str):
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT * FROM tweets WHERE tracking_token = $1", tracking_token
+        )
+        return dict(row) if row else None
+
+
+async def block_sender(ip_address: str, admin_id: int, reason: str = None):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "INSERT INTO blocked_senders (ip_address, blocked_by, reason) "
+            "VALUES ($1, $2, $3) RETURNING id, ip_address, reason, created_at",
+            ip_address, admin_id, reason,
+        )
+        return dict(row)
+
+
+async def unblock_sender(sender_id: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("DELETE FROM blocked_senders WHERE id = $1", sender_id)
+
+
+async def get_blocked_senders():
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT b.*, a.display_name AS blocker_name FROM blocked_senders b "
+            "LEFT JOIN admins a ON b.blocked_by = a.id ORDER BY b.created_at DESC"
+        )
+        return [dict(r) for r in rows]
+
+
+async def is_sender_blocked(ip_address: str):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM blocked_senders WHERE ip_address = $1", ip_address
         )
         return dict(row) if row else None
 
