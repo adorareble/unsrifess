@@ -3,13 +3,14 @@ import uuid
 import json
 import asyncio
 import secrets
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Request
 from fastapi.responses import HTMLResponse, FileResponse
 
 from database import (
     get_pool, create_tweet, check_keywords, get_setting,
-    get_superadmin, get_tweet_by_token, is_sender_blocked,
+    get_tweet_by_token, is_sender_blocked,
     reject_tweet, approve_tweet,
 )
 from twitter_client import client, split_into_chunks
@@ -54,9 +55,12 @@ async def status_by_token(tracking_token: str):
         "submitted_at": str(tweet["submitted_at"]),
         "original_text": tweet["original_text"],
     }
-    if tweet["status"] == "approved" and tweet["tweet_urls"]:
-        urls = json.loads(tweet["tweet_urls"]) if isinstance(tweet["tweet_urls"], str) else tweet["tweet_urls"]
-        result["tweet_urls"] = urls
+    if tweet["status"] == "approved":
+        if tweet["tweet_urls"]:
+            urls = json.loads(tweet["tweet_urls"]) if isinstance(tweet["tweet_urls"], str) else tweet["tweet_urls"]
+            result["tweet_urls"] = urls
+        if tweet["reviewed_at"]:
+            result["reviewed_at"] = str(tweet["reviewed_at"])
     if tweet["reject_reason"]:
         result["reason"] = tweet["reject_reason"]
     return result
@@ -78,6 +82,11 @@ async def user_delete_tweet(tracking_token: str):
         raise HTTPException(status_code=404, detail="Submission not found")
     if tweet["status"] != "approved":
         raise HTTPException(status_code=400, detail="Hanya tweet yang sudah terkirim bisa dihapus")
+
+    if tweet["reviewed_at"]:
+        elapsed = datetime.utcnow() - tweet["reviewed_at"]
+        if elapsed > timedelta(minutes=5):
+            raise HTTPException(status_code=400, detail="Batas waktu hapus 5 menit sudah lewat")
 
     tweet_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
 
@@ -149,12 +158,10 @@ async def tweet_sync(
 
         bypass = await get_setting("bypass")
         if bypass == "true":
-            superadmin = await get_superadmin()
-            if superadmin:
-                result = await client.post_tweet(text.strip(), saved_paths)
-                if result and result.get("success"):
-                    await approve_tweet(tweet["id"], superadmin["id"], result["urls"], record_activity=False)
-                    return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "tracking_token": tracking_token}
+            result = await client.post_tweet(text.strip(), saved_paths)
+            if result and result.get("success"):
+                await approve_tweet(tweet["id"], None, result["urls"], record_activity=False)
+                return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "tracking_token": tracking_token}
 
         return {"success": True, "status": "pending", "message": "Your confession has been submitted for review.", "tracking_token": tracking_token}
     except Exception as e:

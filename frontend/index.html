@@ -175,6 +175,7 @@
   }
   .submission-item:hover .submission-del { opacity: 1; }
   .submission-del:hover { color: #f4212e; background: rgba(244,33,46,0.1); }
+  .del-info { color: #71767b; font-size: 0.7rem; }
   .submission-text {
     font-size: 0.85rem; color: #e7e9ea; margin-bottom: 6px;
     white-space: pre-wrap; word-break: break-word;
@@ -334,6 +335,24 @@ function closePopup() {
   document.getElementById('popupOverlay').classList.add('hidden');
 }
 
+function canDelete(reviewedAt) {
+  if (!reviewedAt) return false;
+  const then = new Date(reviewedAt);
+  const now = new Date();
+  return (now - then) < 300000; // 5 menit dalam ms
+}
+
+function deleteRemaining(reviewedAt) {
+  if (!reviewedAt) return '';
+  const then = new Date(reviewedAt);
+  const now = new Date();
+  const left = 300000 - (now - then);
+  if (left <= 0) return '';
+  const m = Math.floor(left / 60000);
+  const s = Math.floor((left % 60000) / 1000);
+  return m > 0 ? m + 'm tersisa' : s + 'd tersisa';
+}
+
 async function deleteTweet(token) {
   showPopup('🗑️', 'Hapus dari X?', 'Tweet ini akan dihapus dari X dan tidak bisa dikembalikan.', [
     { text: 'Batal', cls: 'popup-btn-ghost', fn: closePopup },
@@ -389,8 +408,12 @@ function renderSubmissions() {
     const reasonText = (s.status === 'rejected' || s.status === 'deleted') && s.reason
       ? '<span class="reason-badge">' + escHtml(s.reason) + '</span>' : '';
     const extraHtml = reasonText || tweetLink || '';
-    const delBtn = s.status === 'approved'
+    const deletable = s.status === 'approved' && canDelete(s.reviewed_at);
+    const delBtn = deletable
       ? '<button class="submission-del" onclick="deleteTweet(\'' + s.token + '\')" title="Hapus dari X">🗑️</button>'
+      : '';
+    const delInfo = s.status === 'approved' && s.reviewed_at
+      ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>'
       : '';
     html += `
       <div class="submission-item">
@@ -400,6 +423,7 @@ function renderSubmissions() {
         </div>
         <div class="submission-meta" style="margin-bottom:2px">
           <span>${timeStr}</span>
+          ${delInfo}
         </div>
         <div class="submission-meta">
           <span class="submission-status ${statusClass}">${s.status}</span>
@@ -428,6 +452,7 @@ async function refreshStatuses() {
           if (d.original_text) s.text = d.original_text;
           if (d.tweet_urls) s.urls = d.tweet_urls;
           if (d.reason) s.reason = d.reason;
+          if (d.reviewed_at) s.reviewed_at = d.reviewed_at;
           localStorage.setItem('unsr_submissions', JSON.stringify(subs));
           renderSubmissions();
           return;

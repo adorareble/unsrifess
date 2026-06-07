@@ -76,14 +76,6 @@ async def get_all_admins():
         return [dict(r) for r in rows]
 
 
-async def get_superadmin():
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            "SELECT id, username, display_name FROM admins WHERE role = 'superadmin' AND is_active = TRUE ORDER BY id LIMIT 1"
-        )
-        return dict(row) if row else None
-
 async def deactivate_admin(admin_id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -133,7 +125,7 @@ async def reject_tweet(tweet_id: int, admin_id: int, reason, matched_keyword=Non
             return dict(row) if row else None
 
 
-async def approve_tweet(tweet_id: int, admin_id: int, tweet_urls, record_activity=True):
+async def approve_tweet(tweet_id: int, admin_id: int | None, tweet_urls, record_activity=True):
     pool = await get_pool()
     async with pool.acquire() as conn:
         async with conn.transaction():
