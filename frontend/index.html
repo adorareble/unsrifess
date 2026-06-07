@@ -350,7 +350,7 @@ function deleteRemaining(reviewedAt) {
   if (left <= 0) return '';
   const m = Math.floor(left / 60000);
   const s = Math.floor((left % 60000) / 1000);
-  return m > 0 ? m + 'm tersisa' : s + 'd tersisa';
+  return (m > 0 ? m + 'm' : s + 'd') + ' tersisa';
 }
 
 async function deleteTweet(token) {
@@ -438,39 +438,33 @@ function renderSubmissions() {
 
 async function refreshStatuses() {
   const subs = getSubmissions();
-  for (const s of subs) {
-    if (!s.token) continue;
-    if (s.status === 'rejected' || s.status === 'deleted') {
-      if (s.reason) continue;
-    }
-    try {
-      const r = await fetch('/api/status/' + encodeURIComponent(s.token));
-      if (r.ok) {
+  let changed = false;
+  const fetches = subs.filter(s => s.token && !((s.status === 'rejected' || s.status === 'deleted') && s.reason))
+    .map(async s => {
+      try {
+        const r = await fetch('/api/status/' + encodeURIComponent(s.token));
+        if (!r.ok) return;
         const d = await r.json();
         if (d.status && d.status !== 'pending' && d.status !== s.status) {
           s.status = d.status;
           if (d.original_text) s.text = d.original_text;
           if (d.tweet_urls) s.urls = d.tweet_urls;
           if (d.reason) s.reason = d.reason;
-          localStorage.setItem('unsr_submissions', JSON.stringify(subs));
-          renderSubmissions();
-          return;
-        }
-        if (d.status === 'approved' && d.reviewed_at && !s.reviewed_at) {
+          if (d.reviewed_at) s.reviewed_at = d.reviewed_at;
+          changed = true;
+        } else if (d.status === 'approved' && d.reviewed_at && !s.reviewed_at) {
           s.reviewed_at = d.reviewed_at;
-          localStorage.setItem('unsr_submissions', JSON.stringify(subs));
-          renderSubmissions();
-          return;
-        }
-        }
-        if (d.reason && !s.reason && (d.status === 'rejected' || d.status === 'deleted')) {
+          changed = true;
+        } else if (d.reason && !s.reason && (d.status === 'rejected' || d.status === 'deleted')) {
           s.reason = d.reason;
-          localStorage.setItem('unsr_submissions', JSON.stringify(subs));
-          renderSubmissions();
-          return;
+          changed = true;
         }
-      }
-    } catch {}
+      } catch {}
+    });
+  await Promise.all(fetches);
+  if (changed) {
+    localStorage.setItem('unsr_submissions', JSON.stringify(subs));
+    renderSubmissions();
   }
 }
 
