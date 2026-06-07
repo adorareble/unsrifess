@@ -111,7 +111,7 @@ async def create_tweet(original_text, image_paths, submitted_by, chunk_count=0, 
         return dict(row)
 
 
-async def reject_tweet(tweet_id: int, admin_id: int, reason, matched_keyword=None):
+async def reject_tweet(tweet_id: int, admin_id: int, reason, matched_keyword=None, record_activity=True):
     pool = await get_pool()
     if reason is not None and isinstance(reason, str) and not reason.strip():
         reason = None
@@ -124,7 +124,7 @@ async def reject_tweet(tweet_id: int, admin_id: int, reason, matched_keyword=Non
                 "RETURNING id, status",
                 admin_id, reason, matched_keyword, tweet_id,
             )
-            if row:
+            if row and record_activity:
                 await conn.execute(
                     "INSERT INTO activity_log (admin_id, action, target_type, target_id, details) "
                     "VALUES ($1, $2, $3, $4, $5)",
@@ -133,7 +133,7 @@ async def reject_tweet(tweet_id: int, admin_id: int, reason, matched_keyword=Non
             return dict(row) if row else None
 
 
-async def approve_tweet(tweet_id: int, admin_id: int, tweet_urls):
+async def approve_tweet(tweet_id: int, admin_id: int, tweet_urls, record_activity=True):
     pool = await get_pool()
     async with pool.acquire() as conn:
         async with conn.transaction():
@@ -143,7 +143,7 @@ async def approve_tweet(tweet_id: int, admin_id: int, tweet_urls):
                 "RETURNING id, status, original_text, image_paths",
                 admin_id, json.dumps(tweet_urls), tweet_id,
             )
-            if row:
+            if row and record_activity:
                 await conn.execute(
                     "INSERT INTO activity_log (admin_id, action, target_type, target_id, details) "
                     "VALUES ($1, $2, $3, $4, NULL)",

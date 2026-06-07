@@ -153,3 +153,6 @@ class TwitterClient:
             if progress_callback:
                 progress_callback(0, 0, f"Error: {err_msg}")
             return {"success": False, "error": err_msg}
+
+
+client = TwitterClient()
