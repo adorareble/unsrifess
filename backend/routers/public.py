@@ -60,7 +60,7 @@ async def status_by_token(tracking_token: str):
             urls = json.loads(tweet["tweet_urls"]) if isinstance(tweet["tweet_urls"], str) else tweet["tweet_urls"]
             result["tweet_urls"] = urls
         if tweet["reviewed_at"]:
-            result["reviewed_at"] = str(tweet["reviewed_at"])
+            result["reviewed_at"] = tweet["reviewed_at"].strftime("%Y-%m-%dT%H:%M:%SZ")
     if tweet["reject_reason"]:
         result["reason"] = tweet["reject_reason"]
     return result

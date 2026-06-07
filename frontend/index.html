@@ -452,10 +452,16 @@ async function refreshStatuses() {
           if (d.original_text) s.text = d.original_text;
           if (d.tweet_urls) s.urls = d.tweet_urls;
           if (d.reason) s.reason = d.reason;
-          if (d.reviewed_at) s.reviewed_at = d.reviewed_at;
           localStorage.setItem('unsr_submissions', JSON.stringify(subs));
           renderSubmissions();
           return;
+        }
+        if (d.status === 'approved' && d.reviewed_at && !s.reviewed_at) {
+          s.reviewed_at = d.reviewed_at;
+          localStorage.setItem('unsr_submissions', JSON.stringify(subs));
+          renderSubmissions();
+          return;
+        }
         }
         if (d.reason && !s.reason && (d.status === 'rejected' || d.status === 'deleted')) {
           s.reason = d.reason;
