@@ -961,35 +961,6 @@ async function loadSettingsActivity() {
   }
 }
 
-async function activateAdmin(id) {
-  try { await api('/panel/api/admins/' + id + '/activate', { method: 'POST' }); loadAdminsSection(); } catch(_) { showPopup('⚠️', 'Error', 'Failed to reactivate admin', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
-}
-async function deactivateAdmin(id) {
-  showPopup('🔒', 'Deactivate Admin?', 'Deactivate admin #' + id + '?', [
-    { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
-    { text: 'Deactivate', cls: 'popup-btn-danger', fn: async () => { closePopup(); try { await api('/panel/api/admins/' + id + '/deactivate', { method: 'POST' }); loadAdminsSection(); } catch(_) { showPopup('⚠️', 'Error', 'Failed to deactivate admin', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); } } },
-  ]);
-}
-async function createAdmin() {
-  const username = document.getElementById('au').value.trim();
-  const password = document.getElementById('ap').value;
-  const displayName = document.getElementById('an').value.trim();
-  const msg = document.getElementById('adminMsg');
-  if (!username || !password || !displayName) { msg.className = 'msg err'; msg.textContent = 'All fields required'; return; }
-  try {
-    const form = new URLSearchParams();
-    form.append('username', username);
-    form.append('password', password);
-    form.append('display_name', displayName);
-    const r = await api('/panel/api/register', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
-    const d = await r.json();
-    if (d.success) {
-      document.getElementById('au').value = ''; document.getElementById('ap').value = ''; document.getElementById('an').value = '';
-      msg.className = 'msg ok'; msg.textContent = 'Admin created'; loadAdminsSection();
-    } else { msg.className = 'msg err'; msg.textContent = d.detail || 'Failed'; }
-  } catch(e) { msg.className = 'msg err'; msg.textContent = 'Connection error'; }
-}
-
 // ── Blocked Sender helpers ──
 function blockSenderPopup(ip) {
   if (!ip || ip === '-') return;

@@ -158,6 +158,17 @@
     padding: 12px; margin-bottom: 8px;
   }
   .submission-item:hover { border-color: #1d9bf0; }
+  .submission-header {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+  }
+  .submission-header .submission-text { margin-bottom: 0; flex: 1; min-width: 0; }
+  .submission-del {
+    background: none; border: none; color: #71767b; cursor: pointer;
+    font-size: 0.9rem; padding: 4px; border-radius: 6px; line-height: 1;
+    transition: .2s; flex-shrink: 0; opacity: 0.4;
+  }
+  .submission-item:hover .submission-del { opacity: 1; }
+  .submission-del:hover { color: #f4212e; background: rgba(244,33,46,0.1); }
   .submission-text {
     font-size: 0.85rem; color: #e7e9ea; margin-bottom: 6px;
     white-space: pre-wrap; word-break: break-word;
@@ -196,6 +207,7 @@
   .popup-btn-primary { background: #1d9bf0; }
   .popup-btn-danger { background: #f4212e; }
   .popup-btn-ghost { background: #2a2a38; color: #e7e9ea; }
+  .popup-actions { display: flex; gap: 8px; justify-content: center; }
 
   @media (max-width: 480px) {
     .container { padding: 12px; }
@@ -267,12 +279,12 @@
   <div class="submissions" id="submissionsSection"></div>
 </div>
 
-<div class="popup-overlay hidden" id="popupOverlay" onclick="closePopup()">
+<div class="popup-overlay hidden" id="popupOverlay" onclick="if(event.target===this)closePopup()">
   <div class="popup-card" onclick="event.stopPropagation()">
     <div class="popup-icon" id="popupIcon"></div>
     <div class="popup-title" id="popupTitle"></div>
     <div class="popup-msg" id="popupMsg"></div>
-    <button class="popup-btn popup-btn-primary" id="popupBtn" onclick="closePopup()">OK</button>
+    <div class="popup-actions" id="popupActions"></div>
   </div>
 </div>
 
@@ -282,7 +294,6 @@ const MAX_IMAGES = 4;
 const MAX_SUBMISSIONS = 10;
 let selectedFiles = [];
 let rateLimited = false;
-let rateResetAt = null;
 let isDone = false;
 
 const tweetText = document.getElementById('tweetText');
@@ -293,17 +304,50 @@ const loadingOverlay = document.getElementById('loadingOverlay');
 const progressBar = document.getElementById('progressBar');
 
 // ── Popup ──
-function showPopup(icon, title, msg, btnText, btnClass) {
+function showPopup(icon, title, msg, buttons) {
   document.getElementById('popupIcon').textContent = icon;
+  document.getElementById('popupIcon').style.display = icon ? '' : 'none';
   document.getElementById('popupTitle').textContent = title;
+  document.getElementById('popupTitle').style.display = title ? '' : 'none';
   document.getElementById('popupMsg').innerHTML = msg;
-  const btn = document.getElementById('popupBtn');
-  btn.textContent = btnText || 'OK';
-  btn.className = 'popup-btn ' + (btnClass || 'popup-btn-primary');
+  const actions = document.getElementById('popupActions');
+  actions.innerHTML = '';
+  (buttons || [{ text: 'OK', cls: 'popup-btn-primary', fn: closePopup }]).forEach(b => {
+    const btn = document.createElement('button');
+    btn.className = 'popup-btn ' + (b.cls || 'popup-btn-primary');
+    btn.textContent = b.text;
+    btn.onclick = b.fn;
+    actions.appendChild(btn);
+  });
   document.getElementById('popupOverlay').classList.remove('hidden');
 }
 function closePopup() {
   document.getElementById('popupOverlay').classList.add('hidden');
+}
+
+async function deleteTweet(token) {
+  showPopup('🗑️', 'Hapus dari X?', 'Tweet ini akan dihapus dari X dan tidak bisa dikembalikan.', [
+    { text: 'Batal', cls: 'popup-btn-ghost', fn: closePopup },
+    { text: 'Hapus', cls: 'popup-btn-danger', fn: async () => {
+      closePopup();
+      try {
+        const r = await fetch('/api/tweets/' + token + '/delete', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) {
+          const subs = getSubmissions().map(s =>
+            s.token === token ? { ...s, status: 'deleted', reason: 'deleted by user' } : s
+          );
+          localStorage.setItem('unsr_submissions', JSON.stringify(subs));
+          renderSubmissions();
+          refreshStatuses();
+        } else {
+          showPopup('⚠️', 'Gagal', d.detail || 'Gagal menghapus tweet.');
+        }
+      } catch(e) {
+        showPopup('⚠️', 'Gagal', 'Gagal menghapus tweet.');
+      }
+    } },
+  ]);
 }
 
 // ── Submissions (localStorage) ──
@@ -336,9 +380,15 @@ function renderSubmissions() {
     const reasonText = (s.status === 'rejected' || s.status === 'deleted') && s.reason
       ? '<span class="reason-badge">' + escHtml(s.reason) + '</span>' : '';
     const extraHtml = reasonText || tweetLink || '';
+    const delBtn = s.status === 'approved'
+      ? '<button class="submission-del" onclick="deleteTweet(\'' + s.token + '\')" title="Hapus dari X">🗑️</button>'
+      : '';
     html += `
       <div class="submission-item">
-        <div class="submission-text">${escHtml(s.text)}</div>
+        <div class="submission-header">
+          <div class="submission-text">${escHtml(s.text)}</div>
+          ${delBtn}
+        </div>
         <div class="submission-meta" style="margin-bottom:2px">
           <span>${timeStr}</span>
         </div>
@@ -653,7 +703,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   } catch (err) {
     hideLoading();
     submitBtn.disabled = false;
-    showPopup('⚠️', 'Connection Error', 'Check your internet and try again.', 'OK', 'popup-btn-ghost');
+    showPopup('⚠️', 'Connection Error', 'Check your internet and try again.', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
     showDone();
   }
 });

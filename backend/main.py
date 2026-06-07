@@ -215,6 +215,34 @@ async def public_serve_image(filename: str):
     return FileResponse(file_path)
 
 
+@app.post("/api/tweets/{tracking_token}/delete")
+async def user_delete_tweet(tracking_token: str):
+    tweet = await get_tweet_by_token(tracking_token)
+    if not tweet:
+        raise HTTPException(status_code=404, detail="Submission not found")
+    if tweet["status"] != "approved":
+        raise HTTPException(status_code=400, detail="Hanya tweet yang sudah terkirim bisa dihapus")
+
+    tweet_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
+
+    for url in tweet_urls:
+        try:
+            tid = url.rstrip("/").split("/")[-1]
+            await client._client.delete_tweet(tid)
+            await asyncio.sleep(1)
+        except Exception:
+            pass
+
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE tweets SET status = 'deleted', reject_reason = 'deleted by user' WHERE id = $1",
+            tweet["id"],
+        )
+
+    return {"success": True}
+
+
 @app.post("/api/tweet-sync")
 async def tweet_sync(
     request: Request,
