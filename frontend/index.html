@@ -419,11 +419,13 @@ function renderSubmissions() {
       <div class="submission-item">
         <div class="submission-header">
           <div class="submission-text">${escHtml(s.text)}</div>
-          ${delBtn}
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+            ${delInfo}
+            ${delBtn}
+          </div>
         </div>
         <div class="submission-meta" style="margin-bottom:2px">
           <span>${timeStr}</span>
-          ${delInfo}
         </div>
         <div class="submission-meta">
           <span class="submission-status ${statusClass}">${s.status}</span>
