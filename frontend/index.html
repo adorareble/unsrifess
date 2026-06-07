@@ -284,7 +284,7 @@
   </div>
 
   <div class="support-section">
-    <p>Keluh kesah lo gratis, kopi admin yang bayar 😅<br>— dukung kami di <a href="https://saweria.co/unsrifess" target="_blank" rel="noopener">sini</a></p>
+    <p>Your rants are free, but our coffee isn't 😅<br>— support us <a href="https://saweria.co/unsrifess" target="_blank" rel="noopener">here</a></p>
   </div>
   <div class="submissions" id="submissionsSection"></div>
 </div>
@@ -350,13 +350,13 @@ function deleteRemaining(reviewedAt) {
   if (left <= 0) return '';
   const m = Math.floor(left / 60000);
   const s = Math.floor((left % 60000) / 1000);
-  return (m > 0 ? m + 'm' : s + 'd') + ' tersisa';
+  return (m > 0 ? m + 'm' : s + 's') + ' left';
 }
 
 async function deleteTweet(token) {
-  showPopup('🗑️', 'Hapus dari X?', 'Tweet ini akan dihapus dari X dan tidak bisa dikembalikan.', [
-    { text: 'Batal', cls: 'popup-btn-ghost', fn: closePopup },
-    { text: 'Hapus', cls: 'popup-btn-danger', fn: async () => {
+  showPopup('🗑️', 'Delete from X?', 'This tweet will be deleted from X and cannot be restored.', [
+    { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
+    { text: 'Delete', cls: 'popup-btn-danger', fn: async () => {
       closePopup();
       try {
         const r = await fetch('/api/tweets/' + token + '/delete', { method: 'POST' });
@@ -369,10 +369,10 @@ async function deleteTweet(token) {
           renderSubmissions();
           refreshStatuses();
         } else {
-          showPopup('⚠️', 'Gagal', d.detail || 'Gagal menghapus tweet.');
+          showPopup('⚠️', 'Failed', d.detail || 'Failed to delete tweet.');
         }
       } catch(e) {
-        showPopup('⚠️', 'Gagal', 'Gagal menghapus tweet.');
+        showPopup('⚠️', 'Failed', 'Failed to delete tweet.');
       }
     } },
   ]);
@@ -383,9 +383,9 @@ function getSubmissions() {
   try { return JSON.parse(localStorage.getItem('unsr_submissions') || '[]'); }
   catch { return []; }
 }
-function saveSubmission(token, text, status, urls, reason) {
+function saveSubmission(token, text, status, urls, reason, reviewed_at) {
   const subs = getSubmissions();
-  subs.unshift({ token, text, date: new Date().toISOString(), status: status || 'pending', urls: urls || null, reason: reason || null });
+  subs.unshift({ token, text, date: new Date().toISOString(), status: status || 'pending', urls: urls || null, reason: reason || null, reviewed_at: reviewed_at || null });
   if (subs.length > MAX_SUBMISSIONS) subs.length = MAX_SUBMISSIONS;
   localStorage.setItem('unsr_submissions', JSON.stringify(subs));
 }
@@ -400,7 +400,7 @@ function renderSubmissions() {
   for (const s of subs) {
     const statusClass = 'status-' + s.status;
     const date = new Date(s.date);
-    const timeStr = date.toLocaleDateString('id-ID', { year: 'numeric', day: 'numeric', month: 'short' })
+    const timeStr = date.toLocaleDateString('en-US', { year: 'numeric', day: 'numeric', month: 'short' })
       + ' ' + String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0') + ':' + String(date.getSeconds()).padStart(2, '0');
     const tweetLink = (s.status === 'approved' && s.urls && s.urls.length)
       ? '<a href="' + s.urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>'
@@ -410,7 +410,7 @@ function renderSubmissions() {
     const extraHtml = reasonText || tweetLink || '';
     const deletable = s.status === 'approved' && canDelete(s.reviewed_at);
     const delBtn = deletable
-      ? '<button class="submission-del" onclick="deleteTweet(\'' + s.token + '\')" title="Hapus dari X">🗑️</button>'
+      ? '<button class="submission-del" onclick="deleteTweet(\'' + s.token + '\')" title="Delete from X">🗑️</button>'
       : '';
     const delInfo = s.status === 'approved' && s.reviewed_at
       ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>'
@@ -708,7 +708,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
     const result = document.getElementById('result');
     if (data.success) {
       if (data.tracking_token) {
-        saveSubmission(data.tracking_token, text, data.status, data.tweet_url ? [data.tweet_url] : null, data.reason);
+        saveSubmission(data.tracking_token, text, data.status, data.tweet_url ? [data.tweet_url] : null, data.reason, data.reviewed_at);
       }
 
       if (data.status === 'rejected') {

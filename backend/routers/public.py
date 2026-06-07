@@ -81,12 +81,12 @@ async def user_delete_tweet(tracking_token: str):
     if not tweet:
         raise HTTPException(status_code=404, detail="Submission not found")
     if tweet["status"] != "approved":
-        raise HTTPException(status_code=400, detail="Hanya tweet yang sudah terkirim bisa dihapus")
+        raise HTTPException(status_code=400, detail="Only approved tweets can be deleted")
 
     if tweet["reviewed_at"]:
         elapsed = datetime.utcnow() - tweet["reviewed_at"]
         if elapsed > timedelta(minutes=5):
-            raise HTTPException(status_code=400, detail="Batas waktu hapus 5 menit sudah lewat")
+            raise HTTPException(status_code=400, detail="5-minute deletion window has passed")
 
     tweet_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
 
@@ -161,7 +161,7 @@ async def tweet_sync(
             result = await client.post_tweet(text.strip(), saved_paths)
             if result and result.get("success"):
                 await approve_tweet(tweet["id"], None, result["urls"], record_activity=False)
-                return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "tracking_token": tracking_token}
+                return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "tracking_token": tracking_token, "reviewed_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
 
         return {"success": True, "status": "pending", "message": "Your confession has been submitted for review.", "tracking_token": tracking_token}
     except Exception as e:
