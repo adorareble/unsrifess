@@ -414,7 +414,7 @@ async function loadStats() {
       <div class="stat-card"><div class="num pending">${d.pending_count}</div><div class="label">Pending</div></div>
       <div class="stat-card"><div class="num approved">${d.approved_today}</div><div class="label">Approved Today</div></div>
       <div class="stat-card"><div class="num rejected">${d.rejected_today}</div><div class="label">Rejected Today</div></div>
-      <div class="stat-card"><div class="num deleted">${d.deleted_count}</div><div class="label">Deleted</div></div>
+
       <div class="stat-card"><div class="num total">${d.total_tweets}</div><div class="label">Total Tweets</div></div>
     `;
     document.getElementById('queueBadge').textContent = d.pending_count;
