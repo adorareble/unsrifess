@@ -54,6 +54,7 @@
   .stat-card .num.approved { color: #00ba7c; }
   .stat-card .num.rejected { color: #f4212e; }
   .stat-card .num.total { color: #1d9bf0; }
+  .stat-card .num.deleted { color: #71767b; }
   .stat-card .num.online { color: #00ba7c; }
   .stat-card .num.offline { color: #f4212e; }
   .stat-card.clickable { cursor: pointer; }
@@ -413,6 +414,7 @@ async function loadStats() {
       <div class="stat-card"><div class="num pending">${d.pending_count}</div><div class="label">Pending</div></div>
       <div class="stat-card"><div class="num approved">${d.approved_today}</div><div class="label">Approved Today</div></div>
       <div class="stat-card"><div class="num rejected">${d.rejected_today}</div><div class="label">Rejected Today</div></div>
+      <div class="stat-card"><div class="num deleted">${d.deleted_count}</div><div class="label">Deleted</div></div>
       <div class="stat-card"><div class="num total">${d.total_tweets}</div><div class="label">Total Tweets</div></div>
     `;
     document.getElementById('queueBadge').textContent = d.pending_count;
@@ -497,7 +499,7 @@ function filenameFromPath(p) {
 async function loadQueue() {
   const el = document.getElementById('tabQueue');
   try {
-    const r = await api('/panel/api/tweets/pending?page=' + queuePage + '&limit=20');
+    const r = await api('/panel/api/tweets/pending?page=' + queuePage + '&limit=10');
     const d = await r.json();
     const tweets = d.tweets || [];
     document.getElementById('queueBadge').textContent = tweets.length;
@@ -597,7 +599,7 @@ async function loadHistory() {
   const status = document.getElementById('hf-status')?.value || '';
   const search = document.getElementById('hf-search')?.value || '';
 
-  let params = 'page=' + historyPage + '&limit=30';
+  let params = 'page=' + historyPage + '&limit=10';
   if (status) params += '&status=' + status;
   if (search) params += '&search=' + encodeURIComponent(search);
 
@@ -927,7 +929,7 @@ async function loadSettingsActivity() {
   try {
     const params = new URLSearchParams();
     params.set('page', settingsActivityPage);
-    params.set('limit', '50');
+    params.set('limit', '10');
     const actionFilter = document.getElementById('af-action');
     if (actionFilter && actionFilter.value) params.set('action', actionFilter.value);
 

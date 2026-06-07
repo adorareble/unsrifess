@@ -328,10 +328,12 @@ async def get_stats():
             "SELECT COUNT(*) FROM tweets WHERE status = 'rejected' AND reviewed_at::date = CURRENT_DATE"
         )
         total_tweets = await conn.fetchval("SELECT COUNT(*) FROM tweets")
+        deleted_count = await conn.fetchval("SELECT COUNT(*) FROM tweets WHERE status = 'deleted'")
         return {
             "pending_count": pending,
             "approved_today": approved_today,
             "rejected_today": rejected_today,
+            "deleted_count": deleted_count,
             "total_tweets": total_tweets,
         }
 
