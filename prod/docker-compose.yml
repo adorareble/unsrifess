@@ -15,6 +15,7 @@ services:
     volumes:
       - temp_images:/app/temp_images
       - ./twitter_state.json:/app/twitter_state.json
+      - ../frontend:/app/frontend
 
   postgres:
     image: postgres:16-alpine
