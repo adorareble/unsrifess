@@ -713,7 +713,7 @@ async function showUserTweets(userId) {
   if (!userTweetsPages[userId]) userTweetsPages[userId] = 1;
   const page = userTweetsPages[userId];
   try {
-    const r = await api('/panel/api/x-users/' + userId + '/tweets?page=' + page + '&limit=10');
+    const r = await api('/panel/api/x-users/' + userId + '/tweets?page=' + page + '&limit=5');
     const d = await r.json();
     const tweets = d.tweets || [];
     const total = d.total || 0;
