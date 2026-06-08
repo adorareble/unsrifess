@@ -160,8 +160,8 @@ async def panel_pending_tweets(
     _: dict = Depends(get_current_admin),
 ):
     offset = (page - 1) * limit
-    tweets = await get_pending_tweets(limit, offset)
-    return {"tweets": tweets, "total": len(tweets)}
+    result = await get_pending_tweets(limit, offset)
+    return result
 
 
 @panel_router.get("/panel/api/images/{filename}")

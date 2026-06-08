@@ -178,6 +178,11 @@ async def get_tweet(tweet_id: int):
 async def get_pending_tweets(limit=20, offset=0):
     pool = await get_pool()
     async with pool.acquire() as conn:
+        total_row = await conn.fetchrow(
+            "SELECT COUNT(*) FROM tweets t WHERE t.status = 'pending'"
+        )
+        total = total_row["count"]
+
         rows = await conn.fetch(
             "SELECT t.*, a.display_name AS reviewer_name FROM tweets t "
             "LEFT JOIN admins a ON t.reviewed_by = a.id "
@@ -185,7 +190,7 @@ async def get_pending_tweets(limit=20, offset=0):
             "ORDER BY t.submitted_at DESC LIMIT $1 OFFSET $2",
             limit, offset,
         )
-        return [dict(r) for r in rows]
+        return {"tweets": [dict(r) for r in rows], "total": total}
 
 
 async def get_tweets(status=None, admin_id=None, search=None, from_date=None, to_date=None, limit=20, offset=0):

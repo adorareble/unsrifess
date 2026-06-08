@@ -501,7 +501,7 @@ async function loadQueue() {
     const r = await api('/panel/api/tweets/pending?page=' + queuePage + '&limit=10');
     const d = await r.json();
     const tweets = d.tweets || [];
-    document.getElementById('queueBadge').textContent = tweets.length;
+    document.getElementById('queueBadge').textContent = d.total || tweets.length;
 
     if (tweets.length === 0) {
       el.innerHTML = '<div class="empty-state">No pending tweets</div>';
@@ -534,6 +534,14 @@ async function loadQueue() {
         + '</div>'
         + '<div class="meta">' + metaParts.join(' &middot; ') + '</div></div>';
     }
+
+    const totalPages = Math.ceil((d.total || tweets.length) / 10);
+    html += '<div class="pagination">'
+      + '<button onclick="queuePage--;loadQueue()"' + (queuePage <= 1 ? ' disabled' : '') + '>Prev</button>'
+      + '<span class="page-info">Page ' + queuePage + ' of ' + totalPages + '</span>'
+      + '<button onclick="queuePage++;loadQueue()"' + (queuePage >= totalPages ? ' disabled' : '') + '>Next</button>'
+      + '</div>';
+
     el.innerHTML = html;
   } catch(e) {
     el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load queue</div>';
@@ -653,8 +661,8 @@ async function loadHistory() {
       + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
       + '<div class="pagination">'
       + '<button onclick="historyPage--;loadHistory()"' + (historyPage <= 1 ? ' disabled' : '') + '>Prev</button>'
-      + '<span class="page-info">Page ' + historyPage + '</span>'
-      + '<button onclick="historyPage++;loadHistory()">Next</button>'
+      + '<span class="page-info">Page ' + historyPage + ' of ' + (d.total ? Math.ceil(d.total / 10) : 1) + '</span>'
+      + '<button onclick="historyPage++;loadHistory()"' + (d.total && historyPage >= Math.ceil(d.total / 10) ? ' disabled' : '') + '>Next</button>'
       + '</div>';
 
     el.innerHTML = html;
@@ -951,7 +959,7 @@ async function loadSettingsActivity() {
         + '<td>' + (a.details ? escHtml(a.details) : '-') + '</td>'
         + '<td>' + fmtTime(a.created_at) + '</td></tr>';
     }
-    const totalPages = Math.ceil(d.total / 50);
+    const totalPages = Math.ceil(d.total / 10);
     el.innerHTML = '<div class="table-wrap"><table style="font-size:0.8rem"><thead><tr><th>Admin</th><th>Action</th><th>Target</th><th>Details</th><th>Time</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     pagination.innerHTML = '<button onclick="settingsActivityPage--;loadSettingsActivity()"' + (settingsActivityPage <= 1 ? ' disabled' : '') + '>Prev</button>'
       + '<span class="page-info">Page ' + settingsActivityPage + ' of ' + totalPages + '</span>'
