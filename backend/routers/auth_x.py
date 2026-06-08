@@ -100,6 +100,7 @@ async def x_callback(request: Request):
             mutual_result = await client.check_mutual(screen_name)
             we_follow = mutual_result.get("we_follow", False)
             follows_us = mutual_result.get("follows_us", False)
+            is_mutual = we_follow and follows_us
             await update_follow_status(x_user_id, we_follow, follows_us)
 
             token = create_user_token(x_user_id, screen_name, is_mutual)
@@ -141,6 +142,8 @@ async def x_me(request: Request):
         "x_user_id": x_user_id,
         "screen_name": payload.get("screen_name"),
         "is_mutual": x_user["is_mutual"] if x_user else False,
+        "we_follow": x_user["we_follow"] if x_user else False,
+        "follows_us": x_user["follows_us"] if x_user else False,
     }
 
 
@@ -195,5 +198,6 @@ async def x_refresh_mutual(request: Request):
         "success": True,
         "is_mutual": is_mutual,
         "we_follow": we_follow,
+        "follows_us": follows_us,
         "token": new_token,
     }

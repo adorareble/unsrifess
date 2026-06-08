@@ -142,12 +142,14 @@
   .user-card .info { flex: 1; min-width: 0; }
   .user-card .info .name { font-size: 0.9rem; font-weight: 600; }
   .user-card .info .screen-name { font-size: 0.8rem; color: #71767b; }
-  .user-card .mutual-badge {
+  .user-card .status-badge {
     display: inline-block; padding: 2px 10px; border-radius: 10px;
-    font-size: 0.7rem; font-weight: 600;
+    font-size: 0.7rem; font-weight: 600; margin-right: 4px;
   }
-  .mutual-badge.yes { background: rgba(0,186,124,0.12); color: #00ba7c; }
-  .mutual-badge.no { background: rgba(244,33,46,0.12); color: #f4212e; }
+  .status-badge.yes { background: rgba(0,186,124,0.12); color: #00ba7c; }
+  .status-badge.no { background: rgba(244,33,46,0.12); color: #f4212e; }
+  .status-badge.na { background: rgba(113,118,123,0.12); color: #71767b; }
+  .user-card .action-row { margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
   .login-cta {
     text-align: center; padding: 60px 20px;
@@ -597,11 +599,18 @@ async function loadUser() {
     const d = await r.json();
     const userArea = document.getElementById('userArea');
     userArea.className = 'user-card';
+    const wfClass = d.we_follow ? 'yes' : 'no';
+    const wfText = d.we_follow ? 'Following ✓' : 'Not Following';
+    const fbClass = d.we_follow ? (d.follows_us ? 'yes' : 'no') : 'na';
+    const fbText = d.we_follow ? (d.follows_us ? 'Followed Back ✓' : 'Not Followed Back') : '—';
     userArea.innerHTML = ''
       + '<div class="avatar"><img src="https://unavatar.io/twitter/' + encodeURIComponent(d.screen_name) + '" onerror="this.parentElement.innerHTML=\'\'"></div>'
-      + '<div class="info"><div class="name">@' + escHtml(d.screen_name) + '</div></div>'
-      + '<span class="mutual-badge ' + (d.is_mutual ? 'yes' : 'no') + '">' + (d.is_mutual ? 'Mutual ✓' : 'Not Mutual ✗') + '</span>'
-      + '<button onclick="logout()" style="background:transparent;border:1px solid #2a2a38;color:#e7e9ea;padding:4px 10px;border-radius:10px;cursor:pointer;font-size:0.75rem">Logout</button>';
+      + '<div class="info"><div class="name">@' + escHtml(d.screen_name) + '</div>'
+      + '<div class="action-row">'
+      + '<span class="status-badge ' + wfClass + '">' + wfText + '</span>'
+      + '<span class="status-badge ' + fbClass + '">' + fbText + '</span>'
+      + '<button onclick="logout()" style="background:transparent;border:1px solid #2a2a38;color:#e7e9ea;padding:4px 10px;border-radius:10px;cursor:pointer;font-size:0.75rem">Logout</button>'
+      + '</div></div>';
     document.getElementById('loginArea').classList.add('hidden');
     userArea.classList.remove('hidden');
 
@@ -613,8 +622,9 @@ async function loadUser() {
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
       const sm = document.getElementById('statusMsg');
-      sm.querySelector('div').textContent = 'Not followed back';
-      sm.querySelector('p').innerHTML = 'Make sure you follow @unsrifess and they follow you back.<br><button class="btn btn-primary" style="margin-top:8px;padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+      const reason = !d.we_follow ? 'You are not following @unsrifess.' : '@unsrifess has not followed you back yet.';
+      sm.querySelector('div').textContent = reason;
+      sm.querySelector('p').innerHTML = 'Complete the requirements above to submit confessions.<br><button class="btn btn-primary" style="margin-top:8px;padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
       sm.classList.remove('hidden');
     }
   } catch { localStorage.removeItem('x_token'); }
