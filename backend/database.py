@@ -417,3 +417,45 @@ async def get_peak_hours():
             "ORDER BY day, hour"
         )
         return [dict(r) for r in rows]
+
+
+async def upsert_x_user(x_user_id, screen_name, name, avatar_url, access_token, refresh_token):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "INSERT INTO x_users (x_user_id, screen_name, name, avatar_url, access_token, refresh_token, last_login_at) "
+            "VALUES ($1, $2, $3, $4, $5, $6, NOW()) "
+            "ON CONFLICT (x_user_id) DO UPDATE SET "
+            "screen_name = EXCLUDED.screen_name, name = EXCLUDED.name, avatar_url = EXCLUDED.avatar_url, "
+            "access_token = EXCLUDED.access_token, refresh_token = EXCLUDED.refresh_token, last_login_at = NOW() "
+            "RETURNING id, x_user_id, screen_name, is_mutual",
+            x_user_id, screen_name, name, avatar_url, access_token, refresh_token,
+        )
+        return dict(row)
+
+
+async def update_mutual_status(x_user_id: str, is_mutual: bool):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE x_users SET is_mutual = $1 WHERE x_user_id = $2",
+            is_mutual, x_user_id,
+        )
+
+
+async def get_x_user_by_id(x_user_id: str):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT * FROM x_users WHERE x_user_id = $1", x_user_id
+        )
+        return dict(row) if row else None
+
+
+async def get_x_users():
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT * FROM x_users ORDER BY created_at DESC"
+        )
+        return [dict(r) for r in rows]
