@@ -437,17 +437,17 @@ async function loadStats() {
     const statusEl = document.getElementById('settingsOnline');
     if (statusEl) {
       statusEl.innerHTML = d.online ? 'Online' : 'Offline';
-      statusEl.className = 'num ' + (d.online ? 'online' : 'offline');
+      statusEl.className = 'badge-' + (d.online ? 'on' : 'off');
     }
     const bypassEl = document.getElementById('settingsBypass');
     if (bypassEl) {
       bypassEl.innerHTML = d.bypass ? 'Bypass ON' : 'Bypass OFF';
-      bypassEl.className = 'num ' + (d.bypass ? 'online' : 'offline');
+      bypassEl.className = 'badge-' + (d.bypass ? 'on' : 'off');
     }
     const bypassMutualEl = document.getElementById('settingsBypassMutual');
     if (bypassMutualEl) {
       bypassMutualEl.innerHTML = d.bypass_mutual ? 'BM ON' : 'BM OFF';
-      bypassMutualEl.className = 'num ' + (d.bypass_mutual ? 'online' : 'offline');
+      bypassMutualEl.className = 'badge-' + (d.bypass_mutual ? 'on' : 'off');
     }
   } catch(_) {}
 
