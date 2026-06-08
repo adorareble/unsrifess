@@ -602,7 +602,6 @@ async function checkStatus() {
     } else {
       dot.className = 'status-dot online';
       text.textContent = 'Online';
-      if (!isDone) document.getElementById('composeArea').classList.remove('hidden');
       document.getElementById('statusMsg').classList.add('hidden');
       rateLimited = false;
       checkSubmitReady();
@@ -695,9 +694,9 @@ function resetForm() {
   validateMsg.className = 'validate-msg';
   validateMsg.textContent = '';
   tweetText.classList.remove('error');
-  document.getElementById('composeArea').classList.remove('hidden');
   document.getElementById('doneArea').classList.add('hidden');
   checkSubmitReady();
+  loadUser();
 }
 
 document.getElementById('submitBtn').addEventListener('click', async () => {
