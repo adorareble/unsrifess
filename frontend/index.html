@@ -606,11 +606,13 @@ async function loadUser() {
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
       const sm = document.getElementById('statusMsg');
-      sm.querySelector('div').textContent = 'Almost there!';
-      sm.querySelector('p').innerHTML = 'To submit confessions you need:<br>'
-        + '1. Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X<br>'
-        + '2. Be followed back by @unsrifess<br><br>'
-        + '<button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+      if (!d.we_follow) {
+        sm.querySelector('div').textContent = 'Follow @unsrifess first';
+        sm.querySelector('p').innerHTML = 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+      } else {
+        sm.querySelector('div').textContent = 'Waiting for follow back\u2026';
+        sm.querySelector('p').innerHTML = 'Make sure @unsrifess follows you back.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+      }
       sm.classList.remove('hidden');
     }
   } catch { localStorage.removeItem('x_token'); }
@@ -632,11 +634,13 @@ async function refreshMutual(btn) {
         loadSubmissions();
       } else {
         const sm = document.getElementById('statusMsg');
-        sm.querySelector('div').textContent = 'Almost there!';
-        sm.querySelector('p').innerHTML = 'To submit confessions you need:<br>'
-          + '1. Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X<br>'
-          + '2. Be followed back by @unsrifess<br><br>'
-          + '<button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+        if (!d.we_follow) {
+          sm.querySelector('div').textContent = 'Follow @unsrifess first';
+          sm.querySelector('p').innerHTML = 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+        } else {
+          sm.querySelector('div').textContent = 'Waiting for follow back\u2026';
+          sm.querySelector('p').innerHTML = 'Make sure @unsrifess follows you back.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+        }
         btn.disabled = false;
       }
     }
