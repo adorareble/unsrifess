@@ -8,7 +8,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 
-from database import upsert_x_user, update_mutual_status
+from database import upsert_x_user, update_follow_status
 from twitter_client import client
 from auth import create_user_token
 
@@ -98,8 +98,9 @@ async def x_callback(request: Request):
             )
 
             mutual_result = await client.check_mutual(screen_name)
-            is_mutual = mutual_result.get("is_mutual", False) if "error" not in mutual_result else False
-            await update_mutual_status(x_user_id, is_mutual)
+            we_follow = mutual_result.get("we_follow", False)
+            follows_us = mutual_result.get("follows_us", False)
+            await update_follow_status(x_user_id, we_follow, follows_us)
 
             token = create_user_token(x_user_id, screen_name, is_mutual)
             html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
@@ -166,7 +167,7 @@ async def x_my_submissions(request: Request):
 @auth_x_router.post("/api/auth/refresh-mutual")
 async def x_refresh_mutual(request: Request):
     from auth import decode_token, create_user_token
-    from database import get_x_user_by_id, update_mutual_status
+    from database import get_x_user_by_id, update_follow_status
     auth = request.headers.get("Authorization", "")
     token = ""
     if auth.startswith("Bearer "):
@@ -184,9 +185,10 @@ async def x_refresh_mutual(request: Request):
         return {"success": False, "error": "Missing screen_name"}
 
     mutual_result = await client.check_mutual(screen_name)
-    is_mutual = mutual_result.get("is_mutual", False) if "error" not in mutual_result else False
     we_follow = mutual_result.get("we_follow", False)
-    await update_mutual_status(x_user_id, is_mutual)
+    follows_us = mutual_result.get("follows_us", False)
+    is_mutual = we_follow and follows_us
+    await update_follow_status(x_user_id, we_follow, follows_us)
 
     new_token = create_user_token(x_user_id, screen_name, is_mutual)
     return {

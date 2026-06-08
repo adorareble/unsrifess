@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS x_users (
     access_token TEXT,
     refresh_token TEXT,
     is_mutual   BOOLEAN DEFAULT false,
+    we_follow   BOOLEAN DEFAULT false,
+    follows_us  BOOLEAN DEFAULT false,
     created_at  TIMESTAMP DEFAULT NOW(),
     last_login_at TIMESTAMP DEFAULT NOW()
 );

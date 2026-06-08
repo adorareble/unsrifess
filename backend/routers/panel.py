@@ -14,7 +14,7 @@ from database import (
     add_keyword, remove_keyword, get_keywords,
     log_activity, get_activity,
     get_setting, set_setting, get_peak_hours,
-    get_x_users, get_x_user_by_id, update_mutual_status,
+    get_x_users, get_x_user_by_id, update_follow_status,
 )
 from auth import (
     hash_password, verify_password, create_token,
@@ -297,12 +297,12 @@ async def panel_follow_user(
 ):
     pool = await get_pool()
     async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT x_user_id, screen_name FROM x_users WHERE id = $1", user_id)
+        row = await conn.fetchrow("SELECT x_user_id, screen_name, we_follow FROM x_users WHERE id = $1", user_id)
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
     result = await client.follow_user(row["x_user_id"])
     if result.get("success"):
-        await update_mutual_status(row["x_user_id"], True)
+        await update_follow_status(row["x_user_id"], row["we_follow"], True)
         await log_activity(admin["id"], "follow_user", "x_user", str(user_id), f"Followed @{row['screen_name']}")
         return {"success": True}
     return {"success": False, "error": result.get("error", "Follow failed")}
@@ -315,12 +315,12 @@ async def panel_unfollow_user(
 ):
     pool = await get_pool()
     async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT x_user_id, screen_name FROM x_users WHERE id = $1", user_id)
+        row = await conn.fetchrow("SELECT x_user_id, screen_name, we_follow FROM x_users WHERE id = $1", user_id)
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
     result = await client.unfollow_user(row["x_user_id"])
     if result.get("success"):
-        await update_mutual_status(row["x_user_id"], False)
+        await update_follow_status(row["x_user_id"], row["we_follow"], False)
         await log_activity(admin["id"], "unfollow_user", "x_user", str(user_id), f"Unfollowed @{row['screen_name']}")
         return {"success": True}
     return {"success": False, "error": result.get("error", "Unfollow failed")}
@@ -345,17 +345,18 @@ async def panel_sync_all_users(
 
         sem = asyncio.Semaphore(5)
 
-        async def sync_one(row):
-            async with sem:
-                try:
-                    result = await client.check_mutual(row["screen_name"])
-                    is_mutual = result.get("is_mutual", False)
-                    await update_mutual_status(row["x_user_id"], is_mutual)
-                    return "error" not in result
-                except Exception as e:
-                    logging.warning(f"sync_one({row['screen_name']}) failed: {e}")
-                    await update_mutual_status(row["x_user_id"], False)
-                    return False
+            async def sync_one(row):
+                async with sem:
+                    try:
+                        result = await client.check_mutual(row["screen_name"])
+                        we_follow = result.get("we_follow", False)
+                        follows_us = result.get("follows_us", False)
+                        await update_follow_status(row["x_user_id"], we_follow, follows_us)
+                        return "error" not in result
+                    except Exception as e:
+                        logging.warning(f"sync_one({row['screen_name']}) failed: {e}")
+                        await update_follow_status(row["x_user_id"], False, False)
+                        return False
 
         results = await asyncio.gather(*[sync_one(r) for r in rows])
         synced = sum(1 for r in results if r)

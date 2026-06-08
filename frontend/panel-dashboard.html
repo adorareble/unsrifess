@@ -1002,8 +1002,10 @@ async function loadUsers() {
 
     let rows = '';
     for (const u of users) {
-      const mutualClass = u.is_mutual ? 'status-approved' : 'status-rejected';
-      const mutualText = u.is_mutual ? 'Mutual' : 'Not Mutual';
+      const followsClass = u.we_follow ? 'status-approved' : 'status-rejected';
+      const followsText = u.we_follow ? 'Yes' : 'No';
+      const fbClass = u.follows_us ? 'status-approved' : 'status-rejected';
+      const fbText = u.we_follow ? (u.follows_us ? 'Yes' : 'No') : '—';
       rows += '<tr>'
         + '<td><div style="display:flex;align-items:center;gap:8px">'
         + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2a2a38;flex-shrink:0">'
@@ -1012,10 +1014,11 @@ async function loadUsers() {
         + '<a href="https://x.com/' + encodeURIComponent(u.screen_name) + '" target="_blank" style="color:#1d9bf0">@' + escHtml(u.screen_name) + '</a>'
         + '</div></td>'
         + '<td>' + escHtml(u.name || '-') + '</td>'
-        + '<td><span class="status-badge ' + mutualClass + '">' + mutualText + '</span></td>'
+        + '<td><span class="status-badge ' + followsClass + '">' + followsText + '</span></td>'
+        + '<td><span class="status-badge ' + fbClass + '">' + fbText + '</span></td>'
         + '<td>' + fmtTime(u.last_login_at) + '</td>'
         + '<td>'
-        + (u.is_mutual
+        + (u.follows_us
             ? '<button class="btn-small danger" onclick="unfollowUser(' + u.id + ')" style="margin-right:4px">Unfollow</button>'
             : '<button class="btn-small primary" onclick="followUser(' + u.id + ')" style="margin-right:4px">Follow</button>')
         + '</td></tr>';
@@ -1023,7 +1026,7 @@ async function loadUsers() {
 
     const totalPages = Math.ceil((d.total || users.length) / 20);
     html += '<div class="table-wrap"><table style="font-size:0.8rem"><thead><tr>'
-      + '<th>User</th><th>Name</th><th>Status</th><th>Last Login</th><th>Action</th>'
+      + '<th>User</th><th>Name</th><th>Follows @unsrifess</th><th>Followed Back</th><th>Last Login</th><th>Action</th>'
       + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
       + '<div class="pagination">'
       + '<button onclick="usersPage--;loadUsers()"' + (usersPage <= 1 ? ' disabled' : '') + '>Prev</button>'

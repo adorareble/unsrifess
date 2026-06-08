@@ -35,6 +35,8 @@ async def init_db():
         await conn.execute(sql)
         await conn.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_login TIMESTAMP")
         await conn.execute("ALTER TABLE tweets ADD COLUMN IF NOT EXISTS tracking_token VARCHAR(32)")
+        await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS we_follow BOOLEAN DEFAULT false")
+        await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS follows_us BOOLEAN DEFAULT false")
 
 
 async def create_admin(username, password, display_name, role="admin"):
@@ -434,12 +436,12 @@ async def upsert_x_user(x_user_id, screen_name, name, avatar_url, access_token, 
         return dict(row)
 
 
-async def update_mutual_status(x_user_id: str, is_mutual: bool):
+async def update_follow_status(x_user_id: str, we_follow: bool, follows_us: bool):
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(
-            "UPDATE x_users SET is_mutual = $1 WHERE x_user_id = $2",
-            is_mutual, x_user_id,
+            "UPDATE x_users SET we_follow = $1, follows_us = $2, is_mutual = ($1 AND $2) WHERE x_user_id = $3",
+            we_follow, follows_us, x_user_id,
         )
 
 
