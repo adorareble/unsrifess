@@ -476,7 +476,8 @@ async def panel_stats(_: dict = Depends(get_current_admin)):
     active_admins = [a for a in admins if a["is_active"]]
     online = await get_setting("online")
     bypass = await get_setting("bypass")
-    return {**stats, "active_admins": len(active_admins), "online": online != "false", "bypass": bypass != "false"}
+    bypass_mutual = await get_setting("bypass_mutual")
+    return {**stats, "active_admins": len(active_admins), "online": online != "false", "bypass": bypass != "false", "bypass_mutual": bypass_mutual != "false"}
 
 
 @panel_router.get("/panel/api/stats/peak-hours")
@@ -504,3 +505,14 @@ async def panel_set_bypass(
     await set_setting("bypass", str(bypass_flag).lower())
     await log_activity(admin["id"], "set_bypass", details=f"Set bypass={bypass_flag}")
     return {"success": True, "bypass": bypass_flag}
+
+
+@panel_router.post("/panel/api/set-bypass-mutual")
+async def panel_set_bypass_mutual(
+    value: str = Form(...),
+    admin: dict = Depends(require_superadmin),
+):
+    bypass_flag = value.lower() in ("1", "true", "yes")
+    await set_setting("bypass_mutual", str(bypass_flag).lower())
+    await log_activity(admin["id"], "set_bypass_mutual", details=f"Set bypass_mutual={bypass_flag}")
+    return {"success": True, "bypass_mutual": bypass_flag}

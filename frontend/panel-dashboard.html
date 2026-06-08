@@ -439,6 +439,11 @@ async function loadStats() {
       bypassEl.innerHTML = d.bypass ? 'Bypass ON' : 'Bypass OFF';
       bypassEl.className = 'num ' + (d.bypass ? 'online' : 'offline');
     }
+    const bypassMutualEl = document.getElementById('settingsBypassMutual');
+    if (bypassMutualEl) {
+      bypassMutualEl.innerHTML = d.bypass_mutual ? 'BM ON' : 'BM OFF';
+      bypassMutualEl.className = 'num ' + (d.bypass_mutual ? 'online' : 'offline');
+    }
   } catch(_) {}
 
   // Peak hours heatmap
@@ -491,6 +496,16 @@ async function toggleBypass() {
   num.textContent = newState ? 'Bypass ON' : 'Bypass OFF';
   num.className = 'num ' + (newState ? 'online' : 'offline');
   try { await api('/panel/api/set-bypass', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: newState ? 'value=1' : 'value=0' }); } catch(_) {}
+  loadStats();
+}
+
+async function toggleBypassMutual() {
+  const num = document.getElementById('settingsBypassMutual');
+  const isOn = (num.textContent || '').trim() === 'BM ON';
+  const newState = !isOn;
+  num.textContent = newState ? 'BM ON' : 'BM OFF';
+  num.className = 'num ' + (newState ? 'online' : 'offline');
+  try { await api('/panel/api/set-bypass-mutual', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: newState ? 'value=1' : 'value=0' }); } catch(_) {}
   loadStats();
 }
 
@@ -868,6 +883,8 @@ async function loadSettings() {
       + '<div class="num" id="settingsOnline">-</div><div class="label">Toggle on/off</div></div>'
       + '<div class="stat-card clickable" id="settingsBypassCard" onclick="toggleBypass()" style="flex:1;min-width:120px;cursor:pointer">'
       + '<div class="num" id="settingsBypass">-</div><div class="label">Auto-approve</div></div>'
+      + '<div class="stat-card clickable" id="settingsBypassMutualCard" onclick="toggleBypassMutual()" style="flex:1;min-width:120px;cursor:pointer">'
+      + '<div class="num" id="settingsBypassMutual">-</div><div class="label">Bypass mutual</div></div>'
       + '</div>';
   }
 
@@ -911,6 +928,7 @@ async function loadSettings() {
     + '<option value="sync_x_users">Sync All</option>'
     + '<option value="set_online">Set Online</option>'
     + '<option value="set_bypass">Set Bypass</option>'
+    + '<option value="set_bypass_mutual">Set Bypass Mutual</option>'
     + '</select></div>'
     + '<div id="activityTableWrap"><div class="empty-state">Loading...</div></div>'
     + '<div class="pagination" id="activityPagination"></div>';
@@ -932,6 +950,8 @@ async function loadSettings() {
         if (se) { se.textContent = d.online ? 'Online' : 'Offline'; se.className = 'num ' + (d.online ? 'online' : 'offline'); }
         const sb = document.getElementById('settingsBypass');
         if (sb) { sb.textContent = d.bypass ? 'Bypass ON' : 'Bypass OFF'; sb.className = 'num ' + (d.bypass ? 'online' : 'offline'); }
+        const sbm = document.getElementById('settingsBypassMutual');
+        if (sbm) { sbm.textContent = d.bypass_mutual ? 'BM ON' : 'BM OFF'; sbm.className = 'num ' + (d.bypass_mutual ? 'online' : 'offline'); }
       }).catch(() => {});
   }
 }

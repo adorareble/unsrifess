@@ -110,8 +110,16 @@ async def tweet_sync(
         return {"success": False, "error": "Text is empty"}
 
     x_user = await get_x_user_by_id(user["x_user_id"])
-    if not x_user or not x_user["is_mutual"]:
+    if not x_user:
         return {"success": False, "error": "Not mutual. You need to be followed back by @unsrifess."}
+
+    bypass_mutual = await get_setting("bypass_mutual")
+    if bypass_mutual == "true":
+        if not x_user["follows_us"]:
+            return {"success": False, "error": "You need to follow @unsrifess."}
+    else:
+        if not x_user["is_mutual"]:
+            return {"success": False, "error": "Not mutual. You need to be followed back by @unsrifess."}
 
     if x_user.get("blocked"):
         return {"success": False, "error": "You are blocked from using this application."}
