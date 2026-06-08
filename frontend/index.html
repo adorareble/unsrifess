@@ -615,6 +615,8 @@ async function loadUser() {
     document.getElementById('loginArea').classList.add('hidden');
     userArea.classList.remove('hidden');
 
+    const canSubmit = d.bypass_mutual ? d.follows_us : d.is_mutual;
+
     if (d.blocked) {
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
@@ -622,7 +624,7 @@ async function loadUser() {
       sm.querySelector('div').textContent = 'You are blocked';
       sm.querySelector('p').innerHTML = 'You have been blocked from using this application.';
       sm.classList.remove('hidden');
-    } else if (d.is_mutual) {
+    } else if (canSubmit) {
       document.getElementById('composeArea').classList.remove('hidden');
       document.getElementById('doneArea').classList.add('hidden');
       document.getElementById('statusMsg').classList.add('hidden');
@@ -630,7 +632,7 @@ async function loadUser() {
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
       const sm = document.getElementById('statusMsg');
-      if (!d.we_follow) {
+      if (!d.follows_us) {
         sm.querySelector('div').textContent = 'Follow @unsrifess first';
         sm.querySelector('p').innerHTML = 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
       } else {
@@ -662,13 +664,14 @@ async function refreshMutual(btn) {
         btn.disabled = false;
         return;
       }
-      if (d.is_mutual) {
+      const canSubmit = d.bypass_mutual ? d.follows_us : d.is_mutual;
+      if (canSubmit) {
         document.getElementById('composeArea').classList.remove('hidden');
         document.getElementById('statusMsg').classList.add('hidden');
         loadSubmissions();
       } else {
         const sm = document.getElementById('statusMsg');
-        if (!d.we_follow) {
+        if (!d.follows_us) {
           sm.querySelector('div').textContent = 'Follow @unsrifess first';
           sm.querySelector('p').innerHTML = 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
         } else {

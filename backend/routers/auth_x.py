@@ -124,7 +124,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 @auth_x_router.get("/api/auth/me")
 async def x_me(request: Request):
     from auth import decode_token
-    from database import get_x_user_by_id
+    from database import get_x_user_by_id, get_setting
     auth = request.headers.get("Authorization", "")
     token = ""
     if auth.startswith("Bearer "):
@@ -138,6 +138,7 @@ async def x_me(request: Request):
         raise HTTPException(status_code=401, detail="Invalid token")
     x_user_id = payload["sub"].replace("x_user:", "")
     x_user = await get_x_user_by_id(x_user_id)
+    bypass_mutual = await get_setting("bypass_mutual")
     return {
         "x_user_id": x_user_id,
         "screen_name": payload.get("screen_name"),
@@ -145,6 +146,7 @@ async def x_me(request: Request):
         "we_follow": x_user["we_follow"] if x_user else False,
         "follows_us": x_user["follows_us"] if x_user else False,
         "blocked": x_user["blocked"] if x_user else False,
+        "bypass_mutual": bypass_mutual == "true",
     }
 
 
@@ -169,15 +171,22 @@ async def x_my_submissions(
         raise HTTPException(status_code=401, detail="Invalid token")
     x_user_id = payload["sub"].replace("x_user:", "")
     x_user = await get_x_user_by_id(x_user_id)
-    if not x_user or x_user.get("blocked") or not x_user.get("is_mutual"):
+    if not x_user or x_user.get("blocked"):
         return {"submissions": [], "total": 0}
+    bypass_mutual = await get_setting("bypass_mutual")
+    if bypass_mutual == "true":
+        if not x_user.get("follows_us"):
+            return {"submissions": [], "total": 0}
+    else:
+        if not x_user.get("is_mutual"):
+            return {"submissions": [], "total": 0}
     return await get_user_tweets(x_user_id, page, limit)
 
 
 @auth_x_router.post("/api/auth/refresh-mutual")
 async def x_refresh_mutual(request: Request):
     from auth import decode_token, create_user_token
-    from database import get_x_user_by_id, update_follow_status
+    from database import get_x_user_by_id, update_follow_status, get_setting
     auth = request.headers.get("Authorization", "")
     token = ""
     if auth.startswith("Bearer "):
@@ -202,11 +211,13 @@ async def x_refresh_mutual(request: Request):
 
     x_user = await get_x_user_by_id(x_user_id)
     new_token = create_user_token(x_user_id, screen_name, is_mutual)
+    bypass_mutual = await get_setting("bypass_mutual")
     return {
         "success": True,
         "is_mutual": is_mutual,
         "we_follow": we_follow,
         "follows_us": follows_us,
         "blocked": x_user["blocked"] if x_user else False,
+        "bypass_mutual": bypass_mutual == "true",
         "token": new_token,
     }
