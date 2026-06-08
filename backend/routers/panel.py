@@ -13,7 +13,7 @@ from database import (
     add_keyword, remove_keyword, get_keywords,
     log_activity, get_activity,
     get_setting, set_setting, get_peak_hours,
-    block_sender, unblock_sender, get_blocked_senders,
+    get_x_users, get_x_user_by_id, update_mutual_status,
 )
 from auth import (
     hash_password, verify_password, create_token,
@@ -271,27 +271,81 @@ async def panel_remove_keyword(keyword_id: int, admin: dict = Depends(get_curren
     return {"success": True}
 
 
-@panel_router.get("/panel/api/blocked-senders")
-async def panel_get_blocked_senders(_: dict = Depends(get_current_admin)):
-    return await get_blocked_senders()
+@panel_router.get("/panel/api/x-users")
+async def panel_get_x_users(
+    page: int = 1,
+    limit: int = 20,
+    _: dict = Depends(get_current_admin),
+):
+    offset = (page - 1) * limit
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        total_row = await conn.fetchrow("SELECT COUNT(*) FROM x_users")
+        total = total_row["count"]
+        rows = await conn.fetch(
+            "SELECT * FROM x_users ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+            limit, offset,
+        )
+        return {"users": [dict(r) for r in rows], "total": total}
 
 
-@panel_router.post("/panel/api/blocked-senders")
-async def panel_block_sender(
-    ip_address: str = Form(...),
-    reason: str = Form(""),
+@panel_router.post("/panel/api/x-users/{user_id}/follow")
+async def panel_follow_user(
+    user_id: int,
     admin: dict = Depends(get_current_admin),
 ):
-    blocked = await block_sender(ip_address, admin["id"], reason.strip() if reason else None)
-    await log_activity(admin["id"], "block_sender", "ip", ip_address, f"Blocked {ip_address}" + (f": {reason}" if reason else ""))
-    return {"success": True, "blocked": blocked}
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT x_user_id, screen_name FROM x_users WHERE id = $1", user_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    result = await client.follow_user(row["x_user_id"])
+    if result.get("success"):
+        await update_mutual_status(row["x_user_id"], True)
+        await log_activity(admin["id"], "follow_user", "x_user", str(user_id), f"Followed @{row['screen_name']}")
+        return {"success": True}
+    return {"success": False, "error": result.get("error", "Follow failed")}
 
 
-@panel_router.delete("/panel/api/blocked-senders/{sender_id}")
-async def panel_unblock_sender(sender_id: int, admin: dict = Depends(get_current_admin)):
-    await unblock_sender(sender_id)
-    await log_activity(admin["id"], "unblock_sender", "blocked_senders", sender_id)
-    return {"success": True}
+@panel_router.post("/panel/api/x-users/{user_id}/unfollow")
+async def panel_unfollow_user(
+    user_id: int,
+    admin: dict = Depends(get_current_admin),
+):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT x_user_id, screen_name FROM x_users WHERE id = $1", user_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    result = await client.unfollow_user(row["x_user_id"])
+    if result.get("success"):
+        await update_mutual_status(row["x_user_id"], False)
+        await log_activity(admin["id"], "unfollow_user", "x_user", str(user_id), f"Unfollowed @{row['screen_name']}")
+        return {"success": True}
+    return {"success": False, "error": result.get("error", "Unfollow failed")}
+
+
+@panel_router.post("/panel/api/x-users/sync-all")
+async def panel_sync_all_users(
+    admin: dict = Depends(get_current_admin),
+):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch("SELECT id, x_user_id, screen_name FROM x_users")
+    synced = 0
+    errors = 0
+    for row in rows:
+        try:
+            result = await client.check_mutual(row["screen_name"])
+            if "error" not in result:
+                await update_mutual_status(row["x_user_id"], result["is_mutual"])
+                synced += 1
+            else:
+                errors += 1
+        except Exception:
+            errors += 1
+    await log_activity(admin["id"], "sync_x_users", details=f"Synced: {synced}, errors: {errors}")
+    return {"success": True, "synced": synced, "errors": errors}
 
 
 @panel_router.get("/panel/api/activity")

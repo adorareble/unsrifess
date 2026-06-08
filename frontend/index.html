@@ -54,6 +54,7 @@
   }
   textarea:focus { border-color: #1d9bf0; }
   textarea.error { border-color: #f4212e; }
+  textarea:disabled { opacity: 0.4; }
   .tweet-count {
     font-size: 0.8rem; font-weight: 500; min-height: 0; margin: 0;
   }
@@ -74,7 +75,6 @@
   .upload-area:hover { border-color: #1d9bf0; color: #1d9bf0; }
   .upload-area.has-file { border-color: #00ba7c; }
   .upload-area.disabled { opacity: 0.4; cursor: not-allowed; }
-  .upload-area.disabled:hover { border-color: #2a2a38; color: #71767b; }
   .file-grid {
     display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
     justify-content: center;
@@ -91,7 +91,6 @@
     color: #fff; font-size: 0.7rem; cursor: pointer; line-height: 20px;
     text-align: center;
   }
-  .file-preview .remove:hover { background: rgba(244,33,46,0.8); }
 
   .btn {
     width: 100%; padding: 12px; border: none; border-radius: 10px;
@@ -126,9 +125,42 @@
   .support-section a {
     color: #1d9bf0; text-decoration: none; font-weight: 500;
   }
-  .support-section a:hover { text-decoration: underline; }
   .hidden { display: none !important; }
   input[type="file"] { display: none; }
+
+  .user-card {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px; border-radius: 12px;
+    background: rgba(29,155,240,0.06); border: 1px solid rgba(29,155,240,0.12);
+    margin-bottom: 14px;
+  }
+  .user-card .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #2a2a38; flex-shrink: 0;
+  }
+  .user-card .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .user-card .info { flex: 1; min-width: 0; }
+  .user-card .info .name { font-size: 0.9rem; font-weight: 600; }
+  .user-card .info .screen-name { font-size: 0.8rem; color: #71767b; }
+  .user-card .mutual-badge {
+    display: inline-block; padding: 2px 10px; border-radius: 10px;
+    font-size: 0.7rem; font-weight: 600;
+  }
+  .mutual-badge.yes { background: rgba(0,186,124,0.12); color: #00ba7c; }
+  .mutual-badge.no { background: rgba(244,33,46,0.12); color: #f4212e; }
+
+  .login-cta {
+    text-align: center; padding: 60px 20px;
+  }
+  .login-cta h2 { font-size: 1.2rem; margin-bottom: 8px; }
+  .login-cta p { font-size: 0.85rem; color: #71767b; margin-bottom: 20px; line-height: 1.5; }
+  .login-cta .x-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px; border: none; border-radius: 9999px;
+    background: #000; color: #fff; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; text-decoration: none;
+  }
+  .login-cta .x-btn:hover { background: #1a1a1a; }
 
   .loading-overlay {
     position: absolute; inset: 0; z-index: 10;
@@ -154,11 +186,8 @@
     border-radius: 2px; transition: width 0.3s;
   }
 
-  /* ── Submissions Section ── */
   .submissions { margin-top: 20px; }
-  .submissions h3 {
-    font-size: 0.85rem; color: #71767b; font-weight: 500; margin-bottom: 10px;
-  }
+  .submissions h3 { font-size: 0.85rem; color: #71767b; font-weight: 500; margin-bottom: 10px; }
   .submission-item {
     background: #1a1a24; border: 1px solid #2a2a38; border-radius: 10px;
     padding: 12px; margin-bottom: 8px;
@@ -192,9 +221,7 @@
   .status-approved { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .status-rejected { background: rgba(244,33,46,0.12); color: #f4212e; }
   .status-deleted { background: rgba(113,118,123,0.12); color: #71767b; }
-  .reason-badge { display: inline-block; font-size: 0.75rem; word-break: break-word; overflow-wrap: break-word; white-space: normal; max-width: 100%; }
 
-  /* ── Popup ── */
   .popup-overlay {
     position: fixed; inset: 0; z-index: 100;
     background: rgba(0,0,0,0.7); display: flex;
@@ -238,6 +265,17 @@
   </div>
 
   <div class="card card-wrap">
+    <div id="loginArea" class="login-cta">
+      <h2>Want to confess?</h2>
+      <p>This service is only for mutuals of @unsrifess.<br>Login with X to verify and submit.</p>
+      <a class="x-btn" href="/api/auth/x/login">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/></svg>
+        Login with X
+      </a>
+    </div>
+
+    <div id="userArea" class="hidden"></div>
+
     <div id="loadingOverlay" class="loading-overlay hidden">
       <div class="spinner"></div>
       <div class="loading-text">Posting...</div>
@@ -246,7 +284,7 @@
       </div>
     </div>
 
-    <div id="composeArea">
+    <div id="composeArea" class="hidden">
       <div class="keyword-hint">
         <span>&#9432;</span>
         <span>Your message must contain <code>unsr!</code> to be sent.</span>
@@ -266,13 +304,8 @@
     </div>
 
     <div id="statusMsg" class="hidden" style="text-align:center;padding:40px 20px">
-      <div style="font-size:1.1rem;color:#e7e9ea;margin-bottom:8px">Submission is closed</div>
+      <div style="font-size:1.1rem;color:#f4212e;margin-bottom:8px">Submission is closed</div>
       <p style="font-size:0.85rem;color:#71767b;margin:0">Please check back later.</p>
-    </div>
-
-    <div id="blockedMsg" class="hidden" style="text-align:center;padding:40px 20px">
-      <div style="font-size:1.1rem;color:#f4212e;margin-bottom:8px">You have been blocked</div>
-      <p style="font-size:0.85rem;color:#71767b;margin:0">You are not allowed to send confessions.</p>
     </div>
 
     <div id="doneArea" class="hidden">
@@ -289,8 +322,8 @@
   <div class="submissions" id="submissionsSection"></div>
 </div>
 
-<div class="popup-overlay hidden" id="popupOverlay" onclick="if(event.target===this)closePopup()">
-  <div class="popup-card" onclick="event.stopPropagation()">
+<div class="popup-overlay hidden" id="popupOverlay">
+  <div class="popup-card">
     <div class="popup-icon" id="popupIcon"></div>
     <div class="popup-title" id="popupTitle"></div>
     <div class="popup-msg" id="popupMsg"></div>
@@ -305,6 +338,7 @@ const MAX_SUBMISSIONS = 10;
 let selectedFiles = [];
 let rateLimited = false;
 let isDone = false;
+let xToken = localStorage.getItem('x_token');
 
 const tweetText = document.getElementById('tweetText');
 const tweetCount = document.getElementById('tweetCount');
@@ -313,13 +347,12 @@ const submitBtn = document.getElementById('submitBtn');
 const loadingOverlay = document.getElementById('loadingOverlay');
 const progressBar = document.getElementById('progressBar');
 
-// ── Popup ──
 function showPopup(icon, title, msg, buttons) {
-  document.getElementById('popupIcon').textContent = icon;
+  document.getElementById('popupIcon').textContent = icon || '';
   document.getElementById('popupIcon').style.display = icon ? '' : 'none';
-  document.getElementById('popupTitle').textContent = title;
+  document.getElementById('popupTitle').textContent = title || '';
   document.getElementById('popupTitle').style.display = title ? '' : 'none';
-  document.getElementById('popupMsg').innerHTML = msg;
+  document.getElementById('popupMsg').innerHTML = msg || '';
   const actions = document.getElementById('popupActions');
   actions.innerHTML = '';
   (buttons || [{ text: 'OK', cls: 'popup-btn-primary', fn: closePopup }]).forEach(b => {
@@ -337,16 +370,11 @@ function closePopup() {
 
 function canDelete(reviewedAt) {
   if (!reviewedAt) return false;
-  const then = new Date(reviewedAt);
-  const now = new Date();
-  return (now - then) < 300000; // 5 menit dalam ms
+  return (new Date() - new Date(reviewedAt)) < 300000;
 }
-
 function deleteRemaining(reviewedAt) {
   if (!reviewedAt) return '';
-  const then = new Date(reviewedAt);
-  const now = new Date();
-  const left = 300000 - (now - then);
+  const left = 300000 - (new Date() - new Date(reviewedAt));
   if (left <= 0) return '';
   const m = Math.floor(left / 60000);
   const s = Math.floor((left % 60000) / 1000);
@@ -371,14 +399,11 @@ async function deleteTweet(token) {
         } else {
           showPopup('⚠️', 'Failed', d.detail || 'Failed to delete tweet.');
         }
-      } catch(e) {
-        showPopup('⚠️', 'Failed', 'Failed to delete tweet.');
-      }
+      } catch(e) { showPopup('⚠️', 'Failed', 'Failed to delete tweet.'); }
     } },
   ]);
 }
 
-// ── Submissions (localStorage) ──
 function getSubmissions() {
   try { return JSON.parse(localStorage.getItem('unsr_submissions') || '[]'); }
   catch { return []; }
@@ -394,7 +419,6 @@ function renderSubmissions() {
   const subs = getSubmissions();
   const el = document.getElementById('submissionsSection');
   if (subs.length === 0) { el.innerHTML = ''; return; }
-
   let html = '<h3>Last 10 Confessions</h3>'
     + '<div style="font-size:0.75rem;color:#71767b;margin:-8px 0 12px">Confessions you sent from this device</div>';
   for (const s of subs) {
@@ -403,66 +427,41 @@ function renderSubmissions() {
     const timeStr = date.toLocaleDateString('en-US', { year: 'numeric', day: 'numeric', month: 'short' })
       + ' ' + String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0') + ':' + String(date.getSeconds()).padStart(2, '0');
     const tweetLink = (s.status === 'approved' && s.urls && s.urls.length)
-      ? '<a href="' + s.urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>'
-      : '';
-    const reasonText = (s.status === 'rejected' || s.status === 'deleted') && s.reason
-      ? '<span class="reason-badge">' + escHtml(s.reason) + '</span>' : '';
-    const extraHtml = reasonText || tweetLink || '';
-    const deletable = s.status === 'approved' && canDelete(s.reviewed_at);
-    const delBtn = deletable
-      ? '<button class="submission-del" onclick="deleteTweet(\'' + s.token + '\')" title="Delete from X">🗑️</button>'
-      : '';
+      ? '<a href="' + s.urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>' : '';
+    const delBtn = s.status === 'approved' && canDelete(s.reviewed_at)
+      ? '<button class="submission-del" onclick="deleteTweet(\'' + s.token + '\')" title="Delete from X">🗑️</button>' : '';
     const delInfo = s.status === 'approved' && s.reviewed_at
-      ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>'
-      : '';
-    html += `
-      <div class="submission-item">
-        <div class="submission-header">
-          <div class="submission-text">${escHtml(s.text)}</div>
-          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-            ${delInfo}
-            ${delBtn}
-          </div>
-        </div>
-        <div class="submission-meta" style="margin-bottom:2px">
-          <span>${timeStr}</span>
-        </div>
-        <div class="submission-meta">
-          <span class="submission-status ${statusClass}">${s.status}</span>
-          ${extraHtml}
-        </div>
-      </div>`;
+      ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>' : '';
+    html += '<div class="submission-item"><div class="submission-header">'
+      + '<div class="submission-text">' + escHtml(s.text) + '</div>'
+      + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">' + delInfo + delBtn + '</div></div>'
+      + '<div class="submission-meta" style="margin-bottom:2px"><span>' + timeStr + '</span></div>'
+      + '<div class="submission-meta"><span class="submission-status ' + statusClass + '">' + s.status + '</span> ' + tweetLink + '</div></div>';
   }
   el.innerHTML = html;
 }
 
-
-
 async function refreshStatuses() {
   const subs = getSubmissions();
   let changed = false;
-  const fetches = subs.filter(s => s.token && !((s.status === 'rejected' || s.status === 'deleted') && s.reason))
-    .map(async s => {
-      try {
-        const r = await fetch('/api/status/' + encodeURIComponent(s.token));
-        if (!r.ok) return;
-        const d = await r.json();
-        if (d.status && d.status !== 'pending' && d.status !== s.status) {
-          s.status = d.status;
-          if (d.original_text) s.text = d.original_text;
-          if (d.tweet_urls) s.urls = d.tweet_urls;
-          if (d.reason) s.reason = d.reason;
-          if (d.reviewed_at) s.reviewed_at = d.reviewed_at;
-          changed = true;
-        } else if (d.status === 'approved' && d.reviewed_at && !s.reviewed_at) {
-          s.reviewed_at = d.reviewed_at;
-          changed = true;
-        } else if (d.reason && !s.reason && (d.status === 'rejected' || d.status === 'deleted')) {
-          s.reason = d.reason;
-          changed = true;
-        }
-      } catch {}
-    });
+  const fetches = subs.filter(s => s.token).map(async s => {
+    try {
+      const r = await fetch('/api/status/' + encodeURIComponent(s.token));
+      if (!r.ok) return;
+      const d = await r.json();
+      if (d.status && d.status !== 'pending' && d.status !== s.status) {
+        s.status = d.status;
+        if (d.original_text) s.text = d.original_text;
+        if (d.tweet_urls) s.urls = d.tweet_urls;
+        if (d.reason) s.reason = d.reason;
+        if (d.reviewed_at) s.reviewed_at = d.reviewed_at;
+        changed = true;
+      } else if (d.status === 'approved' && d.reviewed_at && !s.reviewed_at) {
+        s.reviewed_at = d.reviewed_at;
+        changed = true;
+      }
+    } catch {}
+  });
   await Promise.all(fetches);
   if (changed) {
     localStorage.setItem('unsr_submissions', JSON.stringify(subs));
@@ -470,7 +469,6 @@ async function refreshStatuses() {
   }
 }
 
-// ── Tweet count & validation ──
 function estimateTweets(text) {
   const len = text.length;
   if (len === 0) return 0;
@@ -534,7 +532,6 @@ function checkSubmitReady() {
   submitBtn.disabled = !valid || rateLimited;
 }
 
-// ── File upload ──
 function updateFilePreview() {
   const grid = document.getElementById('fileGrid');
   const area = document.getElementById('uploadArea');
@@ -559,7 +556,6 @@ function updateFilePreview() {
   });
 }
 
-// ── Loading ──
 function showLoading() {
   loadingOverlay.classList.remove('hidden');
   progressBar.style.width = '0%';
@@ -582,7 +578,6 @@ function showDone() {
   document.getElementById('doneArea').classList.remove('hidden');
 }
 
-// ── Status check ──
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
@@ -594,37 +589,21 @@ async function checkStatus() {
       text.textContent = 'Closed';
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
-      const sm = document.getElementById('statusMsg');
-      sm.querySelector('div').textContent = 'Submission is closed';
-      sm.querySelector('p').textContent = 'Please check back later.';
-      sm.classList.remove('hidden');
-      submitBtn.disabled = true;
+      document.getElementById('statusMsg').classList.remove('hidden');
     } else if (!data.logged_in) {
       dot.className = 'status-dot offline';
       text.textContent = 'Offline';
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
-      document.getElementById('blockedMsg').classList.add('hidden');
       const sm = document.getElementById('statusMsg');
       sm.querySelector('div').textContent = 'Twitter offline';
       sm.querySelector('p').textContent = 'Twitter session is offline. Please try again later.';
       sm.classList.remove('hidden');
-      submitBtn.disabled = true;
-    } else if (data.blocked) {
-      dot.className = 'status-dot offline';
-      text.textContent = 'Blocked';
-      document.getElementById('composeArea').classList.add('hidden');
-      document.getElementById('doneArea').classList.add('hidden');
-      document.getElementById('statusMsg').classList.add('hidden');
-      document.getElementById('submissionsSection').innerHTML = '';
-      document.getElementById('blockedMsg').classList.remove('hidden');
-      submitBtn.disabled = true;
     } else {
       dot.className = 'status-dot online';
       text.textContent = 'Online';
       if (!isDone) document.getElementById('composeArea').classList.remove('hidden');
       document.getElementById('statusMsg').classList.add('hidden');
-      document.getElementById('blockedMsg').classList.add('hidden');
       rateLimited = false;
       checkSubmitReady();
     }
@@ -637,8 +616,6 @@ async function checkStatus() {
     sm.querySelector('div').textContent = 'Connection error';
     sm.querySelector('p').textContent = 'Failed to check server status.';
     sm.classList.remove('hidden');
-    document.getElementById('blockedMsg').classList.add('hidden');
-    submitBtn.disabled = true;
   }
 }
 
@@ -649,7 +626,43 @@ function escHtml(s) {
   return d.innerHTML;
 }
 
-// ── Event listeners ──
+async function loadUser() {
+  const token = localStorage.getItem('x_token');
+  if (!token) return;
+  try {
+    const r = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!r.ok) { localStorage.removeItem('x_token'); return; }
+    const d = await r.json();
+    const userArea = document.getElementById('userArea');
+    userArea.className = 'user-card';
+    userArea.innerHTML = ''
+      + '<div class="avatar"><img src="https://unavatar.io/twitter/' + encodeURIComponent(d.screen_name) + '" onerror="this.parentElement.innerHTML=\'\'"></div>'
+      + '<div class="info"><div class="name">@' + escHtml(d.screen_name) + '</div></div>'
+      + '<span class="mutual-badge ' + (d.is_mutual ? 'yes' : 'no') + '">' + (d.is_mutual ? 'Mutual ✓' : 'Not Mutual ✗') + '</span>'
+      + '<button onclick="logout()" style="background:transparent;border:1px solid #2a2a38;color:#e7e9ea;padding:4px 10px;border-radius:10px;cursor:pointer;font-size:0.75rem">Logout</button>';
+    document.getElementById('loginArea').classList.add('hidden');
+    userArea.classList.remove('hidden');
+
+    if (d.is_mutual) {
+      document.getElementById('composeArea').classList.remove('hidden');
+      document.getElementById('doneArea').classList.add('hidden');
+      document.getElementById('statusMsg').classList.add('hidden');
+    } else {
+      document.getElementById('composeArea').classList.add('hidden');
+      document.getElementById('doneArea').classList.add('hidden');
+      const sm = document.getElementById('statusMsg');
+      sm.querySelector('div').textContent = 'Not followed back';
+      sm.querySelector('p').textContent = 'You need to be followed back by @unsrifess to submit confessions.';
+      sm.classList.remove('hidden');
+    }
+  } catch { localStorage.removeItem('x_token'); }
+}
+
+function logout() {
+  localStorage.removeItem('x_token');
+  window.location.reload();
+}
+
 tweetText.addEventListener('input', () => {
   updateTweetCount();
   updateValidation();
@@ -691,6 +704,9 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   const text = tweetText.value.trim();
   if (!text || !/unsr!/i.test(text)) return;
 
+  const token = localStorage.getItem('x_token');
+  if (!token) { showPopup('⚠️', 'Not logged in', 'Please login with X first.'); return; }
+
   showLoading();
   submitBtn.disabled = true;
 
@@ -701,50 +717,43 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   }
 
   try {
-    const r = await fetch('/api/tweet-sync', { method: 'POST', body: formData });
+    const r = await fetch('/api/tweet-sync', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
     const data = await r.json();
     hideLoading();
 
     const result = document.getElementById('result');
     if (data.success) {
       if (data.tracking_token) {
-        saveSubmission(data.tracking_token, text, data.status, data.tweet_url ? [data.tweet_url] : null, data.reason, data.reviewed_at);
+        saveSubmission(data.tracking_token, text, data.status, data.tweet_url ? [data.tweet_url] : null);
       }
-
       if (data.status === 'rejected') {
         result.className = 'result error';
         result.innerHTML = 'Your message was automatically rejected (matched filter).';
       } else if (data.status === 'approved') {
         result.className = 'result success';
-        let html = 'Tweet sent successfully!';
-        if (data.tweet_url) {
-          html = '<a href="' + data.tweet_url + '" target="_blank">' + data.tweet_url + '</a>';
-        }
-        result.innerHTML = html;
+        result.innerHTML = data.tweet_url
+          ? '<a href="' + data.tweet_url + '" target="_blank">' + data.tweet_url + '</a>'
+          : 'Tweet sent successfully!';
       } else {
         result.className = 'result success';
         result.innerHTML = 'Your confession has been submitted for review.';
       }
-    } else if (data.blocked) {
-      checkStatus();
-      return;
     } else {
       result.className = 'result error';
       result.textContent = data.error || 'Something went wrong. Please try again.';
     }
-
     renderSubmissions();
     checkStatus();
     showDone();
   } catch (err) {
     hideLoading();
     submitBtn.disabled = false;
-    showPopup('⚠️', 'Connection Error', 'Check your internet and try again.', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
+    showPopup('⚠️', 'Connection Error', 'Check your internet and try again.');
     showDone();
   }
 });
 
-// ── Init ──
+loadUser();
 checkStatus();
 renderSubmissions();
 refreshStatuses();

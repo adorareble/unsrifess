@@ -66,3 +66,34 @@ async def require_superadmin(admin: dict = Depends(get_current_admin)):
     if admin["role"] != "superadmin":
         raise HTTPException(status_code=403, detail="Superadmin access required")
     return admin
+
+
+def create_user_token(x_user_id: str, screen_name: str, is_mutual: bool) -> str:
+    payload = {
+        "sub": f"x_user:{x_user_id}",
+        "screen_name": screen_name,
+        "is_mutual": is_mutual,
+        "type": "user",
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRE_HOURS),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
+
+
+async def get_current_user(request: Request):
+    auth = request.headers.get("Authorization", "")
+    token = ""
+    if auth.startswith("Bearer "):
+        token = auth[7:]
+    else:
+        token = request.query_params.get("token", "")
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing or invalid token")
+    payload = decode_token(token)
+    if payload is None or payload.get("type") != "user":
+        raise HTTPException(status_code=401, detail="Token expired or invalid")
+    return {
+        "x_user_id": payload["sub"].replace("x_user:", ""),
+        "screen_name": payload.get("screen_name"),
+        "is_mutual": payload.get("is_mutual", False),
+    }

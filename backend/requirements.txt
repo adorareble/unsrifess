@@ -8,3 +8,4 @@ asyncpg
 PyJWT
 bcrypt
 python-dotenv
+authlib

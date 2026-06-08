@@ -155,4 +155,80 @@ class TwitterClient:
             return {"success": False, "error": err_msg}
 
 
+    async def check_mutual(self, target_screen_name: str) -> dict:
+        if not self.is_logged_in():
+            return {"error": "Not logged in. Run setup_login.py first."}
+
+        with open(self.state_file) as f:
+            cookies = json.load(f)
+        cookies.pop("__cf_bm", None)
+        self._client.set_cookies(cookies, clear_cookies=True)
+
+        try:
+            unsrifess = await self._client.get_user_by_screen_name("unsrifess")
+            unsrifess_id = unsrifess.id
+
+            target = await self._client.get_user_by_screen_name(target_screen_name)
+            target_id = target.id
+
+            unsrifess_following = set()
+            cursor = None
+            while True:
+                users = await self._client.get_user_following(unsrifess_id, count=200, cursor=cursor)
+                for u in users:
+                    unsrifess_following.add(str(u.id))
+                cursor = users.next_cursor if hasattr(users, 'next_cursor') else None
+                if not cursor:
+                    break
+
+            target_following = set()
+            try:
+                target_following_ids = await self._client.get_friends_ids(user_id=target_id)
+                if isinstance(target_following_ids, list):
+                    target_following = set(str(u) for u in target_following_ids)
+            except Exception:
+                pass
+
+            follows_us = str(target_id) in unsrifess_following
+            we_follow = str(unsrifess_id) in target_following
+
+            return {
+                "is_mutual": follows_us and we_follow,
+                "follows_us": follows_us,
+                "we_follow": we_follow,
+                "target_id": str(target_id),
+                "unsrifess_id": str(unsrifess_id),
+                "screen_name": target_screen_name,
+            }
+        except Exception as e:
+            logging.exception(f"check_mutual failed: {e}")
+            return {"error": str(e)}
+
+    async def follow_user(self, target_id: str) -> dict:
+        with open(self.state_file) as f:
+            cookies = json.load(f)
+        cookies.pop("__cf_bm", None)
+        self._client.set_cookies(cookies, clear_cookies=True)
+
+        try:
+            result = await self._client.follow_user(target_id)
+            return {"success": True}
+        except Exception as e:
+            logging.exception(f"follow_user failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    async def unfollow_user(self, target_id: str) -> dict:
+        with open(self.state_file) as f:
+            cookies = json.load(f)
+        cookies.pop("__cf_bm", None)
+        self._client.set_cookies(cookies, clear_cookies=True)
+
+        try:
+            result = await self._client.unfollow_user(target_id)
+            return {"success": True}
+        except Exception as e:
+            logging.exception(f"unfollow_user failed: {e}")
+            return {"success": False, "error": str(e)}
+
+
 client = TwitterClient()

@@ -48,12 +48,17 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS blocked_senders (
+CREATE TABLE IF NOT EXISTS x_users (
     id          SERIAL PRIMARY KEY,
-    ip_address  VARCHAR(50) NOT NULL,
-    blocked_by  INT REFERENCES admins(id),
-    reason      TEXT,
-    created_at  TIMESTAMP DEFAULT NOW()
+    x_user_id   VARCHAR(100) UNIQUE NOT NULL,
+    screen_name VARCHAR(100) NOT NULL,
+    name        VARCHAR(200),
+    avatar_url  TEXT,
+    access_token TEXT,
+    refresh_token TEXT,
+    is_mutual   BOOLEAN DEFAULT false,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    last_login_at TIMESTAMP DEFAULT NOW()
 );
 
 INSERT INTO settings (key, value) VALUES ('online', 'true') ON CONFLICT (key) DO NOTHING;

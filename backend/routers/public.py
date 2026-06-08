@@ -5,26 +5,20 @@ import asyncio
 import secrets
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Request
+from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Depends
 from fastapi.responses import HTMLResponse, FileResponse
 
 from database import (
     get_pool, create_tweet, check_keywords, get_setting,
-    get_tweet_by_token, is_sender_blocked,
+    get_tweet_by_token, get_x_user_by_id,
     reject_tweet, approve_tweet,
 )
 from twitter_client import client, split_into_chunks
 from image import TEMP_DIR, add_watermark, compress_image
+from auth import get_current_user
 
 public_router = APIRouter()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-
-
-def get_client_ip(request: Request) -> str:
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
 
 
 @public_router.get("/", response_class=HTMLResponse)
@@ -35,13 +29,11 @@ async def index():
 
 
 @public_router.get("/api/status")
-async def status(request: Request):
+async def status():
     online = await get_setting("online")
-    blocked = await is_sender_blocked(get_client_ip(request))
     return {
         "logged_in": client.is_logged_in(),
         "online": online != "false",
-        "blocked": bool(blocked),
     }
 
 
@@ -110,19 +102,20 @@ async def user_delete_tweet(tracking_token: str):
 
 @public_router.post("/api/tweet-sync")
 async def tweet_sync(
-    request: Request,
     text: str = Form(...),
     images: list[UploadFile] = File(default=None),
+    user: dict = Depends(get_current_user),
 ):
     if not text or not text.strip():
         return {"success": False, "error": "Text is empty"}
 
+    x_user = await get_x_user_by_id(user["x_user_id"])
+    if not x_user or not x_user["is_mutual"]:
+        return {"success": False, "error": "Not mutual. You need to be followed back by @unsrifess."}
+
     online = await get_setting("online")
     if online == "false":
         return {"success": False, "error": "Submission is currently closed."}
-
-    if await is_sender_blocked(get_client_ip(request)):
-        return {"success": False, "blocked": True, "error": "You have been blocked."}
 
     saved_paths = []
     try:
@@ -145,7 +138,7 @@ async def tweet_sync(
 
         matched = await check_keywords(text)
         if matched:
-            tweet = await create_tweet(text.strip(), saved_paths, get_client_ip(request), chunk_count, tracking_token)
+            tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count, tracking_token)
             await reject_tweet(tweet["id"], None, f"Auto-rejected: matched keyword '{matched}'", matched, record_activity=False)
             return {
                 "success": True,
@@ -154,7 +147,7 @@ async def tweet_sync(
                 "tracking_token": tracking_token,
             }
 
-        tweet = await create_tweet(text.strip(), saved_paths, get_client_ip(request), chunk_count, tracking_token)
+        tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count, tracking_token)
 
         bypass = await get_setting("bypass")
         if bypass == "true":
