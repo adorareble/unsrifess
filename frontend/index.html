@@ -772,9 +772,11 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   }
 });
 
-loadUser();
-checkStatus();
-loadSubmissions();
+(async () => {
+  await loadUser();
+  await checkStatus();
+  await loadSubmissions();
+})();
 setInterval(checkStatus, 30000);
 setInterval(loadSubmissions, 20000);
 </script>
