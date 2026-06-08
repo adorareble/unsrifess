@@ -415,6 +415,25 @@ async def panel_unblock_x_user(
     return {"success": True}
 
 
+@panel_router.get("/panel/api/x-users/{user_id}/tweets")
+async def panel_user_tweets(
+    user_id: int,
+    _: dict = Depends(get_current_admin),
+):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT x_user_id, screen_name FROM x_users WHERE id = $1", user_id)
+        if not row:
+            raise HTTPException(status_code=404, detail="User not found")
+        tweets = await conn.fetch(
+            "SELECT id, original_text, status, submitted_at, reviewed_at, "
+            "tweet_urls, reject_reason, matched_keyword, tracking_token "
+            "FROM tweets WHERE submitted_by = $1 ORDER BY submitted_at DESC LIMIT 50",
+            row["x_user_id"],
+        )
+        return {"screen_name": row["screen_name"], "tweets": [dict(t) for t in tweets]}
+
+
 @panel_router.get("/panel/api/activity")
 async def panel_get_activity(
     admin_id: int = None,
