@@ -735,10 +735,10 @@ async function showUserTweets(userId) {
           + '</tr>';
       }
       html += '</tbody></table>';
-      html += '<div class="pagination" style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:10px">'
-        + '<button class="btn-small primary" onclick="userTweetsPages[' + userId + ']=' + (page - 1) + ';showUserTweets(' + userId + ')"' + (page <= 1 ? ' disabled' : '') + '>Prev</button>'
-        + '<span style="font-size:0.75rem;color:#71767b">' + page + ' of ' + totalPages + '</span>'
-        + '<button class="btn-small primary" onclick="userTweetsPages[' + userId + ']=' + (page + 1) + ';showUserTweets(' + userId + ')"' + (page >= totalPages ? ' disabled' : '') + '>Next</button>'
+      html += '<div class="pagination">'
+        + '<button onclick="userTweetsPages[' + userId + ']=' + (page - 1) + ';showUserTweets(' + userId + ')"' + (page <= 1 ? ' disabled' : '') + '>Prev</button>'
+        + '<span class="page-info">Page ' + page + ' of ' + totalPages + '</span>'
+        + '<button onclick="userTweetsPages[' + userId + ']=' + (page + 1) + ';showUserTweets(' + userId + ')"' + (page >= totalPages ? ' disabled' : '') + '>Next</button>'
         + '</div>';
     }
     html += '</div>';
