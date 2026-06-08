@@ -189,6 +189,7 @@ class TwitterClient:
 
             target_following = await _get_ids(target_id)
             we_follow = str(unsrifess_id) in target_following
+            logging.info(f"check_mutual({target_screen_name}): target_following={len(target_following)}, we_follow={we_follow}")
             if not we_follow:
                 return {
                     "is_mutual": False, "follows_us": False, "we_follow": False,
@@ -198,6 +199,7 @@ class TwitterClient:
 
             unsrifess_following = await _get_ids(unsrifess_id)
             follows_us = str(target_id) in unsrifess_following
+            logging.info(f"check_mutual({target_screen_name}): unsrifess_following={len(unsrifess_following)}, follows_us={follows_us}")
 
             return {
                 "is_mutual": follows_us,

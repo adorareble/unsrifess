@@ -1,6 +1,7 @@
 import os
 import json
 import asyncio
+import logging
 
 from fastapi import APIRouter, Form, Query, Depends, HTTPException, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse
@@ -348,12 +349,13 @@ async def panel_sync_all_users(
             async with sem:
                 try:
                     result = await client.check_mutual(row["screen_name"])
-                    if "error" not in result:
-                        await update_mutual_status(row["x_user_id"], result["is_mutual"])
-                        return True
-                except Exception:
-                    pass
-                return False
+                    is_mutual = result.get("is_mutual", False)
+                    await update_mutual_status(row["x_user_id"], is_mutual)
+                    return "error" not in result
+                except Exception as e:
+                    logging.warning(f"sync_one({row['screen_name']}) failed: {e}")
+                    await update_mutual_status(row["x_user_id"], False)
+                    return False
 
         results = await asyncio.gather(*[sync_one(r) for r in rows])
         synced = sum(1 for r in results if r)
