@@ -43,7 +43,7 @@ async def x_login():
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
     }
-    url = "https://x.com/i/oauth/2/authorize?" + urlencode(params)
+    url = "https://x.com/i/oauth2/authorize?" + urlencode(params)
     return RedirectResponse(url=url)
 
 
