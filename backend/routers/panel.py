@@ -277,17 +277,29 @@ async def panel_remove_keyword(keyword_id: int, admin: dict = Depends(get_curren
 async def panel_get_x_users(
     page: int = 1,
     limit: int = 20,
+    search: str = "",
     _: dict = Depends(get_current_admin),
 ):
     offset = (page - 1) * limit
     pool = await get_pool()
     async with pool.acquire() as conn:
-        total_row = await conn.fetchrow("SELECT COUNT(*) FROM x_users")
-        total = total_row["count"]
-        rows = await conn.fetch(
-            "SELECT * FROM x_users ORDER BY created_at DESC LIMIT $1 OFFSET $2",
-            limit, offset,
-        )
+        if search:
+            total_row = await conn.fetchrow(
+                "SELECT COUNT(*) FROM x_users WHERE screen_name ILIKE $1",
+                f"%{search}%",
+            )
+            total = total_row["count"]
+            rows = await conn.fetch(
+                "SELECT * FROM x_users WHERE screen_name ILIKE $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+                f"%{search}%", limit, offset,
+            )
+        else:
+            total_row = await conn.fetchrow("SELECT COUNT(*) FROM x_users")
+            total = total_row["count"]
+            rows = await conn.fetch(
+                "SELECT * FROM x_users ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+                limit, offset,
+            )
         return {"users": [dict(r) for r in rows], "total": total}
 
 

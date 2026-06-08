@@ -404,14 +404,14 @@ async function loadSubmissions() {
   const token = localStorage.getItem('x_token');
   if (!token) { document.getElementById('submissionsSection').innerHTML = ''; return; }
   try {
-    const r = await fetch('/api/auth/my-submissions?page=' + subPage + '&limit=5', { headers: { 'Authorization': 'Bearer ' + token } });
+    const r = await fetch('/api/auth/my-submissions?page=' + subPage + '&limit=10', { headers: { 'Authorization': 'Bearer ' + token } });
     if (!r.ok) return;
     const data = await r.json();
     const subs = data.submissions || [];
     const total = data.total || 0;
     const el = document.getElementById('submissionsSection');
     if (subs.length === 0) { el.innerHTML = ''; subPage = 1; return; }
-    const totalPages = Math.ceil(total / 5);
+    const totalPages = Math.ceil(total / 10);
     let html = '<h3>My Confessions</h3>';
     for (const s of subs) {
       const statusClass = 'status-' + s.status;

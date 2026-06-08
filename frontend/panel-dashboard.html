@@ -1112,17 +1112,22 @@ async function loadSettingsActivity() {
 
 // ── Users helpers ──
 let usersPage = 1;
+let usersSearch = '';
 
 async function loadUsers() {
   const el = document.getElementById('tabUsers');
   try {
-    const r = await api('/panel/api/x-users?page=' + usersPage + '&limit=20');
+    const r = await api('/panel/api/x-users?page=' + usersPage + '&limit=20&search=' + encodeURIComponent(usersSearch));
     const d = await r.json();
     const users = d.users || [];
 
-    let html = '<div style="margin-bottom:10px">'
+    let html = '<div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
       + '<button class="btn-small primary" onclick="syncAllUsers()" style="padding:6px 14px">Sync All</button>'
-      + '<span id="syncMsg" style="margin-left:8px;font-size:0.8rem;color:#71767b"></span>'
+      + '<span id="syncMsg" style="font-size:0.8rem;color:#71767b"></span>'
+      + '<input id="usersSearchInput" placeholder="Search username..." value="' + escHtml(usersSearch) + '"'
+      + ' onkeydown="if(event.key===\'Enter\'){usersSearch=this.value;usersPage=1;loadUsers()}"'
+      + ' style="margin-left:auto;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:6px 10px;font-size:0.8rem;outline:none;width:180px">'
+      + '<button class="btn-small primary" onclick="usersSearch=document.getElementById(\'usersSearchInput\').value;usersPage=1;loadUsers()">Search</button>'
       + '</div>';
 
     if (users.length === 0) {
