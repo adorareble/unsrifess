@@ -168,46 +168,28 @@ class TwitterClient:
             unsrifess = await self._client.get_user_by_screen_name("unsrifess")
             unsrifess_id = unsrifess.id
 
-            target = await self._client.get_user_by_screen_name(target_screen_name)
-            target_id = target.id
+            # Use raw GraphQL response to get legacy.following / followed_by
+            # following: auth user (@unsrifess) follows target → follows_us
+            # followed_by: target follows auth user (@unsrifess) → we_follow
+            raw_resp, _ = await self._client.gql.user_by_screen_name(target_screen_name)
+            target_raw = raw_resp["data"]["user"]["result"]
+            target_id = target_raw.get("rest_id")
+            legacy = target_raw.get("legacy", {})
 
-            async def _check_follows(who_id, target_id):
-                # GraphQL first (more real-time), stop as soon as target found
-                try:
-                    result = await self._client.get_user_following(who_id, count=200)
-                    while True:
-                        for u in result:
-                            if str(u.id) == str(target_id):
-                                return True
-                        if result.next_cursor is None:
-                            return False
-                        result = await result.next()
-                except Exception as e:
-                    logging.warning(f"get_user_following({who_id}) failed: {e}, falling back to get_friends_ids")
-                try:
-                    ids = await self._client.get_friends_ids(user_id=who_id)
-                    return str(target_id) in set(str(u) for u in ids)
-                except Exception as e:
-                    logging.warning(f"get_friends_ids({who_id}) also failed: {e}")
-                    return False
+            we_follow = legacy.get("followed_by", False)
+            follows_us = legacy.get("following", False)
 
-            we_follow = await _check_follows(target_id, unsrifess_id)
-            logging.info(f"check_mutual({target_screen_name}): target_id={target_id}, we_follow={we_follow}")
-            if not we_follow:
-                return {
-                    "is_mutual": False, "follows_us": False, "we_follow": False,
-                    "target_id": str(target_id), "unsrifess_id": str(unsrifess_id),
-                    "screen_name": target_screen_name,
-                }
-
-            follows_us = await _check_follows(unsrifess_id, target_id)
-            logging.info(f"check_mutual({target_screen_name}): unsrifess_id={unsrifess_id}, follows_us={follows_us}")
+            logging.info(
+                f"check_mutual({target_screen_name}): "
+                f"target_id={target_id}, "
+                f"we_follow={we_follow}, follows_us={follows_us}"
+            )
 
             return {
-                "is_mutual": follows_us,
+                "is_mutual": we_follow and follows_us,
                 "follows_us": follows_us,
-                "we_follow": True,
-                "target_id": str(target_id),
+                "we_follow": we_follow,
+                "target_id": str(target_id) if target_id else "",
                 "unsrifess_id": str(unsrifess_id),
                 "screen_name": target_screen_name,
             }
