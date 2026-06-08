@@ -870,7 +870,7 @@ async function loadSettings() {
   let html = '<div style="max-width:800px;margin:0 auto;padding:24px 0">'
     + '<div class="tabs" style="margin-bottom:16px;border-bottom:1px solid #2a2a38">'
     + '<div class="tab active" data-stab="general" onclick="switchSettingsTab(\'general\')">General</div>'
-    + '<div class="tab" data-stab="service" onclick="switchSettingsTab(\'service\')">Service &amp; Moderation</div>'
+    + (isSuper ? '<div class="tab" data-stab="service" onclick="switchSettingsTab(\'service\')">Service &amp; Moderation</div>' : '')
     + '<div class="tab" data-stab="activity" onclick="switchSettingsTab(\'activity\')">Activity Log</div>'
     + '</div>';
 
@@ -902,6 +902,15 @@ async function loadSettings() {
       + '<div id="adminsTableWrap"></div>';
   }
 
+  html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
+    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
+    + '<div class="add-keyword-form" style="margin-bottom:10px">'
+    + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
+    + '<button class="btn-small primary" onclick="addKeyword()" style="padding:10px 20px">Add</button>'
+    + '</div><div class="msg" id="kwMsg"></div>'
+    + '<div class="keyword-list" id="kwList"><div class="empty-state">Loading...</div></div>'
+    + '</div>';
+
   // ── Service & Moderation tab (superadmin only) ──
   html += '<div id="stabService" class="stab-content hidden">';
   if (isSuper) {
@@ -922,14 +931,6 @@ async function loadSettings() {
       + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="setDeleteWindow()">Save</button><span id="dwMsg" style="margin-left:6px;font-size:0.75rem;color:#71767b"></span></td></tr>'
       + '</tbody></table></div>';
   }
-  html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
-    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
-    + '<div class="add-keyword-form" style="margin-bottom:10px">'
-    + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
-    + '<button class="btn-small primary" onclick="addKeyword()" style="padding:10px 20px">Add</button>'
-    + '</div><div class="msg" id="kwMsg"></div>'
-    + '<div class="keyword-list" id="kwList"><div class="empty-state">Loading...</div></div>'
-    + '</div>';
   html += '</div>';
 
   // ── Activity Log tab ──
