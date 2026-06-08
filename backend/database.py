@@ -37,6 +37,7 @@ async def init_db():
         await conn.execute("ALTER TABLE tweets ADD COLUMN IF NOT EXISTS tracking_token VARCHAR(32)")
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS we_follow BOOLEAN DEFAULT false")
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS follows_us BOOLEAN DEFAULT false")
+        await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS blocked BOOLEAN DEFAULT false")
 
 
 async def create_admin(username, password, display_name, role="admin"):
@@ -233,8 +234,9 @@ async def get_tweets(status=None, admin_id=None, search=None, from_date=None, to
 
         params.extend([limit, offset])
         rows = await conn.fetch(
-            f"SELECT t.*, a.display_name AS reviewer_name FROM tweets t "
+            f"SELECT t.*, a.display_name AS reviewer_name, u.screen_name AS user_screen_name, u.id AS x_user_db_id FROM tweets t "
             f"LEFT JOIN admins a ON t.reviewed_by = a.id "
+            f"LEFT JOIN x_users u ON t.submitted_by = u.x_user_id "
             f"{where} ORDER BY t.submitted_at DESC LIMIT ${idx} OFFSET ${idx + 1}",
             *params,
         )
@@ -474,3 +476,26 @@ async def get_user_tweets(x_user_id: str, limit: int = 10):
             x_user_id, limit,
         )
         return [dict(r) for r in rows]
+
+
+async def block_x_user(x_user_id: int, admin_id: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("UPDATE x_users SET blocked = true WHERE id = $1", x_user_id)
+    await log_activity(admin_id, "block_x_user", "x_user", str(x_user_id))
+
+
+async def unblock_x_user(x_user_id: int, admin_id: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute("UPDATE x_users SET blocked = false WHERE id = $1", x_user_id)
+    await log_activity(admin_id, "unblock_x_user", "x_user", str(x_user_id))
+
+
+async def is_x_user_blocked(x_user_id: str) -> bool:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT blocked FROM x_users WHERE x_user_id = $1", x_user_id
+        )
+        return row["blocked"] if row else False

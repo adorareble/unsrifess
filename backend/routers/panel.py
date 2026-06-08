@@ -15,6 +15,7 @@ from database import (
     log_activity, get_activity,
     get_setting, set_setting, get_peak_hours,
     get_x_users, get_x_user_by_id, update_follow_status,
+    block_x_user, unblock_x_user,
 )
 from auth import (
     hash_password, verify_password, create_token,
@@ -378,6 +379,40 @@ async def panel_sync_status(
     if not task:
         return {"status": "idle"}
     return task
+
+
+@panel_router.post("/panel/api/x-users/{user_id}/block")
+async def panel_block_x_user(
+    user_id: int,
+    admin: dict = Depends(get_current_admin),
+):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT screen_name, blocked FROM x_users WHERE id = $1", user_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    if row["blocked"]:
+        return {"success": True, "already_blocked": True}
+    await block_x_user(user_id, admin["id"])
+    await log_activity(admin["id"], "block_x_user", "x_user", str(user_id), f"Blocked @{row['screen_name']}")
+    return {"success": True}
+
+
+@panel_router.post("/panel/api/x-users/{user_id}/unblock")
+async def panel_unblock_x_user(
+    user_id: int,
+    admin: dict = Depends(get_current_admin),
+):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow("SELECT screen_name, blocked FROM x_users WHERE id = $1", user_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not row["blocked"]:
+        return {"success": True, "already_unblocked": True}
+    await unblock_x_user(user_id, admin["id"])
+    await log_activity(admin["id"], "unblock_x_user", "x_user", str(user_id), f"Unblocked @{row['screen_name']}")
+    return {"success": True}
 
 
 @panel_router.get("/panel/api/activity")

@@ -658,7 +658,11 @@ async function loadHistory() {
         + '<td>' + fmtTime(t.submitted_at) + '</td>'
         + '<td>' + (t.reviewer_name || '-') + '</td>'
         + '<td>' + (t.user_screen_name
-            ? '<a href="https://x.com/' + encodeURIComponent(t.user_screen_name) + '" target="_blank" style="color:#1d9bf0">@' + escHtml(t.user_screen_name) + '</a>'
+            ? '<div style="display:flex;align-items:center;gap:4px"><a href="https://x.com/' + encodeURIComponent(t.user_screen_name) + '" target="_blank" style="color:#1d9bf0">@' + escHtml(t.user_screen_name) + '</a>'
+            + (t.x_user_db_id
+                ? '<button class="btn-small danger" onclick="blockUserFromHistory(' + t.x_user_db_id + ')" title="Block" style="padding:2px 6px;font-size:0.65rem">\u{1F6AB}</button>'
+                : '')
+            + '</div>'
             : '-') + '</td>'
         + '<td>' + (urls.length ? urls.map(u => '<a href="' + u + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">link</a>').join(' ') : '-') + '</td>'
         + '<td>' + (t.reject_reason ? escHtml(t.reject_reason) : '-') + '</td>'
@@ -683,6 +687,21 @@ async function loadHistory() {
   } catch(e) {
     el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load history</div>';
   }
+}
+
+async function blockUserFromHistory(id) {
+  showPopup('', 'Block User?', 'Block this user from using the application?', [
+    { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
+    { text: 'Block', cls: 'popup-btn-danger', fn: async () => {
+      closePopup();
+      try {
+        const r = await api('/panel/api/x-users/' + id + '/block', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) { loadHistory(); }
+        else { showPopup('⚠️', 'Block Failed', 'Failed to block user', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
+      } catch(e) { showPopup('⚠️', 'Error', 'Connection error', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
+    } },
+  ]);
 }
 
 async function deleteTweet(id) {
@@ -1006,6 +1025,8 @@ async function loadUsers() {
       const followsText = u.we_follow ? 'Yes' : 'No';
       const fbClass = u.follows_us ? 'status-approved' : 'status-rejected';
       const fbText = u.follows_us ? 'Yes' : 'No';
+      const blockedClass = u.blocked ? 'status-rejected' : 'status-approved';
+      const blockedText = u.blocked ? 'Blocked' : 'Active';
       rows += '<tr>'
         + '<td><div style="display:flex;align-items:center;gap:8px">'
         + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2a2a38;flex-shrink:0">'
@@ -1016,8 +1037,12 @@ async function loadUsers() {
         + '<td>' + escHtml(u.name || '-') + '</td>'
         + '<td><span class="status-badge ' + followsClass + '">' + followsText + '</span></td>'
         + '<td><span class="status-badge ' + fbClass + '">' + fbText + '</span></td>'
+        + '<td><span class="status-badge ' + blockedClass + '">' + blockedText + '</span></td>'
         + '<td>' + fmtTime(u.last_login_at) + '</td>'
         + '<td>'
+        + (u.blocked
+            ? '<button class="btn-small primary" onclick="unblockUser(' + u.id + ')" style="margin-right:4px">Unblock</button>'
+            : '<button class="btn-small danger" onclick="blockUser(' + u.id + ')" style="margin-right:4px">Block</button>')
         + (u.follows_us
             ? '<button class="btn-small danger" onclick="unfollowUser(' + u.id + ')" style="margin-right:4px">Unfollow</button>'
             : '<button class="btn-small primary" onclick="followUser(' + u.id + ')" style="margin-right:4px">Follow</button>')
@@ -1026,7 +1051,7 @@ async function loadUsers() {
 
     const totalPages = Math.ceil((d.total || users.length) / 20);
     html += '<div class="table-wrap"><table style="font-size:0.8rem"><thead><tr>'
-      + '<th>User</th><th>Name</th><th>Follows @unsrifess</th><th>Followed Back</th><th>Last Login</th><th>Action</th>'
+      + '<th>User</th><th>Name</th><th>Follows @unsrifess</th><th>Followed Back</th><th>Status</th><th>Last Login</th><th>Action</th>'
       + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
       + '<div class="pagination">'
       + '<button onclick="usersPage--;loadUsers()"' + (usersPage <= 1 ? ' disabled' : '') + '>Prev</button>'
@@ -1062,6 +1087,30 @@ async function unfollowUser(id) {
       } catch(e) { showPopup('⚠️', 'Error', 'Connection error', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
     } },
   ]);
+}
+
+async function blockUser(id) {
+  showPopup('', 'Block User?', 'Block this user from using the application?', [
+    { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
+    { text: 'Block', cls: 'popup-btn-danger', fn: async () => {
+      closePopup();
+      try {
+        const r = await api('/panel/api/x-users/' + id + '/block', { method: 'POST' });
+        const d = await r.json();
+        if (d.success) { loadUsers(); }
+        else { showPopup('⚠️', 'Block Failed', 'Failed to block user', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
+      } catch(e) { showPopup('⚠️', 'Error', 'Connection error', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
+    } },
+  ]);
+}
+
+async function unblockUser(id) {
+  try {
+    const r = await api('/panel/api/x-users/' + id + '/unblock', { method: 'POST' });
+    const d = await r.json();
+    if (d.success) { loadUsers(); }
+    else { showPopup('⚠️', 'Unblock Failed', 'Failed to unblock user', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
+  } catch(e) { showPopup('⚠️', 'Error', 'Connection error', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
 }
 
 async function syncAllUsers() {

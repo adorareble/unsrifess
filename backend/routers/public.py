@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from database import (
     get_pool, create_tweet, check_keywords, get_setting,
     get_tweet_by_token, get_x_user_by_id,
-    reject_tweet, approve_tweet,
+    reject_tweet, approve_tweet, is_x_user_blocked,
 )
 from twitter_client import client, split_into_chunks
 from image import TEMP_DIR, add_watermark, compress_image
@@ -112,6 +112,9 @@ async def tweet_sync(
     x_user = await get_x_user_by_id(user["x_user_id"])
     if not x_user or not x_user["is_mutual"]:
         return {"success": False, "error": "Not mutual. You need to be followed back by @unsrifess."}
+
+    if x_user.get("blocked"):
+        return {"success": False, "error": "You are blocked from using this application."}
 
     online = await get_setting("online")
     if online == "false":
