@@ -60,18 +60,23 @@ async def x_callback(request: Request):
         raise HTTPException(status_code=400, detail="Invalid state parameter")
 
     try:
-        import httpx
+        import httpx, base64
         token_url = "https://api.x.com/2/oauth2/token"
         token_data = {
             "code": code,
             "grant_type": "authorization_code",
             "client_id": X_CLIENT_ID,
-            "client_secret": X_CLIENT_SECRET,
             "redirect_uri": X_CALLBACK_URL,
             "code_verifier": code_verifier,
         }
+        auth_str = f"{X_CLIENT_ID}:{X_CLIENT_SECRET}"
+        auth_header = base64.b64encode(auth_str.encode()).decode()
         async with httpx.AsyncClient() as http:
-            resp = await http.post(token_url, data=token_data)
+            resp = await http.post(
+                token_url,
+                data=token_data,
+                headers={"Authorization": f"Basic {auth_header}"},
+            )
             token_json = resp.json()
             if resp.status_code != 200:
                 raise HTTPException(status_code=400, detail=f"Token exchange failed: {token_json}")
