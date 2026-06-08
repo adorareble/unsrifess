@@ -411,7 +411,7 @@ async function loadSubmissions() {
     const total = data.total || 0;
     const el = document.getElementById('submissionsSection');
     if (subs.length === 0) { el.innerHTML = ''; subPage = 1; return; }
-    const totalPages = Math.ceil(total / 10);
+    const totalPages = Math.ceil(total / 5);
     let html = '<h3>My Confessions</h3>';
     for (const s of subs) {
       const statusClass = 'status-' + s.status;
