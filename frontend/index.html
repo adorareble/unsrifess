@@ -142,7 +142,6 @@
   .user-card .info { flex: 1; min-width: 0; }
   .user-card .info .name { font-size: 0.9rem; font-weight: 600; }
   .user-card .info .screen-name { font-size: 0.8rem; color: #71767b; }
-  .user-card .action-row { margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
   .login-cta {
     text-align: center; padding: 60px 20px;
@@ -594,10 +593,8 @@ async function loadUser() {
     userArea.className = 'user-card';
     userArea.innerHTML = ''
       + '<div class="avatar"><img src="https://unavatar.io/twitter/' + encodeURIComponent(d.screen_name) + '" onerror="this.parentElement.innerHTML=\'\'"></div>'
-      + '<div class="info"><div class="name">@' + escHtml(d.screen_name) + '</div>'
-      + '<div class="action-row">'
-      + '<button onclick="logout()" style="background:transparent;border:1px solid #2a2a38;color:#e7e9ea;padding:4px 10px;border-radius:10px;cursor:pointer;font-size:0.75rem">Logout</button>'
-      + '</div></div>';
+      + '<div class="info"><div class="name">@' + escHtml(d.screen_name) + '</div></div>'
+      + '<button onclick="logout()" style="background:transparent;border:1px solid #2a2a38;color:#e7e9ea;padding:4px 10px;border-radius:10px;cursor:pointer;font-size:0.75rem;margin-left:auto">Logout</button>';
     document.getElementById('loginArea').classList.add('hidden');
     userArea.classList.remove('hidden');
 
