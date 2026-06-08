@@ -58,6 +58,9 @@
   .stat-card .num.offline { color: #f4212e; }
   .stat-card.clickable { cursor: pointer; }
   .stat-card.clickable:hover { background: #22222e; }
+  .badge-on, .badge-off { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+  .badge-on { background: rgba(0,186,124,0.12); color: #00ba7c; }
+  .badge-off { background: rgba(244,33,46,0.12); color: #f4212e; }
 
   /* ── Tabs ── */
   .tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 1px solid #2a2a38; overflow-x: auto; }
@@ -909,13 +912,13 @@ async function loadSettings() {
       + '<thead><tr><th style="padding:10px 8px">Setting</th><th style="padding:10px 8px;width:120px">Value</th><th style="padding:10px 8px;width:100px">Action</th></tr></thead>'
       + '<tbody>'
       + '<tr><td style="padding:10px 8px">Online / Offline</td>'
-      + '<td style="padding:10px 8px"><span class="num" id="settingsOnline">-</span></td>'
+      + '<td style="padding:10px 8px"><span class="badge-off" id="settingsOnline">-</span></td>'
       + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="toggleOnline()">Toggle</button></td></tr>'
       + '<tr><td style="padding:10px 8px">Auto-approve</td>'
-      + '<td style="padding:10px 8px"><span class="num" id="settingsBypass">-</span></td>'
+      + '<td style="padding:10px 8px"><span class="badge-off" id="settingsBypass">-</span></td>'
       + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="toggleBypass()">Toggle</button></td></tr>'
       + '<tr><td style="padding:10px 8px">Bypass Mutual</td>'
-      + '<td style="padding:10px 8px"><span class="num" id="settingsBypassMutual">-</span></td>'
+      + '<td style="padding:10px 8px"><span class="badge-off" id="settingsBypassMutual">-</span></td>'
       + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="toggleBypassMutual()">Toggle</button></td></tr>'
       + '<tr><td style="padding:10px 8px">Delete Window</td>'
       + '<td style="padding:10px 8px"><div style="display:flex;gap:4px;align-items:center"><input id="dwInput" type="number" min="1" value="5" style="width:50px;background:#0e0e12;border:1px solid #2a2a38;border-radius:6px;color:#e7e9ea;padding:4px 6px;font-size:0.8rem;outline:none;text-align:center"><span style="font-size:0.75rem;color:#71767b">min</span></div></td>'
@@ -968,11 +971,11 @@ async function loadSettings() {
       .then(r => r.json())
       .then(d => {
         const se = document.getElementById('settingsOnline');
-        if (se) { se.textContent = d.online ? 'Online' : 'Offline'; se.className = 'num ' + (d.online ? 'online' : 'offline'); }
+        if (se) { se.textContent = d.online ? 'Online' : 'Offline'; se.className = 'badge-' + (d.online ? 'on' : 'off'); }
         const sb = document.getElementById('settingsBypass');
-        if (sb) { sb.textContent = d.bypass ? 'Bypass ON' : 'Bypass OFF'; sb.className = 'num ' + (d.bypass ? 'online' : 'offline'); }
+        if (sb) { sb.textContent = d.bypass ? 'Bypass ON' : 'Bypass OFF'; sb.className = 'badge-' + (d.bypass ? 'on' : 'off'); }
         const sbm = document.getElementById('settingsBypassMutual');
-        if (sbm) { sbm.textContent = d.bypass_mutual ? 'BM ON' : 'BM OFF'; sbm.className = 'num ' + (d.bypass_mutual ? 'online' : 'offline'); }
+        if (sbm) { sbm.textContent = d.bypass_mutual ? 'BM ON' : 'BM OFF'; sbm.className = 'badge-' + (d.bypass_mutual ? 'on' : 'off'); }
         const dw = document.getElementById('dwInput');
         if (dw) dw.value = d.delete_window || 5;
       }).catch(() => {});
