@@ -31,9 +31,11 @@ async def index():
 @public_router.get("/api/status")
 async def status():
     online = await get_setting("online")
+    delete_window = await get_setting("delete_window")
     return {
         "logged_in": client.is_logged_in(),
         "online": online != "false",
+        "delete_window_minutes": int(delete_window) if delete_window else 5,
     }
 
 
@@ -75,10 +77,12 @@ async def user_delete_tweet(tracking_token: str):
     if tweet["status"] != "approved":
         raise HTTPException(status_code=400, detail="Only approved tweets can be deleted")
 
+    delete_window = int(await get_setting("delete_window") or "5")
+
     if tweet["reviewed_at"]:
         elapsed = datetime.utcnow() - tweet["reviewed_at"]
-        if elapsed > timedelta(minutes=5):
-            raise HTTPException(status_code=400, detail="5-minute deletion window has passed")
+        if elapsed > timedelta(minutes=delete_window):
+            raise HTTPException(status_code=400, detail=f"{delete_window}-minute deletion window has passed")
 
     tweet_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
 

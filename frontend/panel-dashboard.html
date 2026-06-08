@@ -885,7 +885,14 @@ async function loadSettings() {
       + '<div class="num" id="settingsBypass">-</div><div class="label">Auto-approve</div></div>'
       + '<div class="stat-card clickable" id="settingsBypassMutualCard" onclick="toggleBypassMutual()" style="flex:1;min-width:120px;cursor:pointer">'
       + '<div class="num" id="settingsBypassMutual">-</div><div class="label">Bypass mutual</div></div>'
-      + '</div>';
+      + '</div>'
+      + '<div style="background:#22222e;border-radius:10px;padding:16px;margin-top:16px">'
+      + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:10px">Delete Window (minutes)</div>'
+      + '<div style="display:flex;gap:8px;align-items:center">'
+      + '<input id="dwInput" type="number" min="1" value="5" style="width:80px;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
+      + '<button class="btn-small primary" onclick="setDeleteWindow()" style="padding:10px 16px;font-size:0.85rem">Save</button>'
+      + '<span id="dwMsg" style="font-size:0.8rem;color:#71767b"></span>'
+      + '</div></div>';
   }
 
   // ── Keywords ──
@@ -929,6 +936,7 @@ async function loadSettings() {
     + '<option value="set_online">Set Online</option>'
     + '<option value="set_bypass">Set Bypass</option>'
     + '<option value="set_bypass_mutual">Set Bypass Mutual</option>'
+    + '<option value="set_delete_window">Set Delete Window</option>'
     + '</select></div>'
     + '<div id="activityTableWrap"><div class="empty-state">Loading...</div></div>'
     + '<div class="pagination" id="activityPagination"></div>';
@@ -952,6 +960,8 @@ async function loadSettings() {
         if (sb) { sb.textContent = d.bypass ? 'Bypass ON' : 'Bypass OFF'; sb.className = 'num ' + (d.bypass ? 'online' : 'offline'); }
         const sbm = document.getElementById('settingsBypassMutual');
         if (sbm) { sbm.textContent = d.bypass_mutual ? 'BM ON' : 'BM OFF'; sbm.className = 'num ' + (d.bypass_mutual ? 'online' : 'offline'); }
+        const dw = document.getElementById('dwInput');
+        if (dw) dw.value = d.delete_window || 5;
       }).catch(() => {});
   }
 }
@@ -1087,6 +1097,24 @@ async function changePassword() {
       document.getElementById('pwOld').value = ''; document.getElementById('pwNew').value = '';
     } else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
   } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Connection error'; }
+}
+
+async function setDeleteWindow() {
+  const input = document.getElementById('dwInput');
+  const msg = document.getElementById('dwMsg');
+  const val = parseInt(input.value);
+  if (!val || val < 1) { msg.textContent = 'Min 1 minute'; msg.style.color = '#f4212e'; return; }
+  try {
+    const form = new URLSearchParams();
+    form.append('value', val.toString());
+    const r = await api('/panel/api/set-delete-window', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
+    const d = await r.json();
+    if (d.success) {
+      msg.textContent = 'Saved: ' + val + ' minutes';
+      msg.style.color = '#00ba7c';
+      loadStats();
+    } else { msg.textContent = d.detail || 'Failed'; msg.style.color = '#f4212e'; }
+  } catch(e) { msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
 }
 
 // ── Activity helpers ──

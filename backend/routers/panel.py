@@ -477,7 +477,8 @@ async def panel_stats(_: dict = Depends(get_current_admin)):
     online = await get_setting("online")
     bypass = await get_setting("bypass")
     bypass_mutual = await get_setting("bypass_mutual")
-    return {**stats, "active_admins": len(active_admins), "online": online != "false", "bypass": bypass != "false", "bypass_mutual": bypass_mutual != "false"}
+    delete_window = await get_setting("delete_window")
+    return {**stats, "active_admins": len(active_admins), "online": online != "false", "bypass": bypass != "false", "bypass_mutual": bypass_mutual != "false", "delete_window": int(delete_window) if delete_window else 5}
 
 
 @panel_router.get("/panel/api/stats/peak-hours")
@@ -516,3 +517,15 @@ async def panel_set_bypass_mutual(
     await set_setting("bypass_mutual", str(bypass_flag).lower())
     await log_activity(admin["id"], "set_bypass_mutual", details=f"Set bypass_mutual={bypass_flag}")
     return {"success": True, "bypass_mutual": bypass_flag}
+
+
+@panel_router.post("/panel/api/set-delete-window")
+async def panel_set_delete_window(
+    value: int = Form(...),
+    admin: dict = Depends(require_superadmin),
+):
+    if value < 1:
+        raise HTTPException(status_code=400, detail="Minimum 1 minute")
+    await set_setting("delete_window", str(value))
+    await log_activity(admin["id"], "set_delete_window", details=f"Set delete_window={value}")
+    return {"success": True, "delete_window": value}

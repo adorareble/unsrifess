@@ -335,6 +335,7 @@
 const MAX_CHARS = 280;
 let subPage = 1;
 const MAX_IMAGES = 4;
+let deleteWindowMinutes = 5;
 const MAX_SUBMISSIONS = 10;
 let selectedFiles = [];
 let rateLimited = false;
@@ -371,11 +372,11 @@ function closePopup() {
 
 function canDelete(reviewedAt) {
   if (!reviewedAt) return false;
-  return (new Date() - new Date(reviewedAt + 'Z')) < 300000;
+  return (new Date() - new Date(reviewedAt + 'Z')) < deleteWindowMinutes * 60000;
 }
 function deleteRemaining(reviewedAt) {
   if (!reviewedAt) return '';
-  const left = 300000 - (new Date() - new Date(reviewedAt + 'Z'));
+  const left = deleteWindowMinutes * 60000 - (new Date() - new Date(reviewedAt + 'Z'));
   if (left <= 0) return '';
   const m = Math.floor(left / 60000);
   const s = Math.floor((left % 60000) / 1000);
@@ -567,6 +568,7 @@ async function checkStatus() {
   try {
     const r = await fetch('/api/status');
     const data = await r.json();
+    if (data.delete_window_minutes) deleteWindowMinutes = data.delete_window_minutes;
     if (!data.online) {
       dot.className = 'status-dot offline';
       text.textContent = 'Closed';
