@@ -2,7 +2,7 @@ import os
 import json
 import asyncio
 
-from fastapi import APIRouter, Form, Query, Depends, HTTPException, Request
+from fastapi import APIRouter, Form, Query, Depends, HTTPException, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse, FileResponse
 
 from database import (
@@ -325,32 +325,56 @@ async def panel_unfollow_user(
     return {"success": False, "error": result.get("error", "Unfollow failed")}
 
 
+_sync_tasks: dict[int, dict] = {}
+
+
 @panel_router.post("/panel/api/x-users/sync-all")
 async def panel_sync_all_users(
+    background_tasks: BackgroundTasks,
     admin: dict = Depends(get_current_admin),
 ):
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        rows = await conn.fetch("SELECT id, x_user_id, screen_name FROM x_users")
+    aid = admin["id"]
+    _sync_tasks[aid] = {"status": "running", "synced": 0, "errors": 0, "total": 0}
 
-    sem = asyncio.Semaphore(5)
+    async def _background_sync():
+        pool = await get_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch("SELECT id, x_user_id, screen_name FROM x_users")
+        _sync_tasks[aid]["total"] = len(rows)
 
-    async def sync_one(row):
-        async with sem:
-            try:
-                result = await client.check_mutual(row["screen_name"])
-                if "error" not in result:
-                    await update_mutual_status(row["x_user_id"], result["is_mutual"])
-                    return True
-            except Exception:
-                pass
-            return False
+        sem = asyncio.Semaphore(5)
 
-    results = await asyncio.gather(*[sync_one(r) for r in rows])
-    synced = sum(1 for r in results if r)
-    errors = len(results) - synced
-    await log_activity(admin["id"], "sync_x_users", details=f"Synced: {synced}, errors: {errors}")
-    return {"success": True, "synced": synced, "errors": errors}
+        async def sync_one(row):
+            async with sem:
+                try:
+                    result = await client.check_mutual(row["screen_name"])
+                    if "error" not in result:
+                        await update_mutual_status(row["x_user_id"], result["is_mutual"])
+                        return True
+                except Exception:
+                    pass
+                return False
+
+        results = await asyncio.gather(*[sync_one(r) for r in rows])
+        synced = sum(1 for r in results if r)
+        errors = len(results) - synced
+        _sync_tasks[aid]["status"] = "done"
+        _sync_tasks[aid]["synced"] = synced
+        _sync_tasks[aid]["errors"] = errors
+        await log_activity(aid, "sync_x_users", details=f"Synced: {synced}, errors: {errors}")
+
+    background_tasks.add_task(_background_sync)
+    return {"success": True}
+
+
+@panel_router.get("/panel/api/x-users/sync-status")
+async def panel_sync_status(
+    admin: dict = Depends(get_current_admin),
+):
+    task = _sync_tasks.get(admin["id"])
+    if not task:
+        return {"status": "idle"}
+    return task
 
 
 @panel_router.get("/panel/api/activity")

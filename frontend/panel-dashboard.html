@@ -1065,11 +1065,21 @@ async function syncAllUsers() {
   const msg = document.getElementById('syncMsg');
   if (msg) msg.textContent = 'Syncing...';
   try {
-    const r = await api('/panel/api/x-users/sync-all', { method: 'POST' });
-    const d = await r.json();
-    if (msg) msg.textContent = 'Synced: ' + d.synced + ', errors: ' + d.errors;
-    loadUsers();
-    loadStats();
+    await api('/panel/api/x-users/sync-all', { method: 'POST' });
+    const poll = setInterval(async () => {
+      try {
+        const r = await api('/panel/api/x-users/sync-status');
+        const d = await r.json();
+        if (d.status === 'done') {
+          clearInterval(poll);
+          if (msg) msg.textContent = 'Synced: ' + d.synced + ', errors: ' + d.errors;
+          loadUsers();
+          loadStats();
+        } else if (d.status === 'running') {
+          if (msg) msg.textContent = 'Syncing... ' + (d.synced + d.errors) + '/' + d.total;
+        }
+      } catch { clearInterval(poll); if (msg) msg.textContent = 'Sync failed'; }
+    }, 2000);
   } catch(e) {
     if (msg) msg.textContent = 'Sync failed';
   }
