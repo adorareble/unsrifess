@@ -554,26 +554,27 @@ function showDone() {
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
+  const token = localStorage.getItem('x_token');
+  function showStatusMsg(title, msg) {
+    if (!token) return;
+    document.getElementById('composeArea').classList.add('hidden');
+    document.getElementById('doneArea').classList.add('hidden');
+    const sm = document.getElementById('statusMsg');
+    sm.querySelector('div').textContent = title;
+    sm.querySelector('p').textContent = msg;
+    sm.classList.remove('hidden');
+  }
   try {
     const r = await fetch('/api/status');
     const data = await r.json();
     if (!data.online) {
       dot.className = 'status-dot offline';
       text.textContent = 'Closed';
-      document.getElementById('composeArea').classList.add('hidden');
-      document.getElementById('doneArea').classList.add('hidden');
-      document.getElementById('statusMsg').classList.remove('hidden');
-      document.getElementById('statusMsg').querySelector('div').textContent = 'Submission is closed';
-      document.getElementById('statusMsg').querySelector('p').textContent = 'Please check back later.';
+      showStatusMsg('Submission is closed', 'Please check back later.');
     } else if (!data.logged_in) {
       dot.className = 'status-dot offline';
       text.textContent = 'Offline';
-      document.getElementById('composeArea').classList.add('hidden');
-      document.getElementById('doneArea').classList.add('hidden');
-      const sm = document.getElementById('statusMsg');
-      sm.querySelector('div').textContent = 'Twitter offline';
-      sm.querySelector('p').textContent = 'Twitter session is offline. Please try again later.';
-      sm.classList.remove('hidden');
+      showStatusMsg('Twitter offline', 'Twitter session is offline. Please try again later.');
     } else {
       dot.className = 'status-dot online';
       text.textContent = 'Online';
@@ -583,12 +584,7 @@ async function checkStatus() {
   } catch {
     dot.className = 'status-dot offline';
     text.textContent = 'Offline';
-    document.getElementById('composeArea').classList.add('hidden');
-    document.getElementById('doneArea').classList.add('hidden');
-    const sm = document.getElementById('statusMsg');
-    sm.querySelector('div').textContent = 'Connection error';
-    sm.querySelector('p').textContent = 'Failed to check server status.';
-    sm.classList.remove('hidden');
+    showStatusMsg('Connection error', 'Failed to check server status.');
   }
 }
 
