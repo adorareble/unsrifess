@@ -426,9 +426,12 @@ async def panel_user_tweets(
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
         tweets = await conn.fetch(
-            "SELECT id, original_text, status, submitted_at, reviewed_at, "
-            "tweet_urls, reject_reason, matched_keyword, tracking_token "
-            "FROM tweets WHERE submitted_by = $1 ORDER BY submitted_at DESC LIMIT 50",
+            "SELECT t.id, t.original_text, t.status, t.submitted_at, t.reviewed_at, "
+            "t.tweet_urls, t.reject_reason, t.matched_keyword, t.tracking_token, "
+            "a.display_name AS reviewer_name "
+            "FROM tweets t "
+            "LEFT JOIN admins a ON t.reviewed_by = a.id "
+            "WHERE t.submitted_by = $1 ORDER BY t.submitted_at DESC LIMIT 50",
             row["x_user_id"],
         )
         return {"screen_name": row["screen_name"], "tweets": [dict(t) for t in tweets]}
