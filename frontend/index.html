@@ -412,8 +412,11 @@ async function loadSubmissions() {
       const date = new Date(s.submitted_at + 'Z');
       const timeStr = date.toLocaleDateString('en-US', { year: 'numeric', day: 'numeric', month: 'short' })
         + ' ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-      const tweetLink = (s.status === 'approved' && s.tweet_urls)
-        ? '<a href="' + s.tweet_urls + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>' : '';
+      const urls = s.tweet_urls ? JSON.parse(s.tweet_urls) : [];
+      const tweetLink = (s.status === 'approved' && urls.length)
+        ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>' : '';
+      const rejectReason = s.status === 'rejected' && s.reject_reason
+        ? '<span style="color:#f4212e;font-size:0.75rem">Rejected: ' + escHtml(s.reject_reason) + '</span>' : '';
       const delBtn = s.status === 'approved' && canDelete(s.reviewed_at) && s.tracking_token
         ? '<button class="submission-del" onclick="deleteTweet(\'' + s.tracking_token + '\')" title="Delete from X">🗑️</button>' : '';
       const delInfo = s.status === 'approved' && s.reviewed_at
@@ -422,7 +425,7 @@ async function loadSubmissions() {
         + '<div class="submission-text">' + escHtml(s.original_text) + '</div>'
         + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">' + delInfo + delBtn + '</div></div>'
         + '<div class="submission-meta" style="margin-bottom:2px"><span>' + timeStr + '</span></div>'
-        + '<div class="submission-meta"><span class="submission-status ' + statusClass + '">' + s.status + '</span> ' + tweetLink + '</div></div>';
+        + '<div class="submission-meta"><span class="submission-status ' + statusClass + '">' + s.status + '</span> ' + rejectReason + ' ' + tweetLink + '</div></div>';
     }
     html += '<div class="pagination" style="display:flex;justify-content:center;gap:8px;margin-top:12px">'
       + '<button class="btn" style="padding:4px 12px;font-size:0.75rem"' + (subPage <= 1 ? ' disabled' : '') + ' onclick="subPage--;loadSubmissions()">Prev</button>'
