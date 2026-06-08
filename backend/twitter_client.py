@@ -172,20 +172,24 @@ class TwitterClient:
             target_id = target.id
 
             async def _get_ids(user_id):
+                # GraphQL first (more real-time data), fallback to friends_ids v1.1
+                try:
+                    result = await self._client.get_user_following(user_id, count=5000)
+                    ids = set()
+                    while True:
+                        ids.update(str(u.id) for u in result)
+                        if result.next_cursor is None:
+                            break
+                        result = await result.next()
+                    return ids
+                except Exception as e:
+                    logging.warning(f"get_user_following({user_id}) failed: {e}, falling back to get_friends_ids")
                 try:
                     ids = await self._client.get_friends_ids(user_id=user_id)
-                    if ids:
-                        return set(str(u) for u in ids)
+                    return set(str(u) for u in ids)
                 except Exception as e:
-                    logging.warning(f"get_friends_ids({user_id}) failed: {e}, falling back to get_user_following")
-                try:
-                    users = await self._client.get_user_following(user_id, count=5000)
-                    if users:
-                        return set(str(u.id) for u in users)
-                except Exception as e:
-                    logging.warning(f"get_user_following({user_id}) also failed: {e}")
+                    logging.warning(f"get_friends_ids({user_id}) also failed: {e}")
                     return set()
-                return set()
 
             target_following = await _get_ids(target_id)
             we_follow = str(unsrifess_id) in target_following
