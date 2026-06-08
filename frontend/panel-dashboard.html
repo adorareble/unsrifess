@@ -902,29 +902,7 @@ async function loadSettings() {
       + '<div id="adminsTableWrap"></div>';
   }
 
-  html += '</div>';
-
-  // ── Service & Moderation tab ──
-  html += '<div id="stabService" class="stab-content hidden">';
-  if (isSuper) {
-    html += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;align-items:stretch">'
-      + '<div class="stat-card clickable" onclick="toggleOnline()" style="flex:1;min-width:120px;cursor:pointer">'
-      + '<div class="num" id="settingsOnline">-</div><div class="label">Toggle on/off</div></div>'
-      + '<div class="stat-card clickable" onclick="toggleBypass()" style="flex:1;min-width:120px;cursor:pointer">'
-      + '<div class="num" id="settingsBypass">-</div><div class="label">Auto-approve</div></div>'
-      + '<div class="stat-card clickable" onclick="toggleBypassMutual()" style="flex:1;min-width:120px;cursor:pointer">'
-      + '<div class="num" id="settingsBypassMutual">-</div><div class="label">Bypass mutual</div></div>'
-      + '<div class="stat-card" style="flex:1;min-width:140px;cursor:default;display:flex;flex-direction:column;justify-content:center;padding:12px 10px">'
-      + '<div style="font-size:0.65rem;color:#71767b;margin-bottom:6px">Delete Window</div>'
-      + '<div style="display:flex;gap:5px;align-items:center">'
-      + '<input id="dwInput" type="number" min="1" value="5" style="width:50px;background:#0e0e12;border:1px solid #2a2a38;border-radius:6px;color:#e7e9ea;padding:6px 6px;font-size:0.8rem;outline:none;text-align:center">'
-      + '<span style="font-size:0.7rem;color:#71767b">min</span>'
-      + '<button class="btn-small primary" onclick="setDeleteWindow()" style="padding:6px 10px;font-size:0.7rem">Save</button>'
-      + '<span id="dwMsg" style="font-size:0.75rem;color:#71767b"></span>'
-      + '</div></div></div>';
-  }
-
-  html += '<h3 style="margin:0 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
+  html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
     + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
     + '<div class="add-keyword-form" style="margin-bottom:10px">'
     + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
@@ -932,6 +910,28 @@ async function loadSettings() {
     + '</div><div class="msg" id="kwMsg"></div>'
     + '<div class="keyword-list" id="kwList"><div class="empty-state">Loading...</div></div>'
     + '</div>';
+
+  // ── Service & Moderation tab (superadmin only) ──
+  html += '<div id="stabService" class="stab-content hidden">';
+  if (isSuper) {
+    html += '<div class="table-wrap"><table style="font-size:0.85rem">'
+      + '<thead><tr><th style="padding:10px 8px">Setting</th><th style="padding:10px 8px;width:120px">Value</th><th style="padding:10px 8px;width:100px">Action</th></tr></thead>'
+      + '<tbody>'
+      + '<tr><td style="padding:10px 8px">Online / Offline</td>'
+      + '<td style="padding:10px 8px"><span class="num" id="settingsOnline">-</span></td>'
+      + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="toggleOnline()">Toggle</button></td></tr>'
+      + '<tr><td style="padding:10px 8px">Auto-approve</td>'
+      + '<td style="padding:10px 8px"><span class="num" id="settingsBypass">-</span></td>'
+      + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="toggleBypass()">Toggle</button></td></tr>'
+      + '<tr><td style="padding:10px 8px">Bypass Mutual</td>'
+      + '<td style="padding:10px 8px"><span class="num" id="settingsBypassMutual">-</span></td>'
+      + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="toggleBypassMutual()">Toggle</button></td></tr>'
+      + '<tr><td style="padding:10px 8px">Delete Window</td>'
+      + '<td style="padding:10px 8px"><div style="display:flex;gap:4px;align-items:center"><input id="dwInput" type="number" min="1" value="5" style="width:50px;background:#0e0e12;border:1px solid #2a2a38;border-radius:6px;color:#e7e9ea;padding:4px 6px;font-size:0.8rem;outline:none;text-align:center"><span style="font-size:0.75rem;color:#71767b">min</span></div></td>'
+      + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="setDeleteWindow()">Save</button><span id="dwMsg" style="margin-left:6px;font-size:0.75rem;color:#71767b"></span></td></tr>'
+      + '</tbody></table></div>';
+  }
+  html += '</div>';
 
   // ── Activity Log tab ──
   html += '<div id="stabActivity" class="stab-content hidden">'
