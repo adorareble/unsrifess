@@ -165,47 +165,46 @@ class TwitterClient:
         self._client.set_cookies(cookies, clear_cookies=True)
 
         try:
-            async def _do_check():
-                unsrifess = await self._client.get_user_by_screen_name("unsrifess")
-                unsrifess_id = unsrifess.id
+            unsrifess = await self._client.get_user_by_screen_name("unsrifess")
+            unsrifess_id = unsrifess.id
 
-                target = await self._client.get_user_by_screen_name(target_screen_name)
-                target_id = target.id
+            target = await self._client.get_user_by_screen_name(target_screen_name)
+            target_id = target.id
 
-                unsrifess_following = set()
-                cursor = None
-                for _ in range(3):
-                    users = await self._client.get_user_following(unsrifess_id, count=200, cursor=cursor)
-                    for u in users:
-                        unsrifess_following.add(str(u.id))
-                    cursor = users.next_cursor if hasattr(users, 'next_cursor') else None
-                    if not cursor:
-                        break
+            target_following = set()
+            try:
+                target_ids = await self._client.get_friends_ids(user_id=target_id)
+                if isinstance(target_ids, list):
+                    target_following = set(str(u) for u in target_ids)
+            except Exception:
+                pass
 
-                target_following = set()
-                try:
-                    target_following_ids = await self._client.get_friends_ids(user_id=target_id)
-                    if isinstance(target_following_ids, list):
-                        target_following = set(str(u) for u in target_following_ids)
-                except Exception:
-                    pass
-
-                follows_us = str(target_id) in unsrifess_following
-                we_follow = str(unsrifess_id) in target_following
-
+            we_follow = str(unsrifess_id) in target_following
+            if not we_follow:
                 return {
-                    "is_mutual": follows_us and we_follow,
-                    "follows_us": follows_us,
-                    "we_follow": we_follow,
-                    "target_id": str(target_id),
-                    "unsrifess_id": str(unsrifess_id),
+                    "is_mutual": False, "follows_us": False, "we_follow": False,
+                    "target_id": str(target_id), "unsrifess_id": str(unsrifess_id),
                     "screen_name": target_screen_name,
                 }
 
-            return await asyncio.wait_for(_do_check(), timeout=15.0)
-        except asyncio.TimeoutError:
-            logging.warning("check_mutual timed out")
-            return {"error": "timeout", "is_mutual": False}
+            unsrifess_following = set()
+            try:
+                unsrifess_ids = await self._client.get_friends_ids(user_id=unsrifess_id)
+                if isinstance(unsrifess_ids, list):
+                    unsrifess_following = set(str(u) for u in unsrifess_ids)
+            except Exception:
+                pass
+
+            follows_us = str(target_id) in unsrifess_following
+
+            return {
+                "is_mutual": True,
+                "follows_us": follows_us,
+                "we_follow": True,
+                "target_id": str(target_id),
+                "unsrifess_id": str(unsrifess_id),
+                "screen_name": target_screen_name,
+            }
         except Exception as e:
             logging.exception(f"check_mutual failed: {e}")
             return {"error": str(e)}
