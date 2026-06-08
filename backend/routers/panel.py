@@ -393,7 +393,7 @@ async def panel_block_x_user(
         raise HTTPException(status_code=404, detail="User not found")
     if row["blocked"]:
         return {"success": True, "already_blocked": True}
-    await block_x_user(user_id, admin["id"])
+    await block_x_user(user_id)
     await log_activity(admin["id"], "block_x_user", "x_user", str(user_id), f"Blocked @{row['screen_name']}")
     return {"success": True}
 
@@ -410,7 +410,7 @@ async def panel_unblock_x_user(
         raise HTTPException(status_code=404, detail="User not found")
     if not row["blocked"]:
         return {"success": True, "already_unblocked": True}
-    await unblock_x_user(user_id, admin["id"])
+    await unblock_x_user(user_id)
     await log_activity(admin["id"], "unblock_x_user", "x_user", str(user_id), f"Unblocked @{row['screen_name']}")
     return {"success": True}
 

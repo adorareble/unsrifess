@@ -478,18 +478,16 @@ async def get_user_tweets(x_user_id: str, limit: int = 10):
         return [dict(r) for r in rows]
 
 
-async def block_x_user(x_user_id: int, admin_id: int):
+async def block_x_user(x_user_id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute("UPDATE x_users SET blocked = true WHERE id = $1", x_user_id)
-    await log_activity(admin_id, "block_x_user", "x_user", str(x_user_id))
 
 
-async def unblock_x_user(x_user_id: int, admin_id: int):
+async def unblock_x_user(x_user_id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute("UPDATE x_users SET blocked = false WHERE id = $1", x_user_id)
-    await log_activity(admin_id, "unblock_x_user", "x_user", str(x_user_id))
 
 
 async def is_x_user_blocked(x_user_id: str) -> bool:
