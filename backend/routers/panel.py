@@ -345,18 +345,18 @@ async def panel_sync_all_users(
 
         sem = asyncio.Semaphore(5)
 
-            async def sync_one(row):
-                async with sem:
-                    try:
-                        result = await client.check_mutual(row["screen_name"])
-                        we_follow = result.get("we_follow", False)
-                        follows_us = result.get("follows_us", False)
-                        await update_follow_status(row["x_user_id"], we_follow, follows_us)
-                        return "error" not in result
-                    except Exception as e:
-                        logging.warning(f"sync_one({row['screen_name']}) failed: {e}")
-                        await update_follow_status(row["x_user_id"], False, False)
-                        return False
+        async def sync_one(row):
+            async with sem:
+                try:
+                    result = await client.check_mutual(row["screen_name"])
+                    we_follow = result.get("we_follow", False)
+                    follows_us = result.get("follows_us", False)
+                    await update_follow_status(row["x_user_id"], we_follow, follows_us)
+                    return "error" not in result
+                except Exception as e:
+                    logging.warning(f"sync_one({row['screen_name']}) failed: {e}")
+                    await update_follow_status(row["x_user_id"], False, False)
+                    return False
 
         results = await asyncio.gather(*[sync_one(r) for r in rows])
         synced = sum(1 for r in results if r)
