@@ -332,18 +332,23 @@ async def panel_sync_all_users(
     pool = await get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch("SELECT id, x_user_id, screen_name FROM x_users")
-    synced = 0
-    errors = 0
-    for row in rows:
-        try:
-            result = await client.check_mutual(row["screen_name"])
-            if "error" not in result:
-                await update_mutual_status(row["x_user_id"], result["is_mutual"])
-                synced += 1
-            else:
-                errors += 1
-        except Exception:
-            errors += 1
+
+    sem = asyncio.Semaphore(5)
+
+    async def sync_one(row):
+        async with sem:
+            try:
+                result = await client.check_mutual(row["screen_name"])
+                if "error" not in result:
+                    await update_mutual_status(row["x_user_id"], result["is_mutual"])
+                    return True
+            except Exception:
+                pass
+            return False
+
+    results = await asyncio.gather(*[sync_one(r) for r in rows])
+    synced = sum(1 for r in results if r)
+    errors = len(results) - synced
     await log_activity(admin["id"], "sync_x_users", details=f"Synced: {synced}, errors: {errors}")
     return {"success": True, "synced": synced, "errors": errors}
 
