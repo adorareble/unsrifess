@@ -14,7 +14,7 @@ services:
         condition: service_healthy
     volumes:
       - temp_images:/app/temp_images
-      - ./twitter_state.json:/app/twitter_state.json
+      - ../twitter_state.json:/app/twitter_state.json
       - ../frontend:/app/frontend
 
   postgres:
