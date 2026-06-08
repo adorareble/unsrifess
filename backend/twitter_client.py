@@ -171,29 +171,28 @@ class TwitterClient:
             target = await self._client.get_user_by_screen_name(target_screen_name)
             target_id = target.id
 
-            async def _get_ids(user_id):
-                # GraphQL first (more real-time data), fallback to friends_ids v1.1
+            async def _check_follows(who_id, target_id):
+                # GraphQL first (more real-time), stop as soon as target found
                 try:
-                    result = await self._client.get_user_following(user_id, count=5000)
-                    ids = set()
+                    result = await self._client.get_user_following(who_id, count=200)
                     while True:
-                        ids.update(str(u.id) for u in result)
+                        for u in result:
+                            if str(u.id) == str(target_id):
+                                return True
                         if result.next_cursor is None:
-                            break
+                            return False
                         result = await result.next()
-                    return ids
                 except Exception as e:
-                    logging.warning(f"get_user_following({user_id}) failed: {e}, falling back to get_friends_ids")
+                    logging.warning(f"get_user_following({who_id}) failed: {e}, falling back to get_friends_ids")
                 try:
-                    ids = await self._client.get_friends_ids(user_id=user_id)
-                    return set(str(u) for u in ids)
+                    ids = await self._client.get_friends_ids(user_id=who_id)
+                    return str(target_id) in set(str(u) for u in ids)
                 except Exception as e:
-                    logging.warning(f"get_friends_ids({user_id}) also failed: {e}")
-                    return set()
+                    logging.warning(f"get_friends_ids({who_id}) also failed: {e}")
+                    return False
 
-            target_following = await _get_ids(target_id)
-            we_follow = str(unsrifess_id) in target_following
-            logging.info(f"check_mutual({target_screen_name}): target_following={len(target_following)}, we_follow={we_follow}")
+            we_follow = await _check_follows(target_id, unsrifess_id)
+            logging.info(f"check_mutual({target_screen_name}): target_id={target_id}, we_follow={we_follow}")
             if not we_follow:
                 return {
                     "is_mutual": False, "follows_us": False, "we_follow": False,
@@ -201,9 +200,8 @@ class TwitterClient:
                     "screen_name": target_screen_name,
                 }
 
-            unsrifess_following = await _get_ids(unsrifess_id)
-            follows_us = str(target_id) in unsrifess_following
-            logging.info(f"check_mutual({target_screen_name}): unsrifess_following={len(unsrifess_following)}, follows_us={follows_us}")
+            follows_us = await _check_follows(unsrifess_id, target_id)
+            logging.info(f"check_mutual({target_screen_name}): unsrifess_id={unsrifess_id}, follows_us={follows_us}")
 
             return {
                 "is_mutual": follows_us,
