@@ -11,3 +11,4 @@ unsrifess/
 AGENTS.md
 prod/.env
 dev/.env
+.opencode/*
