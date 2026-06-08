@@ -115,7 +115,7 @@ async def tweet_sync(
 
     bypass_mutual = await get_setting("bypass_mutual")
     if bypass_mutual == "true":
-        if not x_user["follows_us"]:
+        if not x_user["we_follow"]:
             return {"success": False, "error": "You need to follow @unsrifess."}
     else:
         if not x_user["is_mutual"]:

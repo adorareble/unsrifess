@@ -175,7 +175,7 @@ async def x_my_submissions(
         return {"submissions": [], "total": 0}
     bypass_mutual = await get_setting("bypass_mutual")
     if bypass_mutual == "true":
-        if not x_user.get("follows_us"):
+        if not x_user.get("we_follow"):
             return {"submissions": [], "total": 0}
     else:
         if not x_user.get("is_mutual"):
