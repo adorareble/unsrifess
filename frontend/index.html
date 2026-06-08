@@ -142,13 +142,6 @@
   .user-card .info { flex: 1; min-width: 0; }
   .user-card .info .name { font-size: 0.9rem; font-weight: 600; }
   .user-card .info .screen-name { font-size: 0.8rem; color: #71767b; }
-  .user-card .status-badge {
-    display: inline-block; padding: 2px 10px; border-radius: 10px;
-    font-size: 0.7rem; font-weight: 600; margin-right: 4px;
-  }
-  .status-badge.yes { background: rgba(0,186,124,0.12); color: #00ba7c; }
-  .status-badge.no { background: rgba(244,33,46,0.12); color: #f4212e; }
-  .status-badge.na { background: rgba(113,118,123,0.12); color: #71767b; }
   .user-card .action-row { margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
   .login-cta {
@@ -599,16 +592,10 @@ async function loadUser() {
     const d = await r.json();
     const userArea = document.getElementById('userArea');
     userArea.className = 'user-card';
-    const wfClass = d.we_follow ? 'yes' : 'no';
-    const wfText = d.we_follow ? 'Following ✓' : 'Not Following';
-    const fbClass = d.we_follow ? (d.follows_us ? 'yes' : 'no') : 'na';
-    const fbText = d.we_follow ? (d.follows_us ? 'Followed Back ✓' : 'Not Followed Back') : '—';
     userArea.innerHTML = ''
       + '<div class="avatar"><img src="https://unavatar.io/twitter/' + encodeURIComponent(d.screen_name) + '" onerror="this.parentElement.innerHTML=\'\'"></div>'
       + '<div class="info"><div class="name">@' + escHtml(d.screen_name) + '</div>'
       + '<div class="action-row">'
-      + '<span class="status-badge ' + wfClass + '">' + wfText + '</span>'
-      + '<span class="status-badge ' + fbClass + '">' + fbText + '</span>'
       + '<button onclick="logout()" style="background:transparent;border:1px solid #2a2a38;color:#e7e9ea;padding:4px 10px;border-radius:10px;cursor:pointer;font-size:0.75rem">Logout</button>'
       + '</div></div>';
     document.getElementById('loginArea').classList.add('hidden');

@@ -1005,7 +1005,7 @@ async function loadUsers() {
       const followsClass = u.we_follow ? 'status-approved' : 'status-rejected';
       const followsText = u.we_follow ? 'Yes' : 'No';
       const fbClass = u.follows_us ? 'status-approved' : 'status-rejected';
-      const fbText = u.we_follow ? (u.follows_us ? 'Yes' : 'No') : '—';
+      const fbText = u.follows_us ? 'Yes' : 'No';
       rows += '<tr>'
         + '<td><div style="display:flex;align-items:center;gap:8px">'
         + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2a2a38;flex-shrink:0">'
