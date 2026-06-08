@@ -153,3 +153,23 @@ async def x_me(request: Request):
         "screen_name": payload.get("screen_name"),
         "is_mutual": x_user["is_mutual"] if x_user else False,
     }
+
+
+@auth_x_router.get("/api/auth/my-submissions")
+async def x_my_submissions(request: Request):
+    from auth import decode_token
+    from database import get_user_tweets
+    auth = request.headers.get("Authorization", "")
+    token = ""
+    if auth.startswith("Bearer "):
+        token = auth[7:]
+    else:
+        token = request.query_params.get("token", "")
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing token")
+    payload = decode_token(token)
+    if payload is None or payload.get("type") != "user":
+        raise HTTPException(status_code=401, detail="Invalid token")
+    x_user_id = payload["sub"].replace("x_user:", "")
+    tweets = await get_user_tweets(x_user_id)
+    return {"submissions": tweets}

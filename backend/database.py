@@ -459,3 +459,16 @@ async def get_x_users():
             "SELECT * FROM x_users ORDER BY created_at DESC"
         )
         return [dict(r) for r in rows]
+
+
+async def get_user_tweets(x_user_id: str, limit: int = 10):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT id, original_text, status, submitted_at, reviewed_at, "
+            "tweet_urls, reject_reason, matched_keyword, tracking_token "
+            "FROM tweets WHERE submitted_by = $1 "
+            "ORDER BY submitted_at DESC LIMIT $2",
+            x_user_id, limit,
+        )
+        return [dict(r) for r in rows]

@@ -390,12 +390,7 @@ async function deleteTweet(token) {
         const r = await fetch('/api/tweets/' + token + '/delete', { method: 'POST' });
         const d = await r.json();
         if (d.success) {
-          const subs = getSubmissions().map(s =>
-            s.token === token ? { ...s, status: 'deleted', reason: 'deleted by user' } : s
-          );
-          localStorage.setItem('unsr_submissions', JSON.stringify(subs));
-          renderSubmissions();
-          refreshStatuses();
+          loadSubmissions();
         } else {
           showPopup('⚠️', 'Failed', d.detail || 'Failed to delete tweet.');
         }
@@ -404,69 +399,36 @@ async function deleteTweet(token) {
   ]);
 }
 
-function getSubmissions() {
-  try { return JSON.parse(localStorage.getItem('unsr_submissions') || '[]'); }
-  catch { return []; }
-}
-function saveSubmission(token, text, status, urls, reason, reviewed_at) {
-  const subs = getSubmissions();
-  subs.unshift({ token, text, date: new Date().toISOString(), status: status || 'pending', urls: urls || null, reason: reason || null, reviewed_at: reviewed_at || null });
-  if (subs.length > MAX_SUBMISSIONS) subs.length = MAX_SUBMISSIONS;
-  localStorage.setItem('unsr_submissions', JSON.stringify(subs));
-}
-
-function renderSubmissions() {
-  const subs = getSubmissions();
-  const el = document.getElementById('submissionsSection');
-  if (subs.length === 0) { el.innerHTML = ''; return; }
-  let html = '<h3>Last 10 Confessions</h3>'
-    + '<div style="font-size:0.75rem;color:#71767b;margin:-8px 0 12px">Confessions you sent from this device</div>';
-  for (const s of subs) {
-    const statusClass = 'status-' + s.status;
-    const date = new Date(s.date);
-    const timeStr = date.toLocaleDateString('en-US', { year: 'numeric', day: 'numeric', month: 'short' })
-      + ' ' + String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0') + ':' + String(date.getSeconds()).padStart(2, '0');
-    const tweetLink = (s.status === 'approved' && s.urls && s.urls.length)
-      ? '<a href="' + s.urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>' : '';
-    const delBtn = s.status === 'approved' && canDelete(s.reviewed_at)
-      ? '<button class="submission-del" onclick="deleteTweet(\'' + s.token + '\')" title="Delete from X">🗑️</button>' : '';
-    const delInfo = s.status === 'approved' && s.reviewed_at
-      ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>' : '';
-    html += '<div class="submission-item"><div class="submission-header">'
-      + '<div class="submission-text">' + escHtml(s.text) + '</div>'
-      + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">' + delInfo + delBtn + '</div></div>'
-      + '<div class="submission-meta" style="margin-bottom:2px"><span>' + timeStr + '</span></div>'
-      + '<div class="submission-meta"><span class="submission-status ' + statusClass + '">' + s.status + '</span> ' + tweetLink + '</div></div>';
-  }
-  el.innerHTML = html;
-}
-
-async function refreshStatuses() {
-  const subs = getSubmissions();
-  let changed = false;
-  const fetches = subs.filter(s => s.token).map(async s => {
-    try {
-      const r = await fetch('/api/status/' + encodeURIComponent(s.token));
-      if (!r.ok) return;
-      const d = await r.json();
-      if (d.status && d.status !== 'pending' && d.status !== s.status) {
-        s.status = d.status;
-        if (d.original_text) s.text = d.original_text;
-        if (d.tweet_urls) s.urls = d.tweet_urls;
-        if (d.reason) s.reason = d.reason;
-        if (d.reviewed_at) s.reviewed_at = d.reviewed_at;
-        changed = true;
-      } else if (d.status === 'approved' && d.reviewed_at && !s.reviewed_at) {
-        s.reviewed_at = d.reviewed_at;
-        changed = true;
-      }
-    } catch {}
-  });
-  await Promise.all(fetches);
-  if (changed) {
-    localStorage.setItem('unsr_submissions', JSON.stringify(subs));
-    renderSubmissions();
-  }
+async function loadSubmissions() {
+  const token = localStorage.getItem('x_token');
+  if (!token) { document.getElementById('submissionsSection').innerHTML = ''; return; }
+  try {
+    const r = await fetch('/api/auth/my-submissions', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!r.ok) return;
+    const data = await r.json();
+    const subs = data.submissions || [];
+    const el = document.getElementById('submissionsSection');
+    if (subs.length === 0) { el.innerHTML = ''; return; }
+    let html = '<h3>Last 10 Confessions</h3>';
+    for (const s of subs) {
+      const statusClass = 'status-' + s.status;
+      const date = new Date(s.submitted_at);
+      const timeStr = date.toLocaleDateString('en-US', { year: 'numeric', day: 'numeric', month: 'short' })
+        + ' ' + String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0') + ':' + String(date.getSeconds()).padStart(2, '0');
+      const tweetLink = (s.status === 'approved' && s.tweet_urls)
+        ? '<a href="' + s.tweet_urls + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>' : '';
+      const delBtn = s.status === 'approved' && canDelete(s.reviewed_at) && s.tracking_token
+        ? '<button class="submission-del" onclick="deleteTweet(\'' + s.tracking_token + '\')" title="Delete from X">🗑️</button>' : '';
+      const delInfo = s.status === 'approved' && s.reviewed_at
+        ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>' : '';
+      html += '<div class="submission-item"><div class="submission-header">'
+        + '<div class="submission-text">' + escHtml(s.original_text) + '</div>'
+        + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">' + delInfo + delBtn + '</div></div>'
+        + '<div class="submission-meta" style="margin-bottom:2px"><span>' + timeStr + '</span></div>'
+        + '<div class="submission-meta"><span class="submission-status ' + statusClass + '">' + s.status + '</span> ' + tweetLink + '</div></div>';
+    }
+    el.innerHTML = html;
+  } catch {}
 }
 
 function estimateTweets(text) {
@@ -723,9 +685,6 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
 
     const result = document.getElementById('result');
     if (data.success) {
-      if (data.tracking_token) {
-        saveSubmission(data.tracking_token, text, data.status, data.tweet_url ? [data.tweet_url] : null);
-      }
       if (data.status === 'rejected') {
         result.className = 'result error';
         result.innerHTML = 'Your message was automatically rejected (matched filter).';
@@ -742,7 +701,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
       result.className = 'result error';
       result.textContent = data.error || 'Something went wrong. Please try again.';
     }
-    renderSubmissions();
+    loadSubmissions();
     checkStatus();
     showDone();
   } catch (err) {
@@ -755,10 +714,9 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
 
 loadUser();
 checkStatus();
-renderSubmissions();
-refreshStatuses();
+loadSubmissions();
 setInterval(checkStatus, 30000);
-setInterval(refreshStatuses, 20000);
+setInterval(loadSubmissions, 20000);
 </script>
 </body>
 </html>
