@@ -489,7 +489,7 @@ async function toggleOnline() {
   const isOnline = (num.textContent || '').trim() === 'Online';
   const newState = !isOnline;
   num.textContent = newState ? 'Online' : 'Offline';
-  num.className = 'num ' + (newState ? 'online' : 'offline');
+  num.className = 'badge-' + (newState ? 'on' : 'off');
   try { await api('/panel/api/set-online', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: newState ? 'value=1' : 'value=0' }); } catch(_) {}
   loadStats();
 }
@@ -499,7 +499,7 @@ async function toggleBypass() {
   const isOn = (num.textContent || '').trim() === 'Bypass ON';
   const newState = !isOn;
   num.textContent = newState ? 'Bypass ON' : 'Bypass OFF';
-  num.className = 'num ' + (newState ? 'online' : 'offline');
+  num.className = 'badge-' + (newState ? 'on' : 'off');
   try { await api('/panel/api/set-bypass', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: newState ? 'value=1' : 'value=0' }); } catch(_) {}
   loadStats();
 }
@@ -509,7 +509,7 @@ async function toggleBypassMutual() {
   const isOn = (num.textContent || '').trim() === 'BM ON';
   const newState = !isOn;
   num.textContent = newState ? 'BM ON' : 'BM OFF';
-  num.className = 'num ' + (newState ? 'online' : 'offline');
+  num.className = 'badge-' + (newState ? 'on' : 'off');
   try { await api('/panel/api/set-bypass-mutual', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: newState ? 'value=1' : 'value=0' }); } catch(_) {}
   loadStats();
 }
