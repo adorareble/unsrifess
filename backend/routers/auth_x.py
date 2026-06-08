@@ -74,12 +74,12 @@ async def x_callback(request: Request):
             if resp.status_code != 200:
                 raise HTTPException(status_code=400, detail=f"Token exchange failed: {token_json}")
 
-            access_token = token_json["access_token"]
-            refresh_token = token_json.get("refresh_token")
+            x_access_token = token_json["access_token"]
+            x_refresh_token = token_json.get("refresh_token")
 
             user_resp = await http.get(
                 "https://api.x.com/2/users/me",
-                headers={"Authorization": f"Bearer {access_token}"},
+                headers={"Authorization": f"Bearer {x_access_token}"},
                 params={"user.fields": "profile_image_url"},
             )
             user_data = user_resp.json()
@@ -92,9 +92,9 @@ async def x_callback(request: Request):
             name = x_user.get("name", screen_name)
             avatar_url = x_user.get("profile_image_url", "")
 
-            result = await upsert_x_user(
+            await upsert_x_user(
                 x_user_id, screen_name, name, avatar_url,
-                access_token, refresh_token,
+                x_access_token, x_refresh_token,
             )
 
             mutual_result = await client.check_mutual(screen_name)
@@ -102,29 +102,17 @@ async def x_callback(request: Request):
             await update_mutual_status(x_user_id, is_mutual)
 
             token = create_user_token(x_user_id, screen_name, is_mutual)
-
-            html = f"""<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+            html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Redirecting...</title>
 <style>
-  body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#0e0e12;color:#e7e9ea;display:flex;align-items:center;justify-content:center;min-height:100vh}}
-  .card{{background:#1a1a24;border:1px solid #2a2a38;border-radius:16px;padding:30px;text-align:center;max-width:400px}}
-  .spinner{{width:32px;height:32px;border:3px solid #2a2a38;border-top-color:#1d9bf0;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px}}
-  @keyframes spin{{to{{transform:rotate(360deg)}}}}
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="spinner"></div>
-  <div>Logging in...</div>
-</div>
-<script>
-  localStorage.setItem('x_token', '{token}');
-  window.location.href = '/';
-</script>
-</body>
-</html>"""
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0e0e12;color:#e7e9ea;display:flex;align-items:center;justify-content:center;min-height:100vh}}
+.card{{background:#1a1a24;border:1px solid #2a2a38;border-radius:16px;padding:30px;text-align:center;max-width:400px}}
+.spinner{{width:32px;height:32px;border:3px solid #2a2a38;border-top-color:#1d9bf0;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px}}
+@keyframes spin{{to{{transform:rotate(360deg)}}}}
+</style></head><body><div class="card"><div class="spinner"></div><div>Logging in...</div></div>
+<script>localStorage.setItem('x_token','{token}');window.location.href='/'</script>
+</body></html>"""
             return HTMLResponse(html)
 
     except Exception as e:
@@ -173,3 +161,37 @@ async def x_my_submissions(request: Request):
     x_user_id = payload["sub"].replace("x_user:", "")
     tweets = await get_user_tweets(x_user_id)
     return {"submissions": tweets}
+
+
+@auth_x_router.post("/api/auth/refresh-mutual")
+async def x_refresh_mutual(request: Request):
+    from auth import decode_token, create_user_token
+    from database import get_x_user_by_id, update_mutual_status
+    auth = request.headers.get("Authorization", "")
+    token = ""
+    if auth.startswith("Bearer "):
+        token = auth[7:]
+    else:
+        token = request.query_params.get("token", "")
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing token")
+    payload = decode_token(token)
+    if payload is None or payload.get("type") != "user":
+        raise HTTPException(status_code=401, detail="Invalid token")
+    x_user_id = payload["sub"].replace("x_user:", "")
+    screen_name = payload.get("screen_name", "")
+    if not screen_name:
+        return {"success": False, "error": "Missing screen_name"}
+
+    mutual_result = await client.check_mutual(screen_name)
+    is_mutual = mutual_result.get("is_mutual", False) if "error" not in mutual_result else False
+    we_follow = mutual_result.get("we_follow", False)
+    await update_mutual_status(x_user_id, is_mutual)
+
+    new_token = create_user_token(x_user_id, screen_name, is_mutual)
+    return {
+        "success": True,
+        "is_mutual": is_mutual,
+        "we_follow": we_follow,
+        "token": new_token,
+    }

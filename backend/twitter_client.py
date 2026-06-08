@@ -171,14 +171,21 @@ class TwitterClient:
             target = await self._client.get_user_by_screen_name(target_screen_name)
             target_id = target.id
 
-            target_following = set()
-            try:
-                target_ids = await self._client.get_friends_ids(user_id=target_id)
-                if isinstance(target_ids, list):
-                    target_following = set(str(u) for u in target_ids)
-            except Exception:
-                pass
+            async def _get_ids(user_id):
+                try:
+                    ids = await self._client.get_friends_ids(user_id=user_id)
+                    if isinstance(ids, list):
+                        return set(str(u) for u in ids)
+                except Exception as e:
+                    logging.warning(f"get_friends_ids({user_id}) failed: {e}, falling back to get_user_following")
+                try:
+                    users = await self._client.get_user_following(user_id, count=5000)
+                    return set(str(u.id) for u in users)
+                except Exception as e:
+                    logging.warning(f"get_user_following({user_id}) also failed: {e}")
+                    return set()
 
+            target_following = await _get_ids(target_id)
             we_follow = str(unsrifess_id) in target_following
             if not we_follow:
                 return {
@@ -187,18 +194,11 @@ class TwitterClient:
                     "screen_name": target_screen_name,
                 }
 
-            unsrifess_following = set()
-            try:
-                unsrifess_ids = await self._client.get_friends_ids(user_id=unsrifess_id)
-                if isinstance(unsrifess_ids, list):
-                    unsrifess_following = set(str(u) for u in unsrifess_ids)
-            except Exception:
-                pass
-
+            unsrifess_following = await _get_ids(unsrifess_id)
             follows_us = str(target_id) in unsrifess_following
 
             return {
-                "is_mutual": True,
+                "is_mutual": follows_us,
                 "follows_us": follows_us,
                 "we_follow": True,
                 "target_id": str(target_id),

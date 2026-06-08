@@ -614,10 +614,32 @@ async function loadUser() {
       document.getElementById('doneArea').classList.add('hidden');
       const sm = document.getElementById('statusMsg');
       sm.querySelector('div').textContent = 'Not followed back';
-      sm.querySelector('p').textContent = 'You need to be followed back by @unsrifess to submit confessions.';
+      sm.querySelector('p').innerHTML = 'Make sure you follow @unsrifess and they follow you back.<br><button class="btn btn-primary" style="margin-top:8px;padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
       sm.classList.remove('hidden');
     }
   } catch { localStorage.removeItem('x_token'); }
+}
+
+async function refreshMutual(btn) {
+  const token = localStorage.getItem('x_token');
+  if (!token) return;
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  try {
+    const r = await fetch('/api/auth/refresh-mutual', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token } });
+    const d = await r.json();
+    if (d.success && d.token) {
+      localStorage.setItem('x_token', d.token);
+      if (d.is_mutual) {
+        document.getElementById('composeArea').classList.remove('hidden');
+        document.getElementById('statusMsg').classList.add('hidden');
+        loadSubmissions();
+      } else {
+        btn.textContent = d.we_follow ? 'Waiting for follow back...' : 'Follow @unsrifess first';
+        setTimeout(() => { btn.textContent = 'Check again'; btn.disabled = false; }, 3000);
+      }
+    }
+  } catch { btn.textContent = 'Failed'; btn.disabled = false; }
 }
 
 function logout() {
