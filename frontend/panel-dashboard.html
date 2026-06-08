@@ -73,6 +73,8 @@
   }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
+  .stab-content { display: block; }
+  .stab-content.hidden { display: none; }
 
   /* ── Queue Card ── */
   .queue-card {
@@ -851,17 +853,29 @@ async function doDelete(id, reason) {
 }
 
 // ─── Settings Tab (merged) ──────────────────────────────
-let settingsActivityPage = 1;
+let stabActivityPage = 1;
+
+function switchSettingsTab(name) {
+  document.querySelectorAll('[data-stab]').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.stab-content').forEach(t => t.classList.add('hidden'));
+  document.querySelector('[data-stab="' + name + '"]').classList.add('active');
+  document.getElementById('stab' + name.charAt(0).toUpperCase() + name.slice(1)).classList.remove('hidden');
+}
 
 async function loadSettings() {
   const el = document.getElementById('tabSettings');
   const currentName = ADMIN.display_name || ADMIN.username;
   const isSuper = ADMIN.role === 'superadmin';
 
-  let html = '<div style="max-width:800px;margin:0 auto;padding:24px 0">';
+  let html = '<div style="max-width:800px;margin:0 auto;padding:24px 0">'
+    + '<div class="tabs" style="margin-bottom:16px;border-bottom:1px solid #2a2a38">'
+    + '<div class="tab active" data-stab="general" onclick="switchSettingsTab(\'general\')">General</div>'
+    + '<div class="tab" data-stab="service" onclick="switchSettingsTab(\'service\')">Service &amp; Moderation</div>'
+    + '<div class="tab" data-stab="activity" onclick="switchSettingsTab(\'activity\')">Activity Log</div>'
+    + '</div>';
 
-  // ── General ──
-  html += '<h3 style="margin:0 0 16px;font-size:1rem;color:#e7e9ea">General</h3>'
+  // ── General tab ──
+  html += '<div id="stabGeneral" class="stab-content">'
     + '<div style="background:#22222e;border-radius:10px;padding:16px;margin-bottom:20px">'
     + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:10px">Display Name</div>'
     + '<div style="display:flex;gap:8px">'
@@ -875,36 +889,6 @@ async function loadSettings() {
     + '<button class="btn-small primary" onclick="changePassword()" style="padding:10px;font-size:0.85rem">Save</button>'
     + '<div id="pwMsg" style="font-size:0.85rem"></div></div></div>';
 
-  // ── Toggles (superadmin only) ──
-  if (isSuper) {
-    html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Toggles</h3>'
-      + '<div style="display:flex;gap:12px;flex-wrap:wrap">'
-      + '<div class="stat-card clickable" id="settingsStatusCard" onclick="toggleOnline()" style="flex:1;min-width:120px;cursor:pointer">'
-      + '<div class="num" id="settingsOnline">-</div><div class="label">Toggle on/off</div></div>'
-      + '<div class="stat-card clickable" id="settingsBypassCard" onclick="toggleBypass()" style="flex:1;min-width:120px;cursor:pointer">'
-      + '<div class="num" id="settingsBypass">-</div><div class="label">Auto-approve</div></div>'
-      + '<div class="stat-card clickable" id="settingsBypassMutualCard" onclick="toggleBypassMutual()" style="flex:1;min-width:120px;cursor:pointer">'
-      + '<div class="num" id="settingsBypassMutual">-</div><div class="label">Bypass mutual</div></div>'
-      + '</div>'
-      + '<div style="background:#22222e;border-radius:10px;padding:16px;margin-top:16px">'
-      + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:10px">Delete Window (minutes)</div>'
-      + '<div style="display:flex;gap:8px;align-items:center">'
-      + '<input id="dwInput" type="number" min="1" value="5" style="width:80px;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
-      + '<button class="btn-small primary" onclick="setDeleteWindow()" style="padding:10px 16px;font-size:0.85rem">Save</button>'
-      + '<span id="dwMsg" style="font-size:0.8rem;color:#71767b"></span>'
-      + '</div></div>';
-  }
-
-  // ── Keywords ──
-  html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
-    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
-    + '<div class="add-keyword-form" style="margin-bottom:10px">'
-    + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
-    + '<button class="btn-small primary" onclick="addKeyword()" style="padding:10px 20px">Add</button>'
-    + '</div><div class="msg" id="kwMsg"></div>'
-    + '<div class="keyword-list" id="kwList"><div class="empty-state">Loading...</div></div>';
-
-  // ── Admins (superadmin only) ──
   if (isSuper) {
     html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Admin Management</h3>'
       + '<div style="margin-bottom:12px;padding:14px;background:#22222e;border-radius:10px">'
@@ -918,10 +902,41 @@ async function loadSettings() {
       + '<div id="adminsTableWrap"></div>';
   }
 
-  // ── Activity Log ──
-  html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Activity Log</h3>'
+  html += '</div>';
+
+  // ── Service & Moderation tab ──
+  html += '<div id="stabService" class="stab-content hidden">';
+  if (isSuper) {
+    html += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;align-items:stretch">'
+      + '<div class="stat-card clickable" onclick="toggleOnline()" style="flex:1;min-width:120px;cursor:pointer">'
+      + '<div class="num" id="settingsOnline">-</div><div class="label">Toggle on/off</div></div>'
+      + '<div class="stat-card clickable" onclick="toggleBypass()" style="flex:1;min-width:120px;cursor:pointer">'
+      + '<div class="num" id="settingsBypass">-</div><div class="label">Auto-approve</div></div>'
+      + '<div class="stat-card clickable" onclick="toggleBypassMutual()" style="flex:1;min-width:120px;cursor:pointer">'
+      + '<div class="num" id="settingsBypassMutual">-</div><div class="label">Bypass mutual</div></div>'
+      + '<div class="stat-card" style="flex:1;min-width:140px;cursor:default;display:flex;flex-direction:column;justify-content:center;padding:12px 10px">'
+      + '<div style="font-size:0.65rem;color:#71767b;margin-bottom:6px">Delete Window</div>'
+      + '<div style="display:flex;gap:5px;align-items:center">'
+      + '<input id="dwInput" type="number" min="1" value="5" style="width:50px;background:#0e0e12;border:1px solid #2a2a38;border-radius:6px;color:#e7e9ea;padding:6px 6px;font-size:0.8rem;outline:none;text-align:center">'
+      + '<span style="font-size:0.7rem;color:#71767b">min</span>'
+      + '<button class="btn-small primary" onclick="setDeleteWindow()" style="padding:6px 10px;font-size:0.7rem">Save</button>'
+      + '<span id="dwMsg" style="font-size:0.75rem;color:#71767b"></span>'
+      + '</div></div></div>';
+  }
+
+  html += '<h3 style="margin:0 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
+    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
+    + '<div class="add-keyword-form" style="margin-bottom:10px">'
+    + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
+    + '<button class="btn-small primary" onclick="addKeyword()" style="padding:10px 20px">Add</button>'
+    + '</div><div class="msg" id="kwMsg"></div>'
+    + '<div class="keyword-list" id="kwList"><div class="empty-state">Loading...</div></div>'
+    + '</div>';
+
+  // ── Activity Log tab ──
+  html += '<div id="stabActivity" class="stab-content hidden">'
     + '<div class="filter-bar" style="margin-bottom:8px">'
-    + '<select id="af-action" onchange="settingsActivityPage=1;loadSettingsActivity()">'
+    + '<select id="af-action" onchange="stabActivityPage=1;loadSettingsActivity()">'
     + '<option value="">All actions</option>'
     + '<option value="approve">Approve</option><option value="reject">Reject</option>'
     + '<option value="delete">Delete</option><option value="login">Login</option>'
@@ -939,17 +954,16 @@ async function loadSettings() {
     + '<option value="set_delete_window">Set Delete Window</option>'
     + '</select></div>'
     + '<div id="activityTableWrap"><div class="empty-state">Loading...</div></div>'
-    + '<div class="pagination" id="activityPagination"></div>';
+    + '<div class="pagination" id="activityPagination"></div>'
+    + '</div>';
 
   html += '</div>';
   el.innerHTML = html;
 
-  // Load async sections
   loadKeywordsSection();
   if (isSuper) loadAdminsSection();
   loadSettingsActivity();
 
-  // Fetch current online/bypass status for toggles
   if (isSuper) {
     fetch('/panel/api/stats', { headers: { 'Authorization': 'Bearer ' + TOKEN } })
       .then(r => r.json())
@@ -1123,7 +1137,7 @@ async function loadSettingsActivity() {
   const pagination = document.getElementById('activityPagination');
   try {
     const params = new URLSearchParams();
-    params.set('page', settingsActivityPage);
+    params.set('page', stabActivityPage);
     params.set('limit', '10');
     const actionFilter = document.getElementById('af-action');
     if (actionFilter && actionFilter.value) params.set('action', actionFilter.value);
@@ -1149,9 +1163,9 @@ async function loadSettingsActivity() {
     }
     const totalPages = Math.ceil(d.total / 10);
     el.innerHTML = '<div class="table-wrap"><table style="font-size:0.8rem"><thead><tr><th>Admin</th><th>Action</th><th>Target</th><th>Details</th><th>Time</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
-    pagination.innerHTML = '<button onclick="settingsActivityPage--;loadSettingsActivity()"' + (settingsActivityPage <= 1 ? ' disabled' : '') + '>Prev</button>'
-      + '<span class="page-info">Page ' + settingsActivityPage + ' of ' + totalPages + '</span>'
-      + '<button onclick="settingsActivityPage++;loadSettingsActivity()"' + (settingsActivityPage >= totalPages ? ' disabled' : '') + '>Next</button>';
+    pagination.innerHTML = '<button onclick="stabActivityPage--;loadSettingsActivity()"' + (stabActivityPage <= 1 ? ' disabled' : '') + '>Prev</button>'
+      + '<span class="page-info">Page ' + stabActivityPage + ' of ' + totalPages + '</span>'
+      + '<button onclick="stabActivityPage++;loadSettingsActivity()"' + (stabActivityPage >= totalPages ? ' disabled' : '') + '>Next</button>';
   } catch(e) {
     el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load activity</div>';
     pagination.innerHTML = '';
