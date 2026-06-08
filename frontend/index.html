@@ -364,11 +364,11 @@ function closePopup() {
 
 function canDelete(reviewedAt) {
   if (!reviewedAt) return false;
-  return (new Date() - new Date(reviewedAt)) < 300000;
+  return (new Date() - new Date(reviewedAt + 'Z')) < 300000;
 }
 function deleteRemaining(reviewedAt) {
   if (!reviewedAt) return '';
-  const left = 300000 - (new Date() - new Date(reviewedAt));
+  const left = 300000 - (new Date() - new Date(reviewedAt + 'Z'));
   if (left <= 0) return '';
   const m = Math.floor(left / 60000);
   const s = Math.floor((left % 60000) / 1000);
@@ -406,9 +406,8 @@ async function loadSubmissions() {
     let html = '<h3>Last 10 Confessions</h3>';
     for (const s of subs) {
       const statusClass = 'status-' + s.status;
-      const date = new Date(s.submitted_at);
-      const timeStr = date.toLocaleDateString('en-US', { year: 'numeric', day: 'numeric', month: 'short' })
-        + ' ' + String(date.getHours()).padStart(2, '0') + ':' + String(date.getMinutes()).padStart(2, '0') + ':' + String(date.getSeconds()).padStart(2, '0');
+      const date = new Date(s.submitted_at + 'Z');
+      const timeStr = date.toLocaleString();
       const tweetLink = (s.status === 'approved' && s.tweet_urls)
         ? '<a href="' + s.tweet_urls + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>' : '';
       const delBtn = s.status === 'approved' && canDelete(s.reviewed_at) && s.tracking_token
