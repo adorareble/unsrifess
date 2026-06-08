@@ -327,6 +327,7 @@
 
 <script>
 const MAX_CHARS = 280;
+let subPage = 1;
 const MAX_IMAGES = 4;
 const MAX_SUBMISSIONS = 10;
 let selectedFiles = [];
@@ -397,13 +398,15 @@ async function loadSubmissions() {
   const token = localStorage.getItem('x_token');
   if (!token) { document.getElementById('submissionsSection').innerHTML = ''; return; }
   try {
-    const r = await fetch('/api/auth/my-submissions', { headers: { 'Authorization': 'Bearer ' + token } });
+    const r = await fetch('/api/auth/my-submissions?page=' + subPage + '&limit=10', { headers: { 'Authorization': 'Bearer ' + token } });
     if (!r.ok) return;
     const data = await r.json();
     const subs = data.submissions || [];
+    const total = data.total || 0;
     const el = document.getElementById('submissionsSection');
-    if (subs.length === 0) { el.innerHTML = ''; return; }
-    let html = '<h3>Last 10 Confessions</h3>';
+    if (subs.length === 0) { el.innerHTML = ''; subPage = 1; return; }
+    const totalPages = Math.ceil(total / 10);
+    let html = '<h3>My Confessions</h3>';
     for (const s of subs) {
       const statusClass = 'status-' + s.status;
       const date = new Date(s.submitted_at + 'Z');
@@ -421,6 +424,11 @@ async function loadSubmissions() {
         + '<div class="submission-meta" style="margin-bottom:2px"><span>' + timeStr + '</span></div>'
         + '<div class="submission-meta"><span class="submission-status ' + statusClass + '">' + s.status + '</span> ' + tweetLink + '</div></div>';
     }
+    html += '<div class="pagination" style="display:flex;justify-content:center;gap:8px;margin-top:12px">'
+      + '<button class="btn" style="padding:4px 12px;font-size:0.75rem"' + (subPage <= 1 ? ' disabled' : '') + ' onclick="subPage--;loadSubmissions()">Prev</button>'
+      + '<span style="font-size:0.75rem;color:#71767b;line-height:28px">Page ' + subPage + ' of ' + totalPages + '</span>'
+      + '<button class="btn" style="padding:4px 12px;font-size:0.75rem"' + (subPage >= totalPages ? ' disabled' : '') + ' onclick="subPage++;loadSubmissions()">Next</button>'
+      + '</div>';
     el.innerHTML = html;
   } catch {}
 }

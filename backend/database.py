@@ -468,17 +468,23 @@ async def get_x_users():
         return [dict(r) for r in rows]
 
 
-async def get_user_tweets(x_user_id: str, limit: int = 10):
+async def get_user_tweets(x_user_id: str, page: int = 1, limit: int = 10):
     pool = await get_pool()
+    offset = (page - 1) * limit
     async with pool.acquire() as conn:
+        count_row = await conn.fetchrow(
+            "SELECT COUNT(*) FROM tweets WHERE submitted_by = $1",
+            x_user_id,
+        )
+        total = count_row["count"]
         rows = await conn.fetch(
             "SELECT id, original_text, status, submitted_at, reviewed_at, "
             "tweet_urls, reject_reason, matched_keyword, tracking_token "
             "FROM tweets WHERE submitted_by = $1 "
-            "ORDER BY submitted_at DESC LIMIT $2",
-            x_user_id, limit,
+            "ORDER BY submitted_at DESC LIMIT $2 OFFSET $3",
+            x_user_id, limit, offset,
         )
-        return [dict(r) for r in rows]
+        return {"submissions": [dict(r) for r in rows], "total": total}
 
 
 async def block_x_user(x_user_id: int):

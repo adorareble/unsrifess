@@ -149,9 +149,13 @@ async def x_me(request: Request):
 
 
 @auth_x_router.get("/api/auth/my-submissions")
-async def x_my_submissions(request: Request):
+async def x_my_submissions(
+    request: Request,
+    page: int = 1,
+    limit: int = 10,
+):
     from auth import decode_token
-    from database import get_user_tweets
+    from database import get_user_tweets, get_x_user_by_id
     auth = request.headers.get("Authorization", "")
     token = ""
     if auth.startswith("Bearer "):
@@ -164,8 +168,10 @@ async def x_my_submissions(request: Request):
     if payload is None or payload.get("type") != "user":
         raise HTTPException(status_code=401, detail="Invalid token")
     x_user_id = payload["sub"].replace("x_user:", "")
-    tweets = await get_user_tweets(x_user_id)
-    return {"submissions": tweets}
+    x_user = await get_x_user_by_id(x_user_id)
+    if not x_user or x_user.get("blocked") or not x_user.get("is_mutual"):
+        return {"submissions": [], "total": 0}
+    return await get_user_tweets(x_user_id, page, limit)
 
 
 @auth_x_router.post("/api/auth/refresh-mutual")
