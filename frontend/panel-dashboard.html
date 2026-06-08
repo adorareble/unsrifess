@@ -539,7 +539,7 @@ async function loadQueue() {
           + '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#2a2a38;flex-shrink:0">'
           + (t.user_avatar_url ? '<img src="' + t.user_avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
           + '</div>'
-          + '<span style="color:#1d9bf0;font-weight:500">@' + escHtml(t.user_screen_name) + '</span>'
+          + '<span style="color:#1d9bf0;cursor:pointer;font-weight:500" onclick="showUserTweets(' + t.x_user_db_id + ')">@' + escHtml(t.user_screen_name) + '</span>'
           + '</div>'
         : '';
 

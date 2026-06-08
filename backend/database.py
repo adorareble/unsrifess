@@ -187,8 +187,11 @@ async def get_pending_tweets(limit=20, offset=0):
         total = total_row["count"]
 
         rows = await conn.fetch(
-            "SELECT t.*, a.display_name AS reviewer_name FROM tweets t "
+            "SELECT t.*, a.display_name AS reviewer_name, "
+            "u.screen_name AS user_screen_name, u.avatar_url AS user_avatar_url, "
+            "u.id AS x_user_db_id FROM tweets t "
             "LEFT JOIN admins a ON t.reviewed_by = a.id "
+            "LEFT JOIN x_users u ON t.submitted_by = u.x_user_id "
             "WHERE t.status = 'pending' "
             "ORDER BY t.submitted_at DESC LIMIT $1 OFFSET $2",
             limit, offset,
