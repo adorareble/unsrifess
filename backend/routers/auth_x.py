@@ -157,7 +157,7 @@ async def x_my_submissions(
     limit: int = 5,
 ):
     from auth import decode_token
-    from database import get_user_tweets, get_x_user_by_id
+    from database import get_user_tweets, get_x_user_by_id, get_setting
     auth = request.headers.get("Authorization", "")
     token = ""
     if auth.startswith("Bearer "):
