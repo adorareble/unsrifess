@@ -174,16 +174,18 @@ class TwitterClient:
             async def _get_ids(user_id):
                 try:
                     ids = await self._client.get_friends_ids(user_id=user_id)
-                    if isinstance(ids, list):
+                    if ids:
                         return set(str(u) for u in ids)
                 except Exception as e:
                     logging.warning(f"get_friends_ids({user_id}) failed: {e}, falling back to get_user_following")
                 try:
                     users = await self._client.get_user_following(user_id, count=5000)
-                    return set(str(u.id) for u in users)
+                    if users:
+                        return set(str(u.id) for u in users)
                 except Exception as e:
                     logging.warning(f"get_user_following({user_id}) also failed: {e}")
                     return set()
+                return set()
 
             target_following = await _get_ids(target_id)
             we_follow = str(unsrifess_id) in target_following
