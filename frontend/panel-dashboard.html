@@ -308,6 +308,7 @@
 const TOKEN = localStorage.getItem('panel_token');
 const ADMIN = JSON.parse(localStorage.getItem('panel_admin') || '{}');
 let userIdFromPopup = 0;
+let userTweetsPages = {};
 
 if (!TOKEN) { window.location.href = '/panel/login'; }
 
@@ -694,10 +695,14 @@ async function loadHistory() {
 
 async function showUserTweets(userId) {
   userIdFromPopup = userId;
+  if (!userTweetsPages[userId]) userTweetsPages[userId] = 1;
+  const page = userTweetsPages[userId];
   try {
-    const r = await api('/panel/api/x-users/' + userId + '/tweets');
+    const r = await api('/panel/api/x-users/' + userId + '/tweets?page=' + page + '&limit=10');
     const d = await r.json();
     const tweets = d.tweets || [];
+    const total = d.total || 0;
+    const totalPages = Math.ceil(total / 10) || 1;
     let html = '<div style="max-height:70vh;overflow-y:auto;text-align:left">';
     html += '<div style="margin-bottom:10px;font-size:0.85rem">Tweets by <a href="https://x.com/' + encodeURIComponent(d.screen_name) + '" target="_blank" style="color:#1d9bf0">@' + d.screen_name + '</a></div>';
     if (tweets.length === 0) {
@@ -730,6 +735,11 @@ async function showUserTweets(userId) {
           + '</tr>';
       }
       html += '</tbody></table>';
+      html += '<div class="pagination" style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:10px">'
+        + '<button class="btn-small primary" onclick="userTweetsPages[' + userId + ']=' + (page - 1) + ';showUserTweets(' + userId + ')"' + (page <= 1 ? ' disabled' : '') + '>Prev</button>'
+        + '<span style="font-size:0.75rem;color:#71767b">' + page + ' of ' + totalPages + '</span>'
+        + '<button class="btn-small primary" onclick="userTweetsPages[' + userId + ']=' + (page + 1) + ';showUserTweets(' + userId + ')"' + (page >= totalPages ? ' disabled' : '') + '>Next</button>'
+        + '</div>';
     }
     html += '</div>';
     showPopup('', 'User Tweets', html, null, true);

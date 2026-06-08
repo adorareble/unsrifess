@@ -418,23 +418,31 @@ async def panel_unblock_x_user(
 @panel_router.get("/panel/api/x-users/{user_id}/tweets")
 async def panel_user_tweets(
     user_id: int,
+    page: int = 1,
+    limit: int = 10,
     _: dict = Depends(get_current_admin),
 ):
     pool = await get_pool()
+    offset = (page - 1) * limit
     async with pool.acquire() as conn:
         row = await conn.fetchrow("SELECT x_user_id, screen_name FROM x_users WHERE id = $1", user_id)
         if not row:
             raise HTTPException(status_code=404, detail="User not found")
+        count_row = await conn.fetchrow(
+            "SELECT COUNT(*) FROM tweets WHERE submitted_by = $1",
+            row["x_user_id"],
+        )
+        total = count_row["count"]
         tweets = await conn.fetch(
             "SELECT t.id, t.original_text, t.status, t.submitted_at, t.reviewed_at, "
             "t.tweet_urls, t.reject_reason, t.matched_keyword, t.tracking_token, "
             "a.display_name AS reviewer_name "
             "FROM tweets t "
             "LEFT JOIN admins a ON t.reviewed_by = a.id "
-            "WHERE t.submitted_by = $1 ORDER BY t.submitted_at DESC LIMIT 50",
-            row["x_user_id"],
+            "WHERE t.submitted_by = $1 ORDER BY t.submitted_at DESC LIMIT $2 OFFSET $3",
+            row["x_user_id"], limit, offset,
         )
-        return {"screen_name": row["screen_name"], "tweets": [dict(t) for t in tweets]}
+        return {"screen_name": row["screen_name"], "tweets": [dict(t) for t in tweets], "total": total}
 
 
 @panel_router.get("/panel/api/activity")
