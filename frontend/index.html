@@ -590,6 +590,8 @@ async function checkStatus() {
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
       document.getElementById('statusMsg').classList.remove('hidden');
+      document.getElementById('statusMsg').querySelector('div').textContent = 'Submission is closed';
+      document.getElementById('statusMsg').querySelector('p').textContent = 'Please check back later.';
     } else if (!data.logged_in) {
       dot.className = 'status-dot offline';
       text.textContent = 'Offline';
@@ -602,7 +604,6 @@ async function checkStatus() {
     } else {
       dot.className = 'status-dot online';
       text.textContent = 'Online';
-      document.getElementById('statusMsg').classList.add('hidden');
       rateLimited = false;
       checkSubmitReady();
     }
