@@ -152,7 +152,7 @@ async def x_me(request: Request):
 async def x_my_submissions(
     request: Request,
     page: int = 1,
-    limit: int = 10,
+    limit: int = 5,
 ):
     from auth import decode_token
     from database import get_user_tweets, get_x_user_by_id

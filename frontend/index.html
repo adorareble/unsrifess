@@ -404,7 +404,7 @@ async function loadSubmissions() {
   const token = localStorage.getItem('x_token');
   if (!token) { document.getElementById('submissionsSection').innerHTML = ''; return; }
   try {
-    const r = await fetch('/api/auth/my-submissions?page=' + subPage + '&limit=10', { headers: { 'Authorization': 'Bearer ' + token } });
+    const r = await fetch('/api/auth/my-submissions?page=' + subPage + '&limit=5', { headers: { 'Authorization': 'Bearer ' + token } });
     if (!r.ok) return;
     const data = await r.json();
     const subs = data.submissions || [];
