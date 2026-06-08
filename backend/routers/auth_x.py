@@ -20,18 +20,13 @@ X_CALLBACK_URL = os.getenv("X_CALLBACK_URL")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-_verifier_store: dict[str, str] = {}
-
-
 @auth_x_router.get("/api/auth/x/login")
 async def x_login():
     if not X_CLIENT_ID:
         raise HTTPException(status_code=500, detail="X_CLIENT_ID not configured")
 
     import hashlib, base64
-    state = secrets.token_urlsafe(32)
     code_verifier = secrets.token_urlsafe(64)
-    _verifier_store[state] = code_verifier
     code_challenge_digest = hashlib.sha256(code_verifier.encode()).digest()
     code_challenge = base64.urlsafe_b64encode(code_challenge_digest).rstrip(b"=").decode()
     params = {
@@ -39,7 +34,7 @@ async def x_login():
         "client_id": X_CLIENT_ID,
         "redirect_uri": X_CALLBACK_URL,
         "scope": "tweet.read users.read",
-        "state": state,
+        "state": code_verifier,
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
     }
@@ -51,13 +46,11 @@ async def x_login():
 async def x_callback(request: Request):
     code = request.query_params.get("code")
     error = request.query_params.get("error")
-    state = request.query_params.get("state", "")
+    code_verifier = request.query_params.get("state", "")
     if error or not code:
         raise HTTPException(status_code=400, detail=f"X OAuth error: {error}")
-
-    code_verifier = _verifier_store.pop(state, None)
     if not code_verifier:
-        raise HTTPException(status_code=400, detail="Invalid state parameter")
+        raise HTTPException(status_code=400, detail="Missing state parameter")
 
     try:
         import httpx, base64
