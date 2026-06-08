@@ -598,7 +598,14 @@ async function loadUser() {
     document.getElementById('loginArea').classList.add('hidden');
     userArea.classList.remove('hidden');
 
-    if (d.is_mutual) {
+    if (d.blocked) {
+      document.getElementById('composeArea').classList.add('hidden');
+      document.getElementById('doneArea').classList.add('hidden');
+      const sm = document.getElementById('statusMsg');
+      sm.querySelector('div').textContent = 'You are blocked';
+      sm.querySelector('p').innerHTML = 'You have been blocked from using this application.';
+      sm.classList.remove('hidden');
+    } else if (d.is_mutual) {
       document.getElementById('composeArea').classList.remove('hidden');
       document.getElementById('doneArea').classList.add('hidden');
       document.getElementById('statusMsg').classList.add('hidden');
@@ -628,6 +635,16 @@ async function refreshMutual(btn) {
     const d = await r.json();
     if (d.success && d.token) {
       localStorage.setItem('x_token', d.token);
+      if (d.blocked) {
+        document.getElementById('composeArea').classList.add('hidden');
+        document.getElementById('doneArea').classList.add('hidden');
+        const sm = document.getElementById('statusMsg');
+        sm.querySelector('div').textContent = 'You are blocked';
+        sm.querySelector('p').innerHTML = 'You have been blocked from using this application.';
+        sm.classList.remove('hidden');
+        btn.disabled = false;
+        return;
+      }
       if (d.is_mutual) {
         document.getElementById('composeArea').classList.remove('hidden');
         document.getElementById('statusMsg').classList.add('hidden');
