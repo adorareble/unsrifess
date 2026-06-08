@@ -134,6 +134,7 @@ async def x_callback(request: Request):
 @auth_x_router.get("/api/auth/me")
 async def x_me(request: Request):
     from auth import decode_token
+    from database import get_x_user_by_id
     auth = request.headers.get("Authorization", "")
     token = ""
     if auth.startswith("Bearer "):
@@ -145,8 +146,10 @@ async def x_me(request: Request):
     payload = decode_token(token)
     if payload is None or payload.get("type") != "user":
         raise HTTPException(status_code=401, detail="Invalid token")
+    x_user_id = payload["sub"].replace("x_user:", "")
+    x_user = await get_x_user_by_id(x_user_id)
     return {
-        "x_user_id": payload["sub"].replace("x_user:", ""),
+        "x_user_id": x_user_id,
         "screen_name": payload.get("screen_name"),
-        "is_mutual": payload.get("is_mutual", False),
+        "is_mutual": x_user["is_mutual"] if x_user else False,
     }
