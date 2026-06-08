@@ -606,9 +606,12 @@ async function loadUser() {
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
       const sm = document.getElementById('statusMsg');
-      const reason = !d.we_follow ? 'You are not following @unsrifess.' : '@unsrifess has not followed you back yet.';
-      sm.querySelector('div').textContent = reason;
-      sm.querySelector('p').innerHTML = 'Complete the requirements above to submit confessions.<br><button class="btn btn-primary" style="margin-top:8px;padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+      const title = !d.we_follow ? 'Follow @unsrifess first' : 'Waiting for follow back\u2026';
+      const desc = !d.we_follow
+        ? 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.'
+        : 'Make sure @unsrifess follows you back.<br><button class="btn btn-primary" style="margin-top:8px;padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+      sm.querySelector('div').textContent = title;
+      sm.querySelector('p').innerHTML = desc;
       sm.classList.remove('hidden');
     }
   } catch { localStorage.removeItem('x_token'); }
@@ -629,8 +632,15 @@ async function refreshMutual(btn) {
         document.getElementById('statusMsg').classList.add('hidden');
         loadSubmissions();
       } else {
-        btn.textContent = d.we_follow ? 'Waiting for follow back...' : 'Follow @unsrifess first';
-        setTimeout(() => { btn.textContent = 'Check again'; btn.disabled = false; }, 3000);
+        const sm = document.getElementById('statusMsg');
+        const title = !d.we_follow ? 'Follow @unsrifess first' : 'Waiting for follow back\u2026';
+        const desc = !d.we_follow
+          ? 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.'
+          : 'Make sure @unsrifess follows you back.';
+        sm.querySelector('div').textContent = title;
+        sm.querySelector('p').innerHTML = desc;
+        btn.textContent = 'Check again';
+        btn.disabled = false;
       }
     }
   } catch { btn.textContent = 'Failed'; btn.disabled = false; }
