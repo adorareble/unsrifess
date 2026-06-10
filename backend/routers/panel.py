@@ -534,8 +534,8 @@ async def panel_set_delete_window(
 
 @panel_router.post("/panel/api/set-announcement")
 async def panel_set_announcement(
-    value: str = Form(...),
     admin: dict = Depends(require_superadmin),
+    value: str = Form(""),
 ):
     old_value = await get_setting("announcement") or ""
     await set_setting("announcement", value)
