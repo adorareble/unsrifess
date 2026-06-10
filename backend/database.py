@@ -34,7 +34,7 @@ async def init_db():
     async with pool.acquire() as conn:
         await conn.execute(sql)
         await conn.execute("ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_login TIMESTAMP")
-        await conn.execute("ALTER TABLE tweets ADD COLUMN IF NOT EXISTS tracking_token VARCHAR(32)")
+        await conn.execute("ALTER TABLE tweets DROP COLUMN IF EXISTS tracking_token")
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS we_follow BOOLEAN DEFAULT false")
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS follows_us BOOLEAN DEFAULT false")
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS blocked BOOLEAN DEFAULT false")
@@ -91,17 +91,16 @@ async def activate_admin(admin_id: int):
         await conn.execute("UPDATE admins SET is_active = TRUE WHERE id = $1", admin_id)
 
 
-async def create_tweet(original_text, image_paths, submitted_by, chunk_count=0, tracking_token=None):
+async def create_tweet(original_text, image_paths, submitted_by, chunk_count=0):
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "INSERT INTO tweets (original_text, image_paths, submitted_by, chunk_count, tracking_token) "
-            "VALUES ($1, $2, $3, $4, $5) RETURNING id, status, submitted_at",
+            "INSERT INTO tweets (original_text, image_paths, submitted_by, chunk_count) "
+            "VALUES ($1, $2, $3, $4) RETURNING id, status, submitted_at",
             original_text,
             json.dumps(image_paths) if image_paths else None,
             submitted_by,
             chunk_count,
-            tracking_token,
         )
         return dict(row)
 
@@ -365,15 +364,6 @@ async def set_setting(key, value):
         )
 
 
-async def get_tweet_by_token(tracking_token: str):
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(
-            "SELECT * FROM tweets WHERE tracking_token = $1", tracking_token
-        )
-        return dict(row) if row else None
-
-
 async def block_sender(ip_address: str, admin_id: int, reason: str = None):
     pool = await get_pool()
     async with pool.acquire() as conn:
@@ -479,7 +469,7 @@ async def get_user_tweets(x_user_id: str, page: int = 1, limit: int = 10):
         total = count_row["count"]
         rows = await conn.fetch(
             "SELECT id, original_text, status, submitted_at, reviewed_at, "
-            "tweet_urls, reject_reason, matched_keyword, tracking_token "
+            "tweet_urls, reject_reason, matched_keyword "
             "FROM tweets WHERE submitted_by = $1 "
             "ORDER BY submitted_at DESC LIMIT $2 OFFSET $3",
             x_user_id, limit, offset,

@@ -21,8 +21,7 @@ CREATE TABLE IF NOT EXISTS tweets (
     reject_reason   TEXT,
     tweet_urls      TEXT,
     chunk_count     INTEGER DEFAULT 0,
-    matched_keyword VARCHAR(255),
-    tracking_token  VARCHAR(32) UNIQUE
+    matched_keyword VARCHAR(255)
 );
 
 CREATE TABLE IF NOT EXISTS keyword_filters (

@@ -183,6 +183,57 @@ async def x_my_submissions(
     return await get_user_tweets(x_user_id, page, limit)
 
 
+@auth_x_router.delete("/api/auth/tweets/{tweet_id}")
+async def x_delete_tweet(tweet_id: int, request: Request):
+    import json
+    import asyncio
+    from datetime import datetime, timedelta
+    from auth import decode_token
+    from database import get_pool, get_tweet, get_setting
+    from twitter_client import client
+
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+    token = auth[7:]
+    payload = decode_token(token)
+    if payload is None or payload.get("type") != "user":
+        raise HTTPException(status_code=401, detail="Invalid token")
+    x_user_id = payload["sub"].replace("x_user:", "")
+
+    tweet = await get_tweet(tweet_id)
+    if not tweet:
+        raise HTTPException(status_code=404, detail="Tweet not found")
+    if tweet["submitted_by"] != x_user_id:
+        raise HTTPException(status_code=403, detail="You can only delete your own tweets")
+    if tweet["status"] != "approved":
+        raise HTTPException(status_code=400, detail="Only approved tweets can be deleted")
+
+    delete_window = int(await get_setting("delete_window") or "5")
+    if tweet["reviewed_at"]:
+        elapsed = datetime.utcnow() - tweet["reviewed_at"]
+        if elapsed > timedelta(minutes=delete_window):
+            raise HTTPException(status_code=400, detail=f"{delete_window}-minute deletion window has passed")
+
+    tweet_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
+    for url in tweet_urls:
+        try:
+            tid = url.rstrip("/").split("/")[-1]
+            await client._client.delete_tweet(tid)
+            await asyncio.sleep(1)
+        except Exception:
+            pass
+
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE tweets SET status = 'deleted', reject_reason = 'deleted by user' WHERE id = $1",
+            tweet_id,
+        )
+
+    return {"success": True}
+
+
 @auth_x_router.post("/api/auth/refresh-mutual")
 async def x_refresh_mutual(request: Request):
     from auth import decode_token, create_user_token

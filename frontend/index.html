@@ -383,13 +383,15 @@ function deleteRemaining(reviewedAt) {
   return (m > 0 ? m + 'm' : s + 's') + ' left';
 }
 
-async function deleteTweet(token) {
+async function deleteTweet(id) {
+  const token = localStorage.getItem('x_token');
+  if (!token) { showPopup('⚠️', 'Not logged in', 'Please login with X first.'); return; }
   showPopup('🗑️', 'Delete from X?', 'This tweet will be deleted from X and cannot be restored.', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Delete', cls: 'popup-btn-danger', fn: async () => {
       closePopup();
       try {
-        const r = await fetch('/api/tweets/' + token + '/delete', { method: 'POST' });
+        const r = await fetch('/api/auth/tweets/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
         const d = await r.json();
         if (d.success) {
           loadSubmissions();
@@ -424,8 +426,8 @@ async function loadSubmissions() {
         ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>' : '';
       const rejectReason = (s.status === 'rejected' || s.status === 'deleted') && s.reject_reason
         ? '<span style="color:#71767b;font-size:0.75rem">' + escHtml(s.reject_reason) + '</span>' : '';
-      const delBtn = s.status === 'approved' && canDelete(s.reviewed_at) && s.tracking_token
-        ? '<button class="submission-del" onclick="deleteTweet(\'' + s.tracking_token + '\')" title="Delete from X">🗑️</button>' : '';
+      const delBtn = s.status === 'approved' && canDelete(s.reviewed_at)
+        ? '<button class="submission-del" onclick="deleteTweet(' + s.id + ')" title="Delete from X">🗑️</button>' : '';
       const delInfo = s.status === 'approved' && s.reviewed_at
         ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>' : '';
       html += '<div class="submission-item"><div class="submission-header">'

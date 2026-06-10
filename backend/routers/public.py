@@ -1,17 +1,14 @@
 import os
 import uuid
-import json
-import asyncio
-import secrets
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Depends
 from fastapi.responses import HTMLResponse, FileResponse
 
 from database import (
-    get_pool, create_tweet, check_keywords, get_setting,
-    get_tweet_by_token, get_x_user_by_id,
-    reject_tweet, approve_tweet, is_x_user_blocked,
+    create_tweet, check_keywords, get_setting,
+    get_x_user_by_id,
+    reject_tweet, approve_tweet,
 )
 from twitter_client import client, split_into_chunks
 from image import TEMP_DIR, add_watermark, compress_image
@@ -39,27 +36,6 @@ async def status():
     }
 
 
-@public_router.get("/api/status/{tracking_token}")
-async def status_by_token(tracking_token: str):
-    tweet = await get_tweet_by_token(tracking_token)
-    if not tweet:
-        raise HTTPException(status_code=404, detail="Submission not found")
-    result = {
-        "status": tweet["status"],
-        "submitted_at": str(tweet["submitted_at"]),
-        "original_text": tweet["original_text"],
-    }
-    if tweet["status"] == "approved":
-        if tweet["tweet_urls"]:
-            urls = json.loads(tweet["tweet_urls"]) if isinstance(tweet["tweet_urls"], str) else tweet["tweet_urls"]
-            result["tweet_urls"] = urls
-        if tweet["reviewed_at"]:
-            result["reviewed_at"] = tweet["reviewed_at"].strftime("%Y-%m-%dT%H:%M:%SZ")
-    if tweet["reject_reason"]:
-        result["reason"] = tweet["reject_reason"]
-    return result
-
-
 @public_router.get("/api/images/{filename}")
 async def public_serve_image(filename: str):
     safe_name = os.path.basename(filename)
@@ -67,41 +43,6 @@ async def public_serve_image(filename: str):
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Image not found")
     return FileResponse(file_path)
-
-
-@public_router.post("/api/tweets/{tracking_token}/delete")
-async def user_delete_tweet(tracking_token: str):
-    tweet = await get_tweet_by_token(tracking_token)
-    if not tweet:
-        raise HTTPException(status_code=404, detail="Submission not found")
-    if tweet["status"] != "approved":
-        raise HTTPException(status_code=400, detail="Only approved tweets can be deleted")
-
-    delete_window = int(await get_setting("delete_window") or "5")
-
-    if tweet["reviewed_at"]:
-        elapsed = datetime.utcnow() - tweet["reviewed_at"]
-        if elapsed > timedelta(minutes=delete_window):
-            raise HTTPException(status_code=400, detail=f"{delete_window}-minute deletion window has passed")
-
-    tweet_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
-
-    for url in tweet_urls:
-        try:
-            tid = url.rstrip("/").split("/")[-1]
-            await client._client.delete_tweet(tid)
-            await asyncio.sleep(1)
-        except Exception:
-            pass
-
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE tweets SET status = 'deleted', reject_reason = 'deleted by user' WHERE id = $1",
-            tweet["id"],
-        )
-
-    return {"success": True}
 
 
 @public_router.post("/api/tweet-sync")
@@ -149,29 +90,27 @@ async def tweet_sync(
 
         chunks = split_into_chunks(text.strip())
         chunk_count = len(chunks)
-        tracking_token = secrets.token_hex(16)
 
         matched = await check_keywords(text)
         if matched:
-            tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count, tracking_token)
+            tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count)
             await reject_tweet(tweet["id"], None, f"Auto-rejected: matched keyword '{matched}'", matched, record_activity=False)
             return {
                 "success": True,
                 "status": "rejected",
                 "reason": "Your message was automatically rejected (matched filter).",
-                "tracking_token": tracking_token,
             }
 
-        tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count, tracking_token)
+        tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count)
 
         bypass = await get_setting("bypass")
         if bypass == "true":
             result = await client.post_tweet(text.strip(), saved_paths)
             if result and result.get("success"):
                 await approve_tweet(tweet["id"], None, result["urls"], record_activity=False)
-                return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "tracking_token": tracking_token, "reviewed_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
+                return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "reviewed_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
 
-        return {"success": True, "status": "pending", "message": "Your confession has been submitted for review.", "tracking_token": tracking_token}
+        return {"success": True, "status": "pending", "message": "Your confession has been submitted for review."}
     except Exception as e:
         for p in saved_paths:
             try:

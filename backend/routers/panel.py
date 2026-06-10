@@ -447,7 +447,7 @@ async def panel_user_tweets(
         total = count_row["count"]
         tweets = await conn.fetch(
             "SELECT t.id, t.original_text, t.status, t.submitted_at, t.reviewed_at, "
-            "t.tweet_urls, t.reject_reason, t.matched_keyword, t.tracking_token, "
+            "t.tweet_urls, t.reject_reason, t.matched_keyword, "
             "a.display_name AS reviewer_name "
             "FROM tweets t "
             "LEFT JOIN admins a ON t.reviewed_by = a.id "
