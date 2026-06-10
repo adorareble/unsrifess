@@ -31,6 +31,43 @@
   .status-dot.online { background: #00ba7c; }
   .status-dot.offline { background: #f4212e; }
 
+  .announcement-banner {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(29,155,240,0.08), rgba(139,92,246,0.08));
+    border: 1px solid rgba(29,155,240,0.15);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    height: 40px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+  }
+  .announcement-banner.hidden { display: none; }
+  .announcement-icon {
+    flex-shrink: 0;
+    margin: 0 6px 0 12px;
+    font-size: 1rem;
+  }
+  .announcement-track-wrap {
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+    line-height: 40px;
+  }
+  .announcement-track {
+    display: inline-block;
+    white-space: nowrap;
+    will-change: transform;
+  }
+  .announcement-track a {
+    color: #1d9bf0;
+    text-decoration: none;
+  }
+  .announcement-track a:hover {
+    text-decoration: underline;
+  }
+
   .card {
     background: #1a1a24; border: 1px solid #2a2a38; border-radius: 16px;
     padding: 20px;
@@ -299,6 +336,15 @@
     <div class="status-bar">
       <span class="status-dot" id="statusDot"></span>
       <span id="statusText">Checking...</span>
+    </div>
+  </div>
+
+  <div id="announcementBanner" class="announcement-banner hidden">
+    <span class="announcement-icon">📢</span>
+    <div class="announcement-track-wrap">
+      <div class="announcement-track">
+        <span class="announcement-text" id="announcementText"></span>
+      </div>
     </div>
   </div>
 
@@ -647,6 +693,21 @@ async function checkStatus() {
     const r = await fetch('/api/status');
     const data = await r.json();
     if (data.delete_window_minutes) deleteWindowMinutes = data.delete_window_minutes;
+    const annBanner = document.getElementById('announcementBanner');
+    const annText = document.getElementById('announcementText');
+    if (data.announcement && data.announcement.trim()) {
+      const txt = linkify(data.announcement);
+      if (annText.getAttribute('data-content') !== txt) {
+        stopMarquee();
+        annText.setAttribute('data-content', txt);
+        annText.innerHTML = txt;
+        setTimeout(startMarquee, 0);
+      }
+      annBanner.classList.remove('hidden');
+    } else {
+      annBanner.classList.add('hidden');
+      stopMarquee();
+    }
     if (!data.online) {
       dot.className = 'status-dot offline';
       text.textContent = 'Closed';
@@ -673,6 +734,46 @@ function escHtml(s) {
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
+}
+
+function linkify(text) {
+  const s = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return s.replace(/(?:\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+))/g, function(match, text, url, bareUrl) {
+    if (url) {
+      return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + text + '</a>';
+    }
+    return '<a href="' + bareUrl + '" target="_blank" rel="noopener noreferrer">' + bareUrl + '</a>';
+  });
+}
+
+let marqueeRaf = null;
+let marqueePaused = false;
+function startMarquee() {
+  stopMarquee();
+  const track = document.querySelector('.announcement-track');
+  const wrap = document.querySelector('.announcement-track-wrap');
+  const banner = document.getElementById('announcementBanner');
+  if (!track || !wrap || !track.children.length) return;
+  const speed = 1;
+  let pos = wrap.offsetWidth;
+  marqueePaused = false;
+
+  banner.onpointerenter = () => { marqueePaused = true; };
+  banner.onpointerleave = () => { marqueePaused = false; };
+
+  function frame() {
+    if (!marqueePaused) pos -= speed;
+    if (pos <= -track.scrollWidth) pos = wrap.offsetWidth;
+    track.style.transform = 'translateX(' + pos + 'px)';
+    marqueeRaf = requestAnimationFrame(frame);
+  }
+  marqueeRaf = requestAnimationFrame(frame);
+}
+function stopMarquee() {
+  if (marqueeRaf) cancelAnimationFrame(marqueeRaf);
+  marqueeRaf = null;
+  const banner = document.getElementById('announcementBanner');
+  if (banner) { banner.onpointerenter = null; banner.onpointerleave = null; }
 }
 
 async function loadUser() {

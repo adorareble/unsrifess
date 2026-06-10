@@ -29,10 +29,12 @@ async def index():
 async def status():
     online = await get_setting("online")
     delete_window = await get_setting("delete_window")
+    announcement = await get_setting("announcement")
     return {
         "logged_in": client.is_logged_in(),
         "online": online != "false",
         "delete_window_minutes": int(delete_window) if delete_window else 5,
+        "announcement": announcement or "",
     }
 
 

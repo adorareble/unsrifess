@@ -478,7 +478,8 @@ async def panel_stats(_: dict = Depends(get_current_admin)):
     bypass = await get_setting("bypass")
     bypass_mutual = await get_setting("bypass_mutual")
     delete_window = await get_setting("delete_window")
-    return {**stats, "active_admins": len(active_admins), "online": online != "false", "bypass": bypass != "false", "bypass_mutual": bypass_mutual != "false", "delete_window": int(delete_window) if delete_window else 5}
+    announcement = await get_setting("announcement")
+    return {**stats, "active_admins": len(active_admins), "online": online != "false", "bypass": bypass != "false", "bypass_mutual": bypass_mutual != "false", "delete_window": int(delete_window) if delete_window else 5, "announcement": announcement or ""}
 
 
 @panel_router.get("/panel/api/stats/peak-hours")
@@ -529,3 +530,15 @@ async def panel_set_delete_window(
     await set_setting("delete_window", str(value))
     await log_activity(admin["id"], "set_delete_window", details=f"Set delete_window={value}")
     return {"success": True, "delete_window": value}
+
+
+@panel_router.post("/panel/api/set-announcement")
+async def panel_set_announcement(
+    value: str = Form(...),
+    admin: dict = Depends(require_superadmin),
+):
+    old_value = await get_setting("announcement") or ""
+    await set_setting("announcement", value)
+    await log_activity(admin["id"], "set_announcement",
+        details=f"Old: {old_value or '(empty)'} → New: {value or '(empty)'}")
+    return {"success": True, "announcement": value}
