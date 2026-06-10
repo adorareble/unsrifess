@@ -243,6 +243,44 @@
   .popup-btn-ghost { background: #2a2a38; color: #e7e9ea; }
   .popup-actions { display: flex; gap: 8px; justify-content: center; }
 
+  .tnc-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.65);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .tnc-card {
+    background: #1a1a24; border: 1px solid #2a2a38;
+    border-radius: 16px; padding: 28px;
+    max-width: 480px; width: 100%;
+  }
+  .tnc-title {
+    font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;
+  }
+  .tnc-body {
+    font-size: 0.9rem; color: #e7e9ea; line-height: 1.7;
+    max-height: 45vh; overflow-y: auto;
+    margin-bottom: 20px; padding-right: 6px;
+  }
+
+  .tnc-body ul { padding-left: 20px; margin: 10px 0; }
+  .tnc-body li { margin-bottom: 10px; color: #ccc; }
+  .tnc-check {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px; cursor: pointer; font-size: 0.85rem; color: #e7e9ea;
+  }
+  .tnc-check input[type="checkbox"] {
+    width: 18px; height: 18px; accent-color: #1d9bf0; cursor: pointer; flex-shrink: 0;
+  }
+  .tnc-section-title {
+    font-size: 0.85rem; font-weight: 600; color: #8b5cf6;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+  }
+  .tnc-divider {
+    height: 1px; background: #2a2a38; margin: 16px 0;
+  }
+
+
   @media (max-width: 480px) {
     .container { padding: 12px; }
     .card { padding: 16px; }
@@ -267,7 +305,7 @@
   <div class="card card-wrap">
     <div id="loginArea" class="login-cta">
       <h2>Want to confess?</h2>
-      <p>This service is only for mutuals of @unsrifess.<br>Login with X to verify and submit.</p>
+      <p>Send your anonymous confession.<br>Login with X to continue.</p>
       <a class="x-btn" href="/api/auth/x/login">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/></svg>
         Login with X
@@ -320,6 +358,7 @@
     <p>Your rants are free, but our coffee isn't 😅<br>— support us <a href="https://saweria.co/unsrifess" target="_blank" rel="noopener">here</a></p>
   </div>
   <div class="submissions" id="submissionsSection"></div>
+  <a href="#" id="tncLink" style="display:block;text-align:center;margin-top:14px;font-size:0.8rem;color:#71767b;text-decoration:none">Rules &amp; Disclaimer</a>
 </div>
 
 <div class="popup-overlay hidden" id="popupOverlay">
@@ -328,6 +367,42 @@
     <div class="popup-title" id="popupTitle"></div>
     <div class="popup-msg" id="popupMsg"></div>
     <div class="popup-actions" id="popupActions"></div>
+  </div>
+</div>
+
+<div class="tnc-overlay hidden" id="tncOverlay">
+  <div class="tnc-card">
+    <div class="tnc-title">Rules &amp; Disclaimer</div>
+    <div class="tnc-body" id="tncBody">
+      <div class="tnc-section-title">Community Guidelines</div>
+      <ul>
+        <li>No harassment, hate speech, or doxxing.</li>
+        <li>Do not share personal information of others.</li>
+        <li>Violating content may be rejected or removed without notice.</li>
+        <li>No spam or repetitive submissions.</li>
+        <li>No NSFW / adult content.</li>
+        <li>No promotion or advertising without permission.</li>
+        <li>Do not encourage self-harm or violence.</li>
+      </ul>
+      <div class="tnc-divider"></div>
+      <div class="tnc-section-title">Disclaimer</div>
+      <ul>
+        <li>You are solely responsible for the content you submit.</li>
+        <li>Unsr!fess is not liable for any content posted by users.</li>
+        <li>This service is provided "as is" with no warranty.</li>
+        <li>We reserve the right to block users who violate these terms.</li>
+        <li>We reserve the right to update these terms at any time.</li>
+      </ul>
+      <label class="tnc-check">
+        <input type="checkbox" id="tncCheck1">
+        <span>I agree to the community guidelines</span>
+      </label>
+      <label class="tnc-check">
+        <input type="checkbox" id="tncCheck2">
+        <span>I have read and agree to the disclaimer</span>
+      </label>
+    </div>
+    <button class="btn btn-primary" id="tncAcceptBtn" disabled>I Agree &amp; Continue</button>
   </div>
 </div>
 
@@ -341,6 +416,7 @@ let selectedFiles = [];
 let rateLimited = false;
 let isDone = false;
 let xToken = localStorage.getItem('x_token');
+let tncAccepted = localStorage.getItem('tnc_accepted');
 
 const tweetText = document.getElementById('tweetText');
 const tweetCount = document.getElementById('tweetCount');
@@ -600,6 +676,7 @@ function escHtml(s) {
 }
 
 async function loadUser() {
+  if (!localStorage.getItem('tnc_accepted')) return;
   const token = localStorage.getItem('x_token');
   if (!token) return;
   try {
@@ -689,6 +766,50 @@ function logout() {
   window.location.reload();
 }
 
+function tncCheckReady() {
+  const c1 = document.getElementById('tncCheck1').checked;
+  const c2 = document.getElementById('tncCheck2').checked;
+  document.getElementById('tncAcceptBtn').disabled = !(c1 && c2);
+}
+
+document.getElementById('tncCheck1').addEventListener('change', tncCheckReady);
+document.getElementById('tncCheck2').addEventListener('change', tncCheckReady);
+
+document.getElementById('tncAcceptBtn').onclick = () => {
+  const c1 = document.getElementById('tncCheck1').checked;
+  const c2 = document.getElementById('tncCheck2').checked;
+  if (!c1 || !c2) return;
+  localStorage.setItem('tnc_accepted', 'true');
+  tncAccepted = 'true';
+  document.getElementById('tncOverlay').classList.add('hidden');
+  loadUser();
+  checkStatus();
+  loadSubmissions();
+};
+
+document.getElementById('tncLink').onclick = (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('tncAcceptBtn');
+  const labels = document.querySelectorAll('.tnc-check');
+  const checks = [document.getElementById('tncCheck1'), document.getElementById('tncCheck2')];
+  const body = document.getElementById('tncBody');
+  btn.textContent = 'Close';
+  btn.disabled = false;
+  checks.forEach(c => c.checked = false);
+  labels.forEach(l => l.style.display = 'none');
+  body.scrollTop = 0;
+  btn.onclick = () => {
+    document.getElementById('tncOverlay').classList.add('hidden');
+    labels.forEach(l => l.style.display = '');
+    body.scrollTop = 0;
+    btn.onclick = originalAccept;
+    btn.textContent = 'I Agree & Continue';
+    btn.disabled = true;
+  };
+  document.getElementById('tncOverlay').classList.remove('hidden');
+};
+const originalAccept = document.getElementById('tncAcceptBtn').onclick;
+
 tweetText.addEventListener('input', () => {
   updateTweetCount();
   updateValidation();
@@ -777,6 +898,10 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
 });
 
 (async () => {
+  if (!tncAccepted) {
+    document.getElementById('tncOverlay').classList.remove('hidden');
+    return;
+  }
   await loadUser();
   await checkStatus();
   await loadSubmissions();
