@@ -928,8 +928,9 @@ async function loadSettings() {
       + '<div style="margin-bottom:24px">'
       + '<textarea id="announcementInput" placeholder="Running text shown to users..." rows="3" style="width:100%;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none;resize:vertical;font-family:inherit;margin-bottom:8px"></textarea>'
       + '<div style="display:flex;gap:8px;align-items:center">'
-      + '<button class="btn-small primary" onclick="setAnnouncement()" style="padding:10px 20px">Save</button>'
-      + '<span id="announcementMsg" style="font-size:0.75rem;color:#71767b"></span>'
++ '<button class="btn-small primary" onclick="setAnnouncement()" style="padding:10px 20px">Save</button>'
++ '<button class="btn-small" onclick="clearAnnouncement()" style="padding:10px 20px;background:#2a2a38;border:1px solid #2a2a38;border-radius:8px;color:#f4212e;cursor:pointer;font-size:0.85rem">Clear</button>'
++ '<span id="announcementMsg" style="font-size:0.75rem;color:#71767b"></span>'
       + '</div></div>';
   }
   html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
@@ -1152,6 +1153,19 @@ async function setAnnouncement() {
     const r = await api('/panel/api/set-announcement', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
     const d = await r.json();
     if (d.success) { msg.textContent = 'Saved'; msg.style.color = '#00ba7c'; }
+    else { msg.textContent = d.detail || 'Failed'; msg.style.color = '#f4212e'; }
+  } catch(e) { msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
+}
+
+async function clearAnnouncement() {
+  document.getElementById('announcementInput').value = '';
+  const msg = document.getElementById('announcementMsg');
+  const form = new URLSearchParams();
+  form.append('value', '');
+  try {
+    const r = await api('/panel/api/set-announcement', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
+    const d = await r.json();
+    if (d.success) { msg.textContent = 'Cleared'; msg.style.color = '#f4212e'; }
     else { msg.textContent = d.detail || 'Failed'; msg.style.color = '#f4212e'; }
   } catch(e) { msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
 }
