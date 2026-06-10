@@ -1153,8 +1153,8 @@ async function setAnnouncement() {
     const r = await api('/panel/api/set-announcement', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
     const d = await r.json();
     if (d.success) { msg.textContent = 'Saved'; msg.style.color = '#00ba7c'; }
-    else { msg.textContent = d.detail || 'Failed'; msg.style.color = '#f4212e'; }
-  } catch(e) { msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
+    else { msg.textContent = typeof d.detail === 'string' ? d.detail : 'Failed'; msg.style.color = '#f4212e'; }
+  } catch(e) { console.error('setAnnouncement', e); msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
 }
 
 async function clearAnnouncement() {
@@ -1164,10 +1164,11 @@ async function clearAnnouncement() {
   form.append('value', '');
   try {
     const r = await api('/panel/api/set-announcement', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
+    if (!r.ok) { msg.textContent = 'Error: ' + r.status; msg.style.color = '#f4212e'; return; }
     const d = await r.json();
     if (d.success) { msg.textContent = 'Cleared'; msg.style.color = '#f4212e'; }
-    else { msg.textContent = d.detail || 'Failed'; msg.style.color = '#f4212e'; }
-  } catch(e) { msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
+    else { msg.textContent = typeof d.detail === 'string' ? d.detail : 'Failed'; msg.style.color = '#f4212e'; }
+  } catch(e) { console.error('clearAnnouncement', e); msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
 }
 
 // ── Activity helpers ──
