@@ -25,6 +25,7 @@ def create_token(admin_id: int, role: str) -> str:
     payload = {
         "sub": str(admin_id),
         "role": role,
+        "type": "admin",
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRE_HOURS),
     }
