@@ -2,80 +2,55 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Unsr!fess</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #0e0e12; color: #e7e9ea; min-height: 100vh;
-    display: flex; align-items: center; justify-content: center;
+    background: #000; color: #e7e9ea; min-height: 100vh; min-height: 100dvh;
+    display: flex; justify-content: center;
   }
-  .container { width: 100%; max-width: 560px; padding: 20px; }
+  .container { width: 100%; max-width: 480px; padding: 16px; }
+
   .header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 12px; padding: 0 2px;
   }
   .header h1 {
-    font-size: 1.4rem; font-weight: 700;
+    font-size: 1.15rem; font-weight: 700;
     background: linear-gradient(135deg, #1d9bf0, #8b5cf6);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .header .subtitle { font-size: 0.75rem; color: #71767b; }
-  .status-bar {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 0.8rem; color: #71767b;
-  }
+  .status-group { display: flex; align-items: center; gap: 6px; }
+  .status-text { font-size: 0.8rem; color: #71767b; }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .status-dot.online { background: #00ba7c; }
+  .status-dot.online { background: #00ba7c; box-shadow: 0 0 6px rgba(0,186,124,0.4); }
   .status-dot.offline { background: #f4212e; }
 
   .announcement-banner {
-    display: flex;
-    align-items: center;
-    background: linear-gradient(135deg, rgba(29,155,240,0.08), rgba(139,92,246,0.08));
-    border: 1px solid rgba(29,155,240,0.15);
-    border-radius: 10px;
-    margin-bottom: 12px;
-    height: 40px;
-    overflow: hidden;
-    position: relative;
-    cursor: pointer;
+    display: flex; align-items: center;
+    background: rgba(29,155,240,0.06); border: 1px solid rgba(29,155,240,0.12);
+    border-radius: 12px; margin-bottom: 12px; height: 38px;
+    overflow: hidden; position: relative; cursor: pointer;
   }
   .announcement-banner.hidden { display: none; }
-  .announcement-icon {
-    flex-shrink: 0;
-    margin: 0 6px 0 12px;
-    font-size: 1rem;
-  }
-  .announcement-track-wrap {
-    flex: 1;
-    overflow: hidden;
-    height: 100%;
-    line-height: 40px;
-  }
-  .announcement-track {
-    display: inline-block;
-    white-space: nowrap;
-    will-change: transform;
-  }
-  .announcement-track a {
-    color: #1d9bf0;
-    text-decoration: none;
-  }
-  .announcement-track a:hover {
-    text-decoration: underline;
-  }
+  .announcement-icon { flex-shrink: 0; margin: 0 6px 0 10px; font-size: 0.95rem; }
+  .announcement-track-wrap { flex: 1; overflow: hidden; height: 100%; line-height: 38px; }
+  .announcement-track { display: inline-block; white-space: nowrap; will-change: transform; }
+  .announcement-track a { color: #1d9bf0; text-decoration: none; }
 
   .card {
-    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 16px;
-    padding: 20px;
+    background: #16181c; border: 1px solid #2f3336; border-radius: 20px;
+    padding: 20px; position: relative;
   }
+  .card-wrap { position: relative; }
+
   .keyword-hint {
     display: flex; align-items: center; gap: 6px;
     margin-bottom: 12px; font-size: 0.8rem;
-    padding: 10px 12px; border-radius: 10px;
+    padding: 10px 12px; border-radius: 12px;
     background: rgba(29,155,240,0.06); border: 1px solid rgba(29,155,240,0.12);
     color: #1d9bf0;
   }
@@ -83,67 +58,62 @@
     background: rgba(244,196,48,0.15); padding: 1px 6px;
     border-radius: 4px; font-weight: 600; color: #f4c430;
   }
+
   textarea {
-    width: 100%; background: #0e0e12; border: 1px solid #2a2a38;
-    border-radius: 10px; color: #e7e9ea; font-size: 0.95rem;
-    padding: 12px; resize: vertical; min-height: 120px; font-family: inherit;
-    outline: none;
+    width: 100%; background: #0e0e12; border: 1px solid #2f3336;
+    border-radius: 14px; color: #e7e9ea; font-size: 1rem;
+    padding: 14px; resize: none; min-height: 140px; font-family: inherit;
+    outline: none; line-height: 1.5;
   }
   textarea:focus { border-color: #1d9bf0; }
   textarea.error { border-color: #f4212e; }
   textarea:disabled { opacity: 0.4; }
-  .tweet-count {
-    font-size: 0.8rem; font-weight: 500; min-height: 0; margin: 0;
-  }
+
+  .tweet-count { font-size: 0.8rem; font-weight: 500; margin-top: 6px; min-height: 0; }
   .tweet-count.over { color: #f4212e; }
   .tweet-count.ok { color: #00ba7c; }
   .tweet-count.info { color: #71767b; }
-  .validate-msg {
-    font-size: 0.8rem; min-height: 0; margin: 0; padding: 0;
-  }
+
+  .validate-msg { font-size: 0.8rem; margin-top: 4px; min-height: 0; }
   .validate-msg.error { color: #f4212e; }
   .validate-msg.ok { color: #00ba7c; }
 
   .upload-area {
-    border: 1px dashed #2a2a38; border-radius: 10px; padding: 10px;
-    text-align: center; margin-top: 2px; cursor: pointer; color: #71767b;
-    font-size: 0.85rem;
+    border: 1px dashed #2f3336; border-radius: 14px; padding: 12px;
+    text-align: center; margin-top: 10px; cursor: pointer;
+    color: #71767b; font-size: 0.85rem; transition: border-color .2s, color .2s;
   }
   .upload-area:hover { border-color: #1d9bf0; color: #1d9bf0; }
   .upload-area.has-file { border-color: #00ba7c; }
   .upload-area.disabled { opacity: 0.4; cursor: not-allowed; }
-  .file-grid {
-    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;
-    justify-content: center;
-  }
+
+  .file-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; justify-content: center; }
   .file-preview {
-    width: 80px; height: 80px;
-    border-radius: 8px; overflow: hidden; border: 1px solid #2a2a38;
-    position: relative;
+    width: 72px; height: 72px; border-radius: 10px;
+    overflow: hidden; border: 1px solid #2f3336; position: relative;
   }
   .file-preview img { width: 100%; height: 100%; object-fit: cover; }
   .file-preview .remove {
     position: absolute; top: 2px; right: 2px; width: 20px; height: 20px;
     background: rgba(0,0,0,0.7); border: none; border-radius: 50%;
-    color: #fff; font-size: 0.7rem; cursor: pointer; line-height: 20px;
-    text-align: center;
+    color: #fff; font-size: 0.7rem; cursor: pointer; line-height: 20px; text-align: center;
   }
 
   .btn {
-    width: 100%; padding: 12px; border: none; border-radius: 10px;
-    color: #fff; font-size: 0.95rem; font-weight: 600;
-    cursor: pointer; margin-top: 14px;
+    width: 100%; padding: 14px; border: none; border-radius: 9999px;
+    color: #fff; font-size: 1rem; font-weight: 600;
+    cursor: pointer; margin-top: 14px; transition: opacity .2s;
   }
   .btn-primary { background: #1d9bf0; }
-  .btn-primary:hover:not(:disabled) { background: #1a8cd8; }
+  .btn-primary:hover:not(:disabled) { opacity: .85; }
   .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
   .btn-success { background: #00ba7c; }
-  .btn-success:hover { background: #009d68; }
+  .btn-success:hover { opacity: .85; }
   .done-actions { display: flex; gap: 10px; margin-top: 14px; }
   .done-actions .btn { margin-top: 0; flex: 1; }
 
   .result {
-    margin-top: 14px; padding: 14px; border-radius: 10px;
+    margin-top: 14px; padding: 16px; border-radius: 14px;
     font-size: 0.9rem; text-align: center;
     overflow-wrap: break-word; word-break: break-word;
   }
@@ -151,192 +121,172 @@
   .result.error { background: #2c0a0e; color: #f4212e; border: 1px solid rgba(244,33,46,0.3); }
   .result a { color: #1d9bf0; }
 
-  .support-section {
-    margin-top: 20px; padding: 14px 16px; border-radius: 14px;
-    background: rgba(29,155,240,0.04); border: 1px solid rgba(29,155,240,0.1);
-    text-align: center;
-  }
-  .support-section p {
-    font-size: 0.85rem; color: #71767b; margin: 0; line-height: 1.6;
-  }
-  .support-section a {
-    color: #1d9bf0; text-decoration: none; font-weight: 500;
-  }
-  .hidden { display: none !important; }
-  input[type="file"] { display: none; }
-
   .user-card {
     display: flex; align-items: center; gap: 10px;
-    padding: 12px; border-radius: 12px;
+    padding: 10px 12px; border-radius: 14px;
     background: rgba(29,155,240,0.06); border: 1px solid rgba(29,155,240,0.12);
     margin-bottom: 14px;
   }
   .user-card .avatar {
-    width: 40px; height: 40px; border-radius: 50%;
-    background: #2a2a38; flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: #2f3336; flex-shrink: 0; overflow: hidden;
   }
-  .user-card .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .user-card .avatar img { width: 100%; height: 100%; object-fit: cover; }
   .user-card .info { flex: 1; min-width: 0; }
   .user-card .info .name { font-size: 0.9rem; font-weight: 600; }
-  .user-card .info .screen-name { font-size: 0.8rem; color: #71767b; }
 
-  .login-cta {
-    text-align: center; padding: 60px 20px;
-  }
+  .login-cta { text-align: center; padding: 40px 20px; }
   .login-cta h2 { font-size: 1.2rem; margin-bottom: 8px; }
   .login-cta p { font-size: 0.85rem; color: #71767b; margin-bottom: 20px; line-height: 1.5; }
   .login-cta .x-btn {
     display: inline-flex; align-items: center; gap: 8px;
-    padding: 12px 28px; border: none; border-radius: 9999px;
-    background: #000; color: #fff; font-size: 0.95rem; font-weight: 600;
+    padding: 12px 24px; border: none; border-radius: 9999px;
+    background: #fff; color: #000; font-size: 0.95rem; font-weight: 600;
     cursor: pointer; text-decoration: none;
   }
-  .login-cta .x-btn:hover { background: #1a1a1a; }
+  .login-cta .x-btn:hover { background: #e6e6e6; }
+
+  .status-msg { text-align: center; padding: 32px 16px; }
+  .status-msg.hidden { display: none !important; }
+  .status-msg .title { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+  .status-msg .desc { font-size: 0.85rem; color: #71767b; margin: 0; line-height: 1.6; }
+  .status-msg .desc a { color: #1d9bf0; }
+  .status-msg .btn { margin-top: 0; }
 
   .loading-overlay {
-    position: absolute; inset: 0; z-index: 10;
-    border-radius: 16px; overflow: hidden;
+    position: fixed; inset: 0; z-index: 50;
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; gap: 16px;
-    background: rgba(14,14,18,0.92);
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
   }
-  .card-wrap { position: relative; }
+  .loading-overlay.hidden { display: none; }
   .spinner {
-    width: 40px; height: 40px; border: 3px solid #2a2a38;
+    width: 40px; height: 40px; border: 3px solid #2f3336;
     border-top-color: #1d9bf0; border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+    animation: spin .7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { color: #e7e9ea; font-size: 0.9rem; font-weight: 500; }
-  .progress-track {
-    width: 60%; height: 3px; background: #2a2a38; border-radius: 2px;
-    overflow: hidden;
-  }
-  .progress-bar {
-    height: 100%; width: 0%; background: #1d9bf0;
-    border-radius: 2px; transition: width 0.3s;
-  }
+  .progress-track { width: 60%; height: 3px; background: #2f3336; border-radius: 3px; overflow: hidden; }
+  .progress-bar { height: 100%; width: 0%; background: #1d9bf0; transition: width .3s; }
 
   .submissions { margin-top: 20px; }
-  .submissions h3 { font-size: 0.85rem; color: #71767b; font-weight: 500; margin-bottom: 10px; }
-  .sub-page-btn {
-    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 8px;
-    color: #e7e9ea; padding: 6px 14px; cursor: pointer; font-size: 0.8rem;
+  .submissions h3 {
+    font-size: 0.8rem; color: #71767b; font-weight: 500;
+    margin-bottom: 10px; text-transform: uppercase; letter-spacing: .5px;
   }
-  .sub-page-btn:hover { border-color: #1d9bf0; }
-  .sub-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .submission-item {
-    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 10px;
-    padding: 12px; margin-bottom: 8px;
+    background: #16181c; border: 1px solid #2f3336;
+    border-radius: 14px; padding: 14px; margin-bottom: 8px;
   }
-  .submission-item:hover { border-color: #1d9bf0; }
   .submission-header {
     display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
   }
-  .submission-header .submission-text { margin-bottom: 0; flex: 1; min-width: 0; }
+  .submission-text {
+    font-size: 0.88rem; color: #e7e9ea;
+    white-space: pre-wrap; word-break: break-word;
+    flex: 1; min-width: 0; line-height: 1.5;
+  }
   .submission-del {
-    background: none; border: none; color: #71767b; cursor: pointer;
-    font-size: 0.9rem; padding: 4px; border-radius: 6px; line-height: 1;
-    transition: .2s; flex-shrink: 0; opacity: 0.4;
+    background: none; border: none; color: #71767b;
+    cursor: pointer; font-size: 0.9rem; padding: 4px; border-radius: 6px;
+    line-height: 1; opacity: 0.3; flex-shrink: 0;
   }
   .submission-item:hover .submission-del { opacity: 1; }
   .submission-del:hover { color: #f4212e; background: rgba(244,33,46,0.1); }
   .del-info { color: #71767b; font-size: 0.7rem; }
-  .submission-text {
-    font-size: 0.85rem; color: #e7e9ea; margin-bottom: 6px;
-    white-space: pre-wrap; word-break: break-word;
-  }
-  .submission-meta {
-    display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #71767b;
-    flex-wrap: wrap; min-width: 0;
-  }
-  .submission-status {
-    display: inline-block; padding: 1px 8px; border-radius: 10px;
-    font-size: 0.7rem; font-weight: 600; white-space: nowrap;
-  }
+  .submission-meta { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #71767b; flex-wrap: wrap; margin-top: 6px; }
+  .submission-status { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
   .status-pending { background: rgba(244,196,48,0.12); color: #f4c430; }
   .status-approved { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .status-rejected { background: rgba(244,33,46,0.12); color: #f4212e; }
   .status-deleted { background: rgba(113,118,123,0.12); color: #71767b; }
 
+  .sub-page-btn {
+    background: #16181c; border: 1px solid #2f3336; border-radius: 9999px;
+    color: #e7e9ea; padding: 8px 16px; cursor: pointer;
+    font-size: 0.8rem; transition: border-color .2s;
+  }
+  .sub-page-btn:hover { border-color: #1d9bf0; }
+  .sub-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
   .popup-overlay {
     position: fixed; inset: 0; z-index: 100;
-    background: rgba(0,0,0,0.7); display: flex;
-    align-items: center; justify-content: center; padding: 20px;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: flex-end; justify-content: center;
   }
+  .popup-overlay.hidden { display: none; }
   .popup-card {
-    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 16px;
-    padding: 24px; max-width: 400px; width: 100%; text-align: center;
+    width: 100%; max-width: 480px; background: #16181c;
+    border-radius: 24px 24px 0 0;
+    padding: 28px 24px 32px; text-align: center;
+    animation: sheetUp .3s ease;
   }
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   .popup-icon { font-size: 2rem; margin-bottom: 12px; }
   .popup-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
-  .popup-msg { font-size: 0.85rem; color: #71767b; margin-bottom: 16px; line-height: 1.5; }
-  .popup-btn {
-    padding: 10px 28px; border: none; border-radius: 10px;
-    font-size: 0.9rem; font-weight: 600; cursor: pointer; color: #fff;
-  }
+  .popup-msg { font-size: 0.88rem; color: #71767b; margin-bottom: 20px; line-height: 1.5; }
+  .popup-btn { padding: 12px 28px; border: none; border-radius: 9999px; font-size: 0.9rem; font-weight: 600; cursor: pointer; color: #fff; transition: opacity .2s; }
   .popup-btn-primary { background: #1d9bf0; }
   .popup-btn-danger { background: #f4212e; }
-  .popup-btn-ghost { background: #2a2a38; color: #e7e9ea; }
+  .popup-btn-ghost { background: #2f3336; color: #e7e9ea; }
   .popup-actions { display: flex; gap: 8px; justify-content: center; }
 
   .tnc-overlay {
     position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.65);
-    display: flex; align-items: center; justify-content: center;
-    padding: 20px;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: flex-end; justify-content: center;
   }
+  .tnc-overlay.hidden { display: none; }
   .tnc-card {
-    background: #1a1a24; border: 1px solid #2a2a38;
-    border-radius: 16px; padding: 28px;
-    max-width: 480px; width: 100%;
+    width: 100%; max-width: 480px; max-height: 85vh;
+    background: #16181c;
+    border-radius: 24px 24px 0 0;
+    padding: 28px 24px 32px;
+    animation: sheetUp .3s ease;
+    overflow-y: auto;
   }
-  .tnc-title {
-    font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;
-  }
-  .tnc-body {
-    font-size: 0.9rem; color: #e7e9ea; line-height: 1.7;
-    max-height: 45vh; overflow-y: auto;
-    margin-bottom: 20px; padding-right: 6px;
-  }
-
+  .tnc-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; text-align: center; }
+  .tnc-body { font-size: 0.88rem; color: #e7e9ea; line-height: 1.7; margin-bottom: 20px; }
   .tnc-body ul { padding-left: 20px; margin: 10px 0; }
-  .tnc-body li { margin-bottom: 10px; color: #ccc; }
+  .tnc-body li { margin-bottom: 8px; color: #ccc; }
+  .tnc-section-title {
+    font-size: 0.8rem; font-weight: 600; color: #8b5cf6;
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px;
+  }
+  .tnc-divider { height: 1px; background: #2f3336; margin: 16px 0; }
   .tnc-check {
     display: flex; align-items: center; gap: 10px;
-    margin-bottom: 16px; cursor: pointer; font-size: 0.85rem; color: #e7e9ea;
+    margin-bottom: 12px; cursor: pointer; font-size: 0.85rem; color: #e7e9ea;
   }
-  .tnc-check input[type="checkbox"] {
-    width: 18px; height: 18px; accent-color: #1d9bf0; cursor: pointer; flex-shrink: 0;
-  }
-  .tnc-section-title {
-    font-size: 0.85rem; font-weight: 600; color: #8b5cf6;
-    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
-  }
-  .tnc-divider {
-    height: 1px; background: #2a2a38; margin: 16px 0;
-  }
+  .tnc-check input[type="checkbox"] { width: 18px; height: 18px; accent-color: #1d9bf0; cursor: pointer; flex-shrink: 0; }
+  .tnc-card .btn { margin-top: 0; }
 
-
-  @media (max-width: 480px) {
-    .container { padding: 12px; }
-    .card { padding: 16px; }
-    .header h1 { font-size: 1.2rem; }
-    .file-preview { width: 64px; height: 64px; }
+  .support-section {
+    margin-top: 24px; padding: 16px; text-align: center;
   }
+  .support-section p {
+    font-size: 0.82rem; color: #52565c; margin: 0; line-height: 1.6;
+  }
+  .support-section a { color: #71767b; text-decoration: none; }
+  .footer-links {
+    display: flex; justify-content: center; gap: 16px; margin-top: 12px; font-size: 0.78rem;
+  }
+  .footer-links a { color: #52565c; text-decoration: none; }
+  .footer-links a:hover { color: #71767b; }
+
+  .hidden { display: none !important; }
+  input[type="file"] { display: none; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <div>
-      <h1>Unsr!fess</h1>
-      <div class="subtitle">Confess anonymously on X</div>
-    </div>
-    <div class="status-bar">
+    <div class="status-group">
       <span class="status-dot" id="statusDot"></span>
-      <span id="statusText">Checking...</span>
+      <span class="status-text" id="statusText">Checking...</span>
     </div>
+    <h1>Unsr!fess</h1>
   </div>
 
   <div id="announcementBanner" class="announcement-banner hidden">
@@ -353,43 +303,32 @@
       <h2>Want to confess?</h2>
       <p>Send your anonymous confession.<br>Login with X to continue.</p>
       <a class="x-btn" href="/api/auth/x/login">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/></svg>
         Login with X
       </a>
     </div>
 
     <div id="userArea" class="hidden"></div>
 
-    <div id="loadingOverlay" class="loading-overlay hidden">
-      <div class="spinner"></div>
-      <div class="loading-text">Posting...</div>
-      <div class="progress-track">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-    </div>
-
     <div id="composeArea" class="hidden">
       <div class="keyword-hint">
         <span>&#9432;</span>
         <span>Your message must contain <code>unsr!</code> to be sent.</span>
       </div>
-
-      <textarea id="tweetText" placeholder="What would you like to share?" maxlength="3000"></textarea>
+      <textarea id="tweetText" placeholder="What's on your mind?" maxlength="3000" style="min-height:140px"></textarea>
       <div class="tweet-count info" id="tweetCount"></div>
       <div class="validate-msg" id="validateMsg"></div>
-
       <div class="upload-area" id="uploadArea">
         <div class="upload-label">+ Add images (max 4)</div>
         <div class="file-grid" id="fileGrid"></div>
       </div>
       <input type="file" id="fileInput" accept="image/*" multiple>
-
       <button class="btn btn-primary" id="submitBtn" disabled>Send</button>
     </div>
 
-    <div id="statusMsg" class="hidden" style="text-align:center;padding:40px 20px">
-      <div style="font-size:1.1rem;color:#f4212e;margin-bottom:8px">Submission is closed</div>
-      <p style="font-size:0.85rem;color:#71767b;margin:0">Please check back later.</p>
+    <div id="statusMsg" class="status-msg hidden">
+      <div class="title"></div>
+      <p class="desc"></p>
     </div>
 
     <div id="doneArea" class="hidden">
@@ -400,11 +339,14 @@
     </div>
   </div>
 
+  <div class="submissions" id="submissionsSection"></div>
+
   <div class="support-section">
     <p>Your rants are free, but our coffee isn't 😅<br>— support us <a href="https://saweria.co/unsrifess" target="_blank" rel="noopener">here</a></p>
+    <div class="footer-links">
+      <a href="#" id="tncLink">Rules &amp; Disclaimer</a>
+    </div>
   </div>
-  <div class="submissions" id="submissionsSection"></div>
-  <a href="#" id="tncLink" style="display:block;text-align:center;margin-top:14px;font-size:0.8rem;color:#71767b;text-decoration:none">Rules &amp; Disclaimer</a>
 </div>
 
 <div class="popup-overlay hidden" id="popupOverlay">
@@ -447,8 +389,16 @@
         <input type="checkbox" id="tncCheck2">
         <span>I have read and agree to the disclaimer</span>
       </label>
+      <button class="btn btn-primary" id="tncAcceptBtn" disabled>I Agree &amp; Continue</button>
     </div>
-    <button class="btn btn-primary" id="tncAcceptBtn" disabled>I Agree &amp; Continue</button>
+  </div>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="spinner"></div>
+  <div class="loading-text">Posting...</div>
+  <div class="progress-track">
+    <div class="progress-bar" id="progressBar"></div>
   </div>
 </div>
 
@@ -694,8 +644,8 @@ function showStatusMsg(title, msg) {
   document.getElementById('composeArea').classList.add('hidden');
   document.getElementById('doneArea').classList.add('hidden');
   const sm = document.getElementById('statusMsg');
-  sm.querySelector('div').textContent = title;
-  sm.querySelector('p').textContent = msg;
+  sm.querySelector('.title').textContent = title;
+  sm.querySelector('.desc').textContent = msg;
   sm.classList.remove('hidden');
 }
 
@@ -803,7 +753,7 @@ async function loadUser() {
     userArea.innerHTML = ''
       + '<div class="avatar"><img src="https://unavatar.io/twitter/' + encodeURIComponent(d.screen_name) + '" onerror="this.parentElement.innerHTML=\'\'"></div>'
       + '<div class="info"><div class="name">@' + escHtml(d.screen_name) + '</div></div>'
-      + '<button onclick="logout()" style="background:transparent;border:1px solid #2a2a38;color:#e7e9ea;padding:4px 10px;border-radius:10px;cursor:pointer;font-size:0.75rem;margin-left:auto">Logout</button>';
+      + '<button onclick="logout()" style="background:transparent;border:1px solid #2f3336;color:#e7e9ea;padding:4px 10px;border-radius:9999px;cursor:pointer;font-size:0.75rem;margin-left:auto">Logout</button>';
     document.getElementById('loginArea').classList.add('hidden');
     userArea.classList.remove('hidden');
 
@@ -813,8 +763,8 @@ async function loadUser() {
       document.getElementById('composeArea').classList.add('hidden');
       document.getElementById('doneArea').classList.add('hidden');
       const sm = document.getElementById('statusMsg');
-      sm.querySelector('div').textContent = 'You are blocked';
-      sm.querySelector('p').innerHTML = 'You have been blocked from using this application.';
+      sm.querySelector('.title').textContent = 'You are blocked';
+      sm.querySelector('.desc').innerHTML = 'You have been blocked from using this application.';
       sm.classList.remove('hidden');
     } else if (canSubmit) {
       document.getElementById('composeArea').classList.remove('hidden');
@@ -825,11 +775,11 @@ async function loadUser() {
       document.getElementById('doneArea').classList.add('hidden');
       const sm = document.getElementById('statusMsg');
       if (!d.we_follow) {
-        sm.querySelector('div').textContent = 'Follow @unsrifess first';
-        sm.querySelector('p').innerHTML = 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+        sm.querySelector('.title').textContent = 'Follow @unsrifess first';
+        sm.querySelector('.desc').innerHTML = 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
       } else {
-        sm.querySelector('div').textContent = 'Waiting for follow back\u2026';
-        sm.querySelector('p').innerHTML = 'Make sure @unsrifess follows you back.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+        sm.querySelector('.title').textContent = 'Waiting for follow back\u2026';
+        sm.querySelector('.desc').innerHTML = 'Make sure @unsrifess follows you back.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
       }
       sm.classList.remove('hidden');
     }
@@ -850,8 +800,8 @@ async function refreshMutual(btn) {
         document.getElementById('composeArea').classList.add('hidden');
         document.getElementById('doneArea').classList.add('hidden');
         const sm = document.getElementById('statusMsg');
-        sm.querySelector('div').textContent = 'You are blocked';
-        sm.querySelector('p').innerHTML = 'You have been blocked from using this application.';
+        sm.querySelector('.title').textContent = 'You are blocked';
+        sm.querySelector('.desc').innerHTML = 'You have been blocked from using this application.';
         sm.classList.remove('hidden');
         btn.disabled = false;
         return;
@@ -864,11 +814,11 @@ async function refreshMutual(btn) {
       } else {
         const sm = document.getElementById('statusMsg');
         if (!d.we_follow) {
-          sm.querySelector('div').textContent = 'Follow @unsrifess first';
-          sm.querySelector('p').innerHTML = 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+          sm.querySelector('.title').textContent = 'Follow @unsrifess first';
+          sm.querySelector('.desc').innerHTML = 'Follow <a href="https://x.com/unsrifess" target="_blank" style="color:#1d9bf0">@unsrifess</a> on X, then check again.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
         } else {
-          sm.querySelector('div').textContent = 'Waiting for follow back\u2026';
-          sm.querySelector('p').innerHTML = 'Make sure @unsrifess follows you back.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
+          sm.querySelector('.title').textContent = 'Waiting for follow back\u2026';
+          sm.querySelector('.desc').innerHTML = 'Make sure @unsrifess follows you back.<br><br><button class="btn btn-primary" style="padding:6px 16px;font-size:0.8rem" onclick="refreshMutual(this)">Check again</button>';
         }
         btn.disabled = false;
       }
