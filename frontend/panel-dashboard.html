@@ -1426,14 +1426,29 @@ function connectSSE() {
     const card = document.getElementById('qt-' + d.id);
     if (card) card.style.display = 'none';
     loadStats();
+    loadQueue();
   });
 
   es.addEventListener('status_changed', (e) => {
     loadStats();
+    const settingsTab = document.getElementById('tabSettings');
+    if (settingsTab && settingsTab.classList.contains('active')) {
+      const activeStab = settingsTab.querySelector('.stab-content:not(.hidden)');
+      if (activeStab && activeStab.id !== 'stabActivity') {
+        loadSettings();
+      }
+    }
   });
 
   es.addEventListener('announcement_changed', (e) => {
     loadStats();
+  });
+
+  es.addEventListener('user_status_changed', () => {
+    const usersTab = document.getElementById('tabUsers');
+    if (usersTab && usersTab.classList.contains('active')) {
+      loadUsers();
+    }
   });
 
   es.addEventListener('sync_progress', (e) => {
