@@ -236,7 +236,7 @@ async def panel_delete_tweet(
     for url in tweet_urls:
         try:
             tweet_id_str = url.rstrip("/").split("/")[-1]
-            await client._client.delete_tweet(tweet_id_str)
+            await client.delete_tweet(tweet_id_str)
             await asyncio.sleep(1)
         except Exception:
             pass

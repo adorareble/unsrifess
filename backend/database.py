@@ -1,5 +1,6 @@
 ﻿import os
 import json
+import re
 import asyncpg
 from dotenv import load_dotenv
 
@@ -38,6 +39,13 @@ async def init_db():
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS we_follow BOOLEAN DEFAULT false")
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS follows_us BOOLEAN DEFAULT false")
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS blocked BOOLEAN DEFAULT false")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_tweets_status_submitted_at ON tweets(status, submitted_at DESC)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_tweets_submitted_by ON tweets(submitted_by)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_tweets_reviewed_at ON tweets(reviewed_at) WHERE status IN ('approved', 'rejected')")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_admin_id ON activity_log(admin_id)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_created_at ON activity_log(created_at DESC)")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_keyword_is_active ON keyword_filters(keyword) WHERE is_active = TRUE")
+        await conn.execute("CREATE INDEX IF NOT EXISTS idx_x_users_screen_name ON x_users(screen_name)")
 
 
 async def create_admin(username, password, display_name, role="admin"):
@@ -199,7 +207,6 @@ async def get_pending_tweets(limit=20, offset=0):
 
 
 async def get_tweets(status=None, admin_id=None, search=None, from_date=None, to_date=None, limit=20, offset=0):
-    pool = await get_pool()
     conditions = []
     params = []
     idx = 1
@@ -277,9 +284,8 @@ async def check_keywords(text):
         rows = await conn.fetch(
             "SELECT keyword FROM keyword_filters WHERE is_active = TRUE"
         )
-        text_lower = text.lower()
         for r in rows:
-            if r["keyword"] in text_lower:
+            if re.search(rf"(?<!\w){re.escape(r['keyword'])}(?!\w)", text, re.IGNORECASE):
                 return r["keyword"]
     return None
 
@@ -295,7 +301,6 @@ async def log_activity(admin_id: int, action, target_type=None, target_id=None, 
 
 
 async def get_activity(admin_id=None, action=None, limit=50, offset=0):
-    pool = await get_pool()
     conditions = []
     params = []
     idx = 1

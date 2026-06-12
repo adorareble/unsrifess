@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Depends
 from fastapi.responses import HTMLResponse, FileResponse
@@ -11,7 +11,7 @@ from database import (
     reject_tweet, approve_tweet,
 )
 from twitter_client import client, split_into_chunks
-from image import TEMP_DIR, add_watermark, compress_image
+from image import TEMP_DIR, process_image_async
 from auth import get_current_user
 
 public_router = APIRouter()
@@ -86,8 +86,7 @@ async def tweet_sync(
                     content = await img.read()
                     with open(saved_path, "wb") as f:
                         f.write(content)
-                    compress_image(saved_path)
-                    add_watermark(saved_path)
+                    await process_image_async(saved_path)
                     saved_paths.append(saved_path)
 
         chunks = split_into_chunks(text.strip())
@@ -97,6 +96,11 @@ async def tweet_sync(
         if matched:
             tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count)
             await reject_tweet(tweet["id"], None, f"Auto-rejected: matched keyword '{matched}'", matched, record_activity=False)
+            for p in saved_paths:
+                try:
+                    os.remove(p)
+                except OSError:
+                    pass
             return {
                 "success": True,
                 "status": "rejected",
@@ -110,7 +114,7 @@ async def tweet_sync(
             result = await client.post_tweet(text.strip(), saved_paths)
             if result and result.get("success"):
                 await approve_tweet(tweet["id"], None, result["urls"], record_activity=False)
-                return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "reviewed_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
+                return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "reviewed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
 
         return {"success": True, "status": "pending", "message": "Your confession has been submitted for review."}
     except Exception as e:

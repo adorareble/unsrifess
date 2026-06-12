@@ -1,5 +1,6 @@
 import os
 import math
+import asyncio
 from PIL import Image, ImageDraw, ImageFont
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -42,7 +43,7 @@ def add_watermark(image_path):
                 draw.text((tx + ox, ty + oy), WATERMARK_TEXT, font=font, fill=(0, 0, 0, 153))
         draw.text((tx, ty), WATERMARK_TEXT, font=font, fill=(255, 255, 255, 102))
         img = Image.alpha_composite(img, overlay).convert("RGB")
-        img.save(image_path, quality=92)
+        img.save(image_path, quality=JPEG_QUALITY, optimize=True)
     except Exception as e:
         print(f"Watermark failed: {e}", flush=True)
 
@@ -61,3 +62,8 @@ def compress_image(image_path):
         img.save(image_path, "JPEG", quality=JPEG_QUALITY, optimize=True)
     except Exception as e:
         print(f"Compress failed: {e}", flush=True)
+
+
+async def process_image_async(image_path):
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, lambda p: (compress_image(p), add_watermark(p)), image_path)

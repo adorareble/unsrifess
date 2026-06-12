@@ -63,3 +63,11 @@ CREATE TABLE IF NOT EXISTS x_users (
 );
 
 INSERT INTO settings (key, value) VALUES ('online', 'true') ON CONFLICT (key) DO NOTHING;
+
+CREATE INDEX IF NOT EXISTS idx_tweets_status_submitted_at ON tweets(status, submitted_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tweets_submitted_by ON tweets(submitted_by);
+CREATE INDEX IF NOT EXISTS idx_tweets_reviewed_at ON tweets(reviewed_at) WHERE status IN ('approved', 'rejected');
+CREATE INDEX IF NOT EXISTS idx_activity_admin_id ON activity_log(admin_id);
+CREATE INDEX IF NOT EXISTS idx_activity_created_at ON activity_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_keyword_is_active ON keyword_filters(keyword) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_x_users_screen_name ON x_users(screen_name);

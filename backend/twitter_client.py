@@ -54,7 +54,31 @@ class TwitterClient:
             "en-US",
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
         )
+        self._cookies_cache = None
+        self._cookies_mtime = 0
         self._ensure_state_format()
+
+    def _load_cookies(self):
+        try:
+            mtime = os.path.getmtime(self.state_file)
+        except OSError:
+            return None
+        if mtime == self._cookies_mtime and self._cookies_cache is not None:
+            return self._cookies_cache
+        try:
+            with open(self.state_file) as f:
+                data = json.load(f)
+            if "cookies" in data:
+                cookies = {c["name"]: c["value"] for c in data["cookies"]}
+            else:
+                cookies = data
+            cookies.pop("__cf_bm", None)
+            self._cookies_cache = cookies
+            self._cookies_mtime = mtime
+            return cookies
+        except Exception as e:
+            logging.error(f"Failed to load state: {e}")
+            return None
 
     def _ensure_state_format(self):
         if not os.path.exists(self.state_file):
@@ -75,28 +99,19 @@ class TwitterClient:
             logging.error(f"State conversion failed: {e}")
 
     def is_logged_in(self):
-        if not os.path.exists(self.state_file):
-            return False
-        try:
-            with open(self.state_file) as f:
-                cookies = json.load(f)
-            return bool(cookies.get("auth_token"))
-        except Exception:
-            return False
+        cookies = self._load_cookies()
+        return bool(cookies and cookies.get("auth_token"))
 
     async def post_tweet(self, text, image_paths=None, progress_callback=None):
         if not text or not text.strip():
             return {"success": False, "error": "Text is empty"}
 
-        if not os.path.exists(self.state_file):
+        cookies = self._load_cookies()
+        if cookies is None:
             return {
                 "success": False,
                 "error": "Not logged in. Run setup_login.py first.",
             }
-
-        with open(self.state_file) as f:
-            cookies = json.load(f)
-        cookies.pop("__cf_bm", None)
         self._client.set_cookies(cookies, clear_cookies=True)
 
         if image_paths is None:
@@ -156,21 +171,15 @@ class TwitterClient:
 
 
     async def check_mutual(self, target_screen_name: str) -> dict:
-        if not self.is_logged_in():
+        cookies = self._load_cookies()
+        if cookies is None:
             return {"error": "Not logged in. Run setup_login.py first."}
-
-        with open(self.state_file) as f:
-            cookies = json.load(f)
-        cookies.pop("__cf_bm", None)
         self._client.set_cookies(cookies, clear_cookies=True)
 
         try:
             unsrifess = await self._client.get_user_by_screen_name("unsrifess")
             unsrifess_id = unsrifess.id
 
-            # Use raw GraphQL response to get legacy.following / followed_by
-            # following: auth user (@unsrifess) follows target → follows_us
-            # followed_by: target follows auth user (@unsrifess) → we_follow
             raw_resp, _ = await self._client.gql.user_by_screen_name(target_screen_name)
             target_raw = raw_resp["data"]["user"]["result"]
             target_id = target_raw.get("rest_id")
@@ -198,9 +207,9 @@ class TwitterClient:
             return {"error": str(e)}
 
     async def follow_user(self, target_id: str) -> dict:
-        with open(self.state_file) as f:
-            cookies = json.load(f)
-        cookies.pop("__cf_bm", None)
+        cookies = self._load_cookies()
+        if cookies is None:
+            return {"success": False, "error": "Not logged in"}
         self._client.set_cookies(cookies, clear_cookies=True)
 
         try:
@@ -211,9 +220,9 @@ class TwitterClient:
             return {"success": False, "error": str(e)}
 
     async def unfollow_user(self, target_id: str) -> dict:
-        with open(self.state_file) as f:
-            cookies = json.load(f)
-        cookies.pop("__cf_bm", None)
+        cookies = self._load_cookies()
+        if cookies is None:
+            return {"success": False, "error": "Not logged in"}
         self._client.set_cookies(cookies, clear_cookies=True)
 
         try:
@@ -221,6 +230,19 @@ class TwitterClient:
             return {"success": True}
         except Exception as e:
             logging.exception(f"unfollow_user failed: {e}")
+            return {"success": False, "error": str(e)}
+
+    async def delete_tweet(self, tweet_id_str: str) -> dict:
+        cookies = self._load_cookies()
+        if cookies is None:
+            return {"success": False, "error": "Not logged in"}
+        self._client.set_cookies(cookies, clear_cookies=True)
+
+        try:
+            await self._client.delete_tweet(tweet_id_str)
+            return {"success": True}
+        except Exception as e:
+            logging.exception(f"delete_tweet failed: {e}")
             return {"success": False, "error": str(e)}
 
 
