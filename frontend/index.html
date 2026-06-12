@@ -257,7 +257,7 @@
     text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
   }
   .tnc-check {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
     margin-bottom: 10px; cursor: pointer; font-size: 0.82rem; color: #e7e9ea;
   }
   .tnc-check input[type="checkbox"] { width: 16px; height: 16px; accent-color: #1d9bf0; cursor: pointer; flex-shrink: 0; }
@@ -386,12 +386,8 @@
         <li>We reserve the right to update these terms at any time.</li>
       </ul>
       <label class="tnc-check">
-        <input type="checkbox" id="tncCheck1">
-        <span>I agree to the community guidelines</span>
-      </label>
-      <label class="tnc-check">
-        <input type="checkbox" id="tncCheck2">
-        <span>I have read and agree to the disclaimer</span>
+        <input type="checkbox" id="tncCheck">
+        <span>I agree to the rules &amp; disclaimer</span>
       </label>
       <button class="btn btn-primary" id="tncAcceptBtn" disabled>I Agree &amp; Continue</button>
     </div>
@@ -836,18 +832,13 @@ function logout() {
 }
 
 function tncCheckReady() {
-  const c1 = document.getElementById('tncCheck1').checked;
-  const c2 = document.getElementById('tncCheck2').checked;
-  document.getElementById('tncAcceptBtn').disabled = !(c1 && c2);
+  document.getElementById('tncAcceptBtn').disabled = !document.getElementById('tncCheck').checked;
 }
 
-document.getElementById('tncCheck1').addEventListener('change', tncCheckReady);
-document.getElementById('tncCheck2').addEventListener('change', tncCheckReady);
+document.getElementById('tncCheck').addEventListener('change', tncCheckReady);
 
 document.getElementById('tncAcceptBtn').onclick = () => {
-  const c1 = document.getElementById('tncCheck1').checked;
-  const c2 = document.getElementById('tncCheck2').checked;
-  if (!c1 || !c2) return;
+  if (!document.getElementById('tncCheck').checked) return;
   localStorage.setItem('tnc_accepted', 'true');
   tncAccepted = 'true';
   document.getElementById('tncOverlay').classList.add('hidden');
@@ -860,11 +851,11 @@ document.getElementById('tncLink').onclick = (e) => {
   e.preventDefault();
   const btn = document.getElementById('tncAcceptBtn');
   const labels = document.querySelectorAll('.tnc-check');
-  const checks = [document.getElementById('tncCheck1'), document.getElementById('tncCheck2')];
+  const check = document.getElementById('tncCheck');
   const body = document.getElementById('tncBody');
   btn.textContent = 'Close';
   btn.disabled = false;
-  checks.forEach(c => c.checked = false);
+  check.checked = false;
   labels.forEach(l => l.style.display = 'none');
   body.scrollTop = 0;
   btn.onclick = () => {
