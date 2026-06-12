@@ -577,28 +577,30 @@ async function loadQueue() {
     let html = '';
     for (const t of tweets) {
       const images = imagesFromTweet(t);
+      const fns = images.map(filenameFromPath);
       let thumbsHtml = '';
       if (images.length) {
         thumbsHtml = '<div class="thumb-grid">';
         images.forEach((fp, idx) => {
-          const fn = filenameFromPath(fp);
-          thumbsHtml += '<div class="thumb" onclick=\'openLightbox(' + JSON.stringify(images.map(filenameFromPath)) + ',' + idx + ')\'><img src="/panel/api/images/' + fn + '?token=' + TOKEN + '"></div>';
+          thumbsHtml += '<div class="thumb" onclick=\'openLightbox(' + JSON.stringify(fns) + ',' + idx + ')\'><img src="/panel/api/images/' + fns[idx] + '?token=' + TOKEN + '"></div>';
         });
         thumbsHtml += '</div>';
       }
 
       let metaParts = ['#' + t.id, fmtTime(t.submitted_at)];
       if (t.chunk_count > 1) metaParts.push(t.chunk_count + ' tweets');
-      if (t.user_screen_name) metaParts.push('@' + t.user_screen_name);
 
       const userInfo = t.user_screen_name
-        ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:0.8rem">'
-          + '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
+        ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+          + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
           + (t.user_avatar_url ? '<img src="' + t.user_avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
           + '</div>'
-          + '<span style="color:#1d9bf0;cursor:pointer;font-weight:500" onclick="showUserTweets(' + t.x_user_db_id + ')">@' + escHtml(t.user_screen_name) + '</span>'
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:0.85rem;font-weight:500;color:#1d9bf0;cursor:pointer" onclick="showUserTweets(' + t.x_user_db_id + ')">@' + escHtml(t.user_screen_name) + '</div>'
+          + '<div class="meta">' + metaParts.join(' · ') + '</div>'
           + '</div>'
-        : '';
+          + '</div>'
+        : '<div class="meta" style="margin-bottom:10px">' + metaParts.join(' · ') + '</div>';
 
       html += '<div class="item-card" id="qt-' + t.id + '">'
         + userInfo
@@ -608,7 +610,7 @@ async function loadQueue() {
         + '<button class="btn-action btn-approve" onclick="approveTweet(' + t.id + ')">Approve</button>'
         + '<button class="btn-action btn-reject" onclick="rejectTweetPopup(' + t.id + ')">Reject</button>'
         + '</div>'
-        + '<div class="meta">' + metaParts.join(' &middot; ') + '</div></div>';
+        + '</div>';
     }
 
     const totalPages = Math.ceil((d.total || tweets.length) / 10);
@@ -924,13 +926,13 @@ async function loadSettings() {
     + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:10px">Display Name</div>'
     + '<div style="display:flex;gap:8px">'
     + '<input id="dnInput" value="' + escHtml(currentName) + '" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
-    + '<button class="btn-small primary" onclick="changeDisplayName()" style="padding:10px 16px;font-size:0.85rem">Save</button>'
+    + '<button class="btn-action btn-approve" onclick="changeDisplayName()">Save</button>'
     + '</div><div id="dnMsg" style="font-size:0.85rem;margin-top:8px"></div>'
     + '<div style="font-size:0.85rem;color:#e7e9ea;margin:16px 0 10px">Change Password</div>'
     + '<div style="display:flex;flex-direction:column;gap:10px">'
     + '<input id="pwOld" type="password" placeholder="Current password" style="background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
     + '<input id="pwNew" type="password" placeholder="New password" style="background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
-    + '<button class="btn-small primary" onclick="changePassword()" style="padding:10px;font-size:0.85rem">Save</button>'
+    + '<button class="btn-action btn-approve" onclick="changePassword()">Save</button>'
     + '<div id="pwMsg" style="font-size:0.85rem"></div></div></div>';
 
   if (isSuper) {
@@ -941,7 +943,7 @@ async function loadSettings() {
       + '<input id="au" placeholder="Username" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
       + '<input id="ap" type="password" placeholder="Password" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
       + '<input id="an" placeholder="Display Name" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
-      + '<button class="btn-small primary" onclick="createAdmin()" style="padding:8px 16px">Create</button>'
+      + '<button class="btn-action btn-approve" onclick="createAdmin()">Create</button>'
       + '</div><div class="msg" id="adminMsg"></div></div>'
       + '<div id="adminsTableWrap"></div>';
   }
@@ -959,16 +961,16 @@ async function loadSettings() {
       + '<div style="margin-bottom:24px">'
       + '<textarea id="announcementInput" placeholder="Running text shown to users..." rows="3" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none;resize:vertical;font-family:inherit;margin-bottom:8px"></textarea>'
       + '<div style="display:flex;gap:8px;align-items:center">'
-+ '<button class="btn-small primary" onclick="setAnnouncement()" style="padding:10px 20px">Save</button>'
-+ '<button class="btn-small" onclick="clearAnnouncement()" style="padding:10px 20px;background:#2f3336;border:1px solid #2f3336;border-radius:8px;color:#f4212e;cursor:pointer;font-size:0.85rem">Clear</button>'
-+ '<span id="announcementMsg" style="font-size:0.75rem;color:#71767b"></span>'
+ + '<button class="btn-action btn-approve" onclick="setAnnouncement()">Save</button>'
+ + '<button class="btn-action btn-reject" onclick="clearAnnouncement()">Clear</button>'
+ + '<span id="announcementMsg" style="font-size:0.75rem;color:#71767b"></span>'
       + '</div></div>';
   }
   html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
     + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
     + '<div class="add-keyword-form" style="margin-bottom:10px">'
     + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
-    + '<button class="btn-small primary" onclick="addKeyword()" style="padding:10px 20px">Add</button>'
+    + '<button class="btn-small primary" onclick="addKeyword()">Add</button>'
     + '</div><div class="msg" id="kwMsg"></div>'
     + '<div class="keyword-list" id="kwList"><div class="empty-state">Loading...</div></div>'
     + '</div>';
@@ -1431,14 +1433,20 @@ function connectSSE() {
       const card = document.createElement('div');
       card.className = 'item-card';
       card.id = 'qt-' + d.id;
+      const metaParts = ['#' + d.id, fmtTime(d.submitted_at)];
+      if (d.chunk_count > 1) metaParts.push(d.chunk_count + ' tweets');
+      const metaStr = metaParts.join(' · ');
       const userHtml = d.user_screen_name && d.x_user_db_id
-        ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:0.8rem">'
-          + '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
+        ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+          + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
           + (d.user_avatar_url ? '<img src="' + d.user_avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
           + '</div>'
-          + '<span style="color:#1d9bf0;cursor:pointer;font-weight:500" onclick="showUserTweets(' + d.x_user_db_id + ')">@' + escHtml(d.user_screen_name) + '</span>'
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:0.85rem;font-weight:500;color:#1d9bf0;cursor:pointer" onclick="showUserTweets(' + d.x_user_db_id + ')">@' + escHtml(d.user_screen_name) + '</div>'
+          + '<div class="meta">' + metaStr + '</div>'
           + '</div>'
-        : '';
+          + '</div>'
+        : '<div class="meta" style="margin-bottom:10px">' + metaStr + '</div>';
       const thumbsHtml = (d.image_paths && d.image_paths.length)
         ? function() {
             const fns = d.image_paths.map(filenameFromPath);
@@ -1454,8 +1462,7 @@ function connectSSE() {
         + '<div class="actions" id="qa-' + d.id + '">'
         + '<button class="btn-action btn-approve" onclick="approveTweet(' + d.id + ')">Approve</button>'
         + '<button class="btn-action btn-reject" onclick="rejectTweetPopup(' + d.id + ')">Reject</button>'
-        + '</div>'
-        + '<div class="meta">' + meta + '</div>';
+        + '</div>';
       if (empty) {
         el.innerHTML = '';
         el.appendChild(card);
