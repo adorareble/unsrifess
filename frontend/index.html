@@ -14,16 +14,18 @@
   .container { width: 100%; max-width: 480px; padding: 16px; }
 
   .header {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: flex-start; justify-content: space-between;
     margin-bottom: 12px; padding: 0 2px;
   }
+  .header-left { display: flex; flex-direction: column; }
   .header h1 {
-    font-size: 1.15rem; font-weight: 700;
+    font-size: 1.15rem; font-weight: 700; line-height: 1.2;
     background: linear-gradient(135deg, #1d9bf0, #8b5cf6);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .status-group { display: flex; align-items: center; gap: 6px; }
+  .header .subtitle { font-size: 0.72rem; color: #71767b; margin-top: 1px; }
+  .status-group { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 2px; }
   .status-text { font-size: 0.8rem; color: #71767b; }
   .status-dot { width: 8px; height: 8px; border-radius: 50%; }
   .status-dot.online { background: #00ba7c; box-shadow: 0 0 6px rgba(0,186,124,0.4); }
@@ -239,27 +241,26 @@
   }
   .tnc-overlay.hidden { display: none; }
   .tnc-card {
-    width: 100%; max-width: 480px; max-height: 85vh;
+    width: 100%; max-width: 480px; max-height: 70vh;
     background: #16181c;
     border-radius: 24px 24px 0 0;
-    padding: 28px 24px 32px;
+    padding: 24px 20px 28px;
     animation: sheetUp .3s ease;
     overflow-y: auto;
   }
-  .tnc-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; text-align: center; }
-  .tnc-body { font-size: 0.88rem; color: #e7e9ea; line-height: 1.7; margin-bottom: 20px; }
-  .tnc-body ul { padding-left: 20px; margin: 10px 0; }
-  .tnc-body li { margin-bottom: 8px; color: #ccc; }
+  .tnc-title { font-size: 1rem; font-weight: 700; margin-bottom: 14px; text-align: center; }
+  .tnc-body { font-size: 0.82rem; color: #e7e9ea; line-height: 1.6; margin-bottom: 16px; }
+  .tnc-body ul { padding-left: 18px; margin: 8px 0; }
+  .tnc-body li { margin-bottom: 6px; color: #ccc; }
   .tnc-section-title {
-    font-size: 0.8rem; font-weight: 600; color: #8b5cf6;
-    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px;
+    font-size: 0.75rem; font-weight: 600; color: #8b5cf6;
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
   }
-  .tnc-divider { height: 1px; background: #2f3336; margin: 16px 0; }
   .tnc-check {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 12px; cursor: pointer; font-size: 0.85rem; color: #e7e9ea;
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px; cursor: pointer; font-size: 0.82rem; color: #e7e9ea;
   }
-  .tnc-check input[type="checkbox"] { width: 18px; height: 18px; accent-color: #1d9bf0; cursor: pointer; flex-shrink: 0; }
+  .tnc-check input[type="checkbox"] { width: 16px; height: 16px; accent-color: #1d9bf0; cursor: pointer; flex-shrink: 0; }
   .tnc-card .btn { margin-top: 0; }
 
   .support-section {
@@ -282,11 +283,14 @@
 <body>
 <div class="container">
   <div class="header">
+    <div class="header-left">
+      <h1>Unsr!fess</h1>
+      <div class="subtitle">Confess anonymously on X</div>
+    </div>
     <div class="status-group">
       <span class="status-dot" id="statusDot"></span>
       <span class="status-text" id="statusText">Checking...</span>
     </div>
-    <h1>Unsr!fess</h1>
   </div>
 
   <div id="announcementBanner" class="announcement-banner hidden">
