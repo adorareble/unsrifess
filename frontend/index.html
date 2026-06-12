@@ -463,6 +463,18 @@ let rateLimited = false;
 let isDone = false;
 let xToken = localStorage.getItem('x_token');
 let tncAccepted = localStorage.getItem('tnc_accepted');
+let currentUserId = '';
+
+function parseTokenUserId() {
+  try {
+    const parts = (localStorage.getItem('x_token') || '').split('.');
+    if (parts.length === 3) {
+      const p = JSON.parse(atob(parts[1]));
+      currentUserId = (p.sub || '').replace('x_user:', '');
+    }
+  } catch {}
+}
+parseTokenUserId();
 
 const tweetText = document.getElementById('tweetText');
 const tweetCount = document.getElementById('tweetCount');
@@ -552,11 +564,11 @@ async function loadSubmissions() {
         ? '<button class="submission-del" onclick="deleteTweet(' + s.id + ')" title="Delete from X">🗑️</button>' : '';
       const delInfo = s.status === 'approved' && s.reviewed_at
         ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>' : '';
-      html += '<div class="submission-item"><div class="submission-header">'
+      html += '<div class="submission-item" data-tweet-id="' + s.id + '"><div class="submission-header">'
         + '<div class="submission-text">' + escHtml(s.original_text) + '</div>'
         + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">' + delInfo + delBtn + '</div></div>'
         + '<div class="submission-meta" style="margin-bottom:2px"><span>' + timeStr + '</span></div>'
-        + '<div class="submission-meta"><span class="submission-status ' + statusClass + '">' + s.status + '</span> ' + rejectReason + ' ' + tweetLink + '</div></div>';
+        + '<div class="submission-meta"><span class="submission-status ' + statusClass + '" id="ss-' + s.id + '">' + s.status + '</span> ' + rejectReason + ' ' + tweetLink + '</div></div>';
     }
     html += '<div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px">'
       + '<button class="sub-page-btn"' + (subPage <= 1 ? ' disabled' : '') + ' onclick="subPage--;loadSubmissions()">Prev</button>'
@@ -676,19 +688,21 @@ function showDone() {
   document.getElementById('doneArea').classList.remove('hidden');
 }
 
+function showStatusMsg(title, msg) {
+  const token = localStorage.getItem('x_token');
+  if (!token) return;
+  document.getElementById('composeArea').classList.add('hidden');
+  document.getElementById('doneArea').classList.add('hidden');
+  const sm = document.getElementById('statusMsg');
+  sm.querySelector('div').textContent = title;
+  sm.querySelector('p').textContent = msg;
+  sm.classList.remove('hidden');
+}
+
 async function checkStatus() {
   const dot = document.getElementById('statusDot');
   const text = document.getElementById('statusText');
   const token = localStorage.getItem('x_token');
-  function showStatusMsg(title, msg) {
-    if (!token) return;
-    document.getElementById('composeArea').classList.add('hidden');
-    document.getElementById('doneArea').classList.add('hidden');
-    const sm = document.getElementById('statusMsg');
-    sm.querySelector('div').textContent = title;
-    sm.querySelector('p').textContent = msg;
-    sm.classList.remove('hidden');
-  }
   try {
     const r = await fetch('/api/status');
     const data = await r.json();
@@ -1007,8 +1021,76 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   await checkStatus();
   await loadSubmissions();
 })();
-setInterval(checkStatus, 30000);
-setInterval(loadSubmissions, 20000);
+function connectSSE() {
+  const token = localStorage.getItem('x_token');
+  const url = token ? '/api/events?token=' + token : '/api/events';
+  const es = new EventSource(url);
+
+  es.addEventListener('status_changed', (e) => {
+    const d = JSON.parse(e.data);
+    const dot = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+    if (d.online !== undefined) {
+      if (!d.online) {
+        dot.className = 'status-dot offline';
+        text.textContent = 'Closed';
+        showStatusMsg('Submission is closed', 'Please check back later.');
+      } else if (d.logged_in === false) {
+        dot.className = 'status-dot offline';
+        text.textContent = 'Offline';
+        showStatusMsg('Twitter offline', 'Twitter session is offline.');
+      } else {
+        dot.className = 'status-dot online';
+        text.textContent = 'Online';
+        rateLimited = false;
+        checkSubmitReady();
+        document.getElementById('statusMsg').classList.add('hidden');
+        const userArea = document.getElementById('userArea');
+        if (!userArea.classList.contains('hidden')) {
+          document.getElementById('composeArea').classList.remove('hidden');
+        }
+      }
+    }
+    if (d.delete_window !== undefined) deleteWindowMinutes = d.delete_window;
+  });
+
+  es.addEventListener('announcement_changed', (e) => {
+    const d = JSON.parse(e.data);
+    const annBanner = document.getElementById('announcementBanner');
+    const annText = document.getElementById('announcementText');
+    if (d.announcement && d.announcement.trim()) {
+      const txt = linkify(d.announcement);
+      if (annText.getAttribute('data-content') !== txt) {
+        stopMarquee();
+        annText.setAttribute('data-content', txt);
+        annText.innerHTML = txt;
+        setTimeout(startMarquee, 0);
+      }
+      annBanner.classList.remove('hidden');
+    } else {
+      annBanner.classList.add('hidden');
+      stopMarquee();
+    }
+  });
+
+  es.addEventListener('tweet_updated', (e) => {
+    const d = JSON.parse(e.data);
+    if (d.submitted_by !== currentUserId) return;
+    loadSubmissions();
+  });
+
+  es.addEventListener('user_status_changed', (e) => {
+    const d = JSON.parse(e.data);
+    if (d.x_user_id !== currentUserId) return;
+    setTimeout(loadUser, 100);
+  });
+
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectSSE, 3000);
+  };
+}
+connectSSE();
 </script>
 </body>
 </html>

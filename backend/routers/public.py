@@ -13,6 +13,19 @@ from database import (
 from twitter_client import client, split_into_chunks
 from image import TEMP_DIR, process_image_async
 from auth import get_current_user
+from event_bus import publish
+
+_VALID_IMAGE_SIGS = (
+    (b'\xff\xd8\xff', 'image/jpeg'),
+    (b'\x89PNG',      'image/png'),
+    (b'GIF8',         'image/gif'),
+    (b'RIFF',         'image/webp'),
+)
+
+
+def _is_valid_image(content: bytes) -> bool:
+    return any(content[:len(sig)] == sig for sig, _ in _VALID_IMAGE_SIGS)
+
 
 public_router = APIRouter()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -78,16 +91,22 @@ async def tweet_sync(
     saved_paths = []
     try:
         if images:
+            validated = []
             for img in images:
                 if img and img.filename:
-                    ext = os.path.splitext(img.filename)[1] or ".jpg"
-                    filename = f"{uuid.uuid4().hex}{ext}"
-                    saved_path = os.path.join(TEMP_DIR, filename)
                     content = await img.read()
-                    with open(saved_path, "wb") as f:
-                        f.write(content)
-                    await process_image_async(saved_path)
-                    saved_paths.append(saved_path)
+                    if not _is_valid_image(content):
+                        return {"success": False, "error": f"Invalid image format: {img.filename}"}
+                    validated.append((img, content))
+
+            for img, content in validated:
+                ext = os.path.splitext(img.filename)[1] or ".jpg"
+                filename = f"{uuid.uuid4().hex}{ext}"
+                saved_path = os.path.join(TEMP_DIR, filename)
+                with open(saved_path, "wb") as f:
+                    f.write(content)
+                await process_image_async(saved_path)
+                saved_paths.append(saved_path)
 
         chunks = split_into_chunks(text.strip())
         chunk_count = len(chunks)
@@ -96,6 +115,13 @@ async def tweet_sync(
         if matched:
             tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count)
             await reject_tweet(tweet["id"], None, f"Auto-rejected: matched keyword '{matched}'", matched, record_activity=False)
+            publish("tweet_updated", {
+                "event": "tweet_updated",
+                "id": tweet["id"],
+                "status": "rejected",
+                "submitted_by": user["x_user_id"],
+                "reject_reason": f"Auto-rejected: matched keyword '{matched}'",
+            })
             for p in saved_paths:
                 try:
                     os.remove(p)
@@ -109,11 +135,30 @@ async def tweet_sync(
 
         tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count)
 
+        publish("new_tweet", {
+            "event": "new_tweet",
+            "id": tweet["id"],
+            "original_text": text.strip(),
+            "image_paths": saved_paths,
+            "chunk_count": chunk_count,
+            "submitted_at": tweet["submitted_at"].isoformat() if hasattr(tweet["submitted_at"], "isoformat") else str(tweet["submitted_at"]),
+            "user_screen_name": x_user["screen_name"],
+            "user_avatar_url": x_user.get("avatar_url", ""),
+            "x_user_db_id": x_user["id"],
+        })
+
         bypass = await get_setting("bypass")
         if bypass == "true":
             result = await client.post_tweet(text.strip(), saved_paths)
             if result and result.get("success"):
                 await approve_tweet(tweet["id"], None, result["urls"], record_activity=False)
+                publish("tweet_updated", {
+                    "event": "tweet_updated",
+                    "id": tweet["id"],
+                    "status": "approved",
+                    "submitted_by": user["x_user_id"],
+                    "tweet_urls": result["urls"],
+                })
                 return {"success": True, "status": "approved", "tweet_url": result["urls"][0] if result["urls"] else None, "reviewed_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
 
         return {"success": True, "status": "pending", "message": "Your confession has been submitted for review."}

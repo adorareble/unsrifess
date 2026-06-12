@@ -22,7 +22,8 @@ async def close_pool():
     global _pool
     if _pool:
         await _pool.close()
-        _pool = None
+_pool = None
+_settings_cache: dict[str, str | None] = {}
 
 
 async def init_db():
@@ -353,13 +354,18 @@ async def get_stats():
 
 
 async def get_setting(key):
+    if key in _settings_cache:
+        return _settings_cache[key]
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow("SELECT value FROM settings WHERE key = $1", key)
-        return row["value"] if row else None
+        value = row["value"] if row else None
+    _settings_cache[key] = value
+    return value
 
 
 async def set_setting(key, value):
+    _settings_cache.pop(key, None)
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute(

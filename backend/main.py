@@ -13,12 +13,14 @@ from database import init_db, close_pool
 from routers.public import public_router
 from routers.panel import panel_router
 from routers.auth_x import auth_x_router
+from routers.sse import sse_router
 
 app = FastAPI(title="TwitterTools")
 
 app.include_router(public_router)
 app.include_router(panel_router)
 app.include_router(auth_x_router)
+app.include_router(sse_router)
 
 
 @app.exception_handler(404)

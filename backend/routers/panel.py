@@ -23,6 +23,7 @@ from auth import (
 )
 from twitter_client import client
 from image import TEMP_DIR
+from event_bus import publish
 
 panel_router = APIRouter()
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -196,6 +197,13 @@ async def panel_approve_tweet(tweet_id: int, admin: dict = Depends(get_current_a
 
     if result.get("success"):
         updated = await approve_tweet(tweet_id, admin["id"], result["urls"])
+        publish("tweet_updated", {
+            "event": "tweet_updated",
+            "id": tweet_id,
+            "status": "approved",
+            "submitted_by": tweet["submitted_by"],
+            "tweet_urls": result["urls"],
+        })
         return {"success": True, "urls": result["urls"]}
     else:
         return result
@@ -216,6 +224,13 @@ async def panel_reject_tweet(
     updated = await reject_tweet(tweet_id, admin["id"], reason.strip() if reason else None)
     if not updated:
         raise HTTPException(status_code=400, detail="Failed to reject tweet")
+    publish("tweet_updated", {
+        "event": "tweet_updated",
+        "id": tweet_id,
+        "status": "rejected",
+        "submitted_by": tweet["submitted_by"],
+        "reject_reason": reason.strip() if reason else None,
+    })
     return {"success": True}
 
 
@@ -242,6 +257,13 @@ async def panel_delete_tweet(
             pass
 
     updated = await delete_tweet(tweet_id, admin["id"], reason.strip() if reason else None)
+    publish("tweet_updated", {
+        "event": "tweet_updated",
+        "id": tweet_id,
+        "status": "deleted",
+        "submitted_by": tweet["submitted_by"],
+        "reject_reason": reason.strip() if reason else None,
+    })
     return {"success": True}
 
 
@@ -317,6 +339,12 @@ async def panel_follow_user(
     if result.get("success"):
         await update_follow_status(row["x_user_id"], row["we_follow"], True)
         await log_activity(admin["id"], "follow_user", "x_user", str(user_id), f"Followed @{row['screen_name']}")
+        publish("user_status_changed", {
+            "event": "user_status_changed",
+            "x_user_id": row["x_user_id"],
+            "we_follow": row["we_follow"],
+            "follows_us": True,
+        })
         return {"success": True}
     return {"success": False, "error": result.get("error", "Follow failed")}
 
@@ -335,6 +363,12 @@ async def panel_unfollow_user(
     if result.get("success"):
         await update_follow_status(row["x_user_id"], row["we_follow"], False)
         await log_activity(admin["id"], "unfollow_user", "x_user", str(user_id), f"Unfollowed @{row['screen_name']}")
+        publish("user_status_changed", {
+            "event": "user_status_changed",
+            "x_user_id": row["x_user_id"],
+            "we_follow": row["we_follow"],
+            "follows_us": False,
+        })
         return {"success": True}
     return {"success": False, "error": result.get("error", "Unfollow failed")}
 
@@ -355,6 +389,7 @@ async def panel_sync_all_users(
         async with pool.acquire() as conn:
             rows = await conn.fetch("SELECT id, x_user_id, screen_name FROM x_users")
         _sync_tasks[aid]["total"] = len(rows)
+        publish("sync_progress", {"event": "sync_progress", "status": "running", "total": len(rows), "synced": 0, "errors": 0})
 
         sem = asyncio.Semaphore(5)
 
@@ -377,6 +412,7 @@ async def panel_sync_all_users(
         _sync_tasks[aid]["status"] = "done"
         _sync_tasks[aid]["synced"] = synced
         _sync_tasks[aid]["errors"] = errors
+        publish("sync_progress", {"event": "sync_progress", "status": "done", "total": len(rows), "synced": synced, "errors": errors})
         await log_activity(aid, "sync_x_users", details=f"Synced: {synced}, errors: {errors}")
 
     background_tasks.add_task(_background_sync)
@@ -400,13 +436,18 @@ async def panel_block_x_user(
 ):
     pool = await get_pool()
     async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT screen_name, blocked FROM x_users WHERE id = $1", user_id)
+        row = await conn.fetchrow("SELECT x_user_id, screen_name, blocked FROM x_users WHERE id = $1", user_id)
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
     if row["blocked"]:
         return {"success": True, "already_blocked": True}
     await block_x_user(user_id)
     await log_activity(admin["id"], "block_x_user", "x_user", str(user_id), f"Blocked @{row['screen_name']}")
+    publish("user_status_changed", {
+        "event": "user_status_changed",
+        "x_user_id": row["x_user_id"],
+        "blocked": True,
+    })
     return {"success": True}
 
 
@@ -417,13 +458,18 @@ async def panel_unblock_x_user(
 ):
     pool = await get_pool()
     async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT screen_name, blocked FROM x_users WHERE id = $1", user_id)
+        row = await conn.fetchrow("SELECT x_user_id, screen_name, blocked FROM x_users WHERE id = $1", user_id)
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
     if not row["blocked"]:
         return {"success": True, "already_unblocked": True}
     await unblock_x_user(user_id)
     await log_activity(admin["id"], "unblock_x_user", "x_user", str(user_id), f"Unblocked @{row['screen_name']}")
+    publish("user_status_changed", {
+        "event": "user_status_changed",
+        "x_user_id": row["x_user_id"],
+        "blocked": False,
+    })
     return {"success": True}
 
 
@@ -495,6 +541,7 @@ async def panel_set_online(
     online_flag = value.lower() in ("1", "true", "yes")
     await set_setting("online", str(online_flag).lower())
     await log_activity(admin["id"], "set_online", details=f"Set online={online_flag}")
+    publish("status_changed", {"event": "status_changed", "online": online_flag})
     return {"success": True, "online": online_flag}
 
 
@@ -506,6 +553,7 @@ async def panel_set_bypass(
     bypass_flag = value.lower() in ("1", "true", "yes")
     await set_setting("bypass", str(bypass_flag).lower())
     await log_activity(admin["id"], "set_bypass", details=f"Set bypass={bypass_flag}")
+    publish("status_changed", {"event": "status_changed", "bypass": bypass_flag})
     return {"success": True, "bypass": bypass_flag}
 
 
@@ -517,6 +565,7 @@ async def panel_set_bypass_mutual(
     bypass_flag = value.lower() in ("1", "true", "yes")
     await set_setting("bypass_mutual", str(bypass_flag).lower())
     await log_activity(admin["id"], "set_bypass_mutual", details=f"Set bypass_mutual={bypass_flag}")
+    publish("status_changed", {"event": "status_changed", "bypass_mutual": bypass_flag})
     return {"success": True, "bypass_mutual": bypass_flag}
 
 
@@ -529,6 +578,7 @@ async def panel_set_delete_window(
         raise HTTPException(status_code=400, detail="Minimum 1 minute")
     await set_setting("delete_window", str(value))
     await log_activity(admin["id"], "set_delete_window", details=f"Set delete_window={value}")
+    publish("status_changed", {"event": "status_changed", "delete_window": value})
     return {"success": True, "delete_window": value}
 
 
@@ -541,4 +591,5 @@ async def panel_set_announcement(
     await set_setting("announcement", value)
     await log_activity(admin["id"], "set_announcement",
         details=f"Old: {old_value or '(empty)'} → New: {value or '(empty)'}")
+    publish("announcement_changed", {"event": "announcement_changed", "announcement": value})
     return {"success": True, "announcement": value}

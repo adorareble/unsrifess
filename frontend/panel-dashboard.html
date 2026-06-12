@@ -1369,14 +1369,96 @@ function switchTab(name) {
   if (name === 'settings') loadSettings();
 }
 
+// ─── SSE Events ────────────────────────────────────────────
+function connectSSE() {
+  const es = new EventSource('/panel/api/events?token=' + TOKEN);
+
+  es.addEventListener('new_tweet', (e) => {
+    const d = JSON.parse(e.data);
+    const badge = document.getElementById('queueBadge');
+    badge.textContent = parseInt(badge.textContent || '0') + 1;
+
+    const active = document.querySelector('.tab-content.active');
+    if (active && active.id === 'tabQueue' && queuePage === 1) {
+      const el = document.getElementById('tabQueue');
+      const empty = el.querySelector('.empty-state');
+      const card = document.createElement('div');
+      card.className = 'queue-card';
+      card.id = 'qt-' + d.id;
+      const userHtml = d.user_screen_name && d.x_user_db_id
+        ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:0.8rem">'
+          + '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#2a2a38;flex-shrink:0">'
+          + (d.user_avatar_url ? '<img src="' + d.user_avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
+          + '</div>'
+          + '<span style="color:#1d9bf0;cursor:pointer;font-weight:500" onclick="showUserTweets(' + d.x_user_db_id + ')">@' + escHtml(d.user_screen_name) + '</span>'
+          + '</div>'
+        : '';
+      const thumbsHtml = (d.image_paths && d.image_paths.length)
+        ? function() {
+            const fns = d.image_paths.map(filenameFromPath);
+            const fnsJson = JSON.stringify(fns);
+            return '<div class="thumb-grid">' + fns.map((fn, idx) => {
+              return '<div class="thumb" onclick=\'openLightbox(' + fnsJson + ',' + idx + ')\'><img src="/panel/api/images/' + fn + '?token=' + TOKEN + '"></div>';
+            }).join('') + '</div>';
+          }()
+        : '';
+      const meta = '#' + d.id + ' ' + fmtTime(d.submitted_at) + (d.chunk_count > 1 ? ' ' + d.chunk_count + ' tweets' : '');
+      card.innerHTML = userHtml + thumbsHtml
+        + '<div class="text">' + escHtml(d.original_text) + '</div>'
+        + '<div class="actions" id="qa-' + d.id + '">'
+        + '<button class="btn btn-approve" onclick="approveTweet(' + d.id + ')">Approve</button>'
+        + '<button class="btn btn-reject" onclick="rejectTweetPopup(' + d.id + ')">Reject</button>'
+        + '</div>'
+        + '<div class="meta">' + meta + '</div>';
+      if (empty) {
+        el.innerHTML = '';
+        el.appendChild(card);
+      } else {
+        el.insertBefore(card, el.firstChild);
+      }
+      const pages = el.querySelector('.pagination');
+      if (pages) el.insertBefore(card, pages);
+    }
+  });
+
+  es.addEventListener('tweet_updated', (e) => {
+    const d = JSON.parse(e.data);
+    const card = document.getElementById('qt-' + d.id);
+    if (card) card.style.display = 'none';
+    loadStats();
+  });
+
+  es.addEventListener('status_changed', (e) => {
+    loadStats();
+  });
+
+  es.addEventListener('announcement_changed', (e) => {
+    loadStats();
+  });
+
+  es.addEventListener('sync_progress', (e) => {
+    const d = JSON.parse(e.data);
+    const msg = document.getElementById('syncMsg');
+    if (!msg) return;
+    if (d.status === 'running') {
+      msg.textContent = 'Syncing... ' + (d.synced + d.errors) + '/' + d.total;
+    } else if (d.status === 'done') {
+      msg.textContent = 'Synced: ' + d.synced + ', errors: ' + d.errors;
+      loadUsers();
+      loadStats();
+    }
+  });
+
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectSSE, 3000);
+  };
+}
+
 // ─── Init & Auto-refresh ──────────────────────────────────
 loadStats();
 loadQueue();
-setInterval(() => {
-  const active = document.querySelector('.tab-content.active');
-  if (active && active.id === 'tabQueue') loadQueue();
-  loadStats();
-}, 15000);
+connectSSE();
 </script>
 </body>
 </html>

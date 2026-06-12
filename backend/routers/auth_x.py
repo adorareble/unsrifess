@@ -11,6 +11,7 @@ from starlette.config import Config
 from database import upsert_x_user, update_follow_status
 from twitter_client import client
 from auth import create_user_token
+from event_bus import publish
 
 auth_x_router = APIRouter()
 
@@ -102,6 +103,14 @@ async def x_callback(request: Request):
             follows_us = mutual_result.get("follows_us", False)
             is_mutual = we_follow and follows_us
             await update_follow_status(x_user_id, we_follow, follows_us)
+            publish("user_status_changed", {
+                "event": "user_status_changed",
+                "x_user_id": x_user_id,
+                "is_mutual": is_mutual,
+                "we_follow": we_follow,
+                "follows_us": follows_us,
+                "blocked": False,
+            })
 
             token = create_user_token(x_user_id, screen_name, is_mutual)
             html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
@@ -231,6 +240,13 @@ async def x_delete_tweet(tweet_id: int, request: Request):
             tweet_id,
         )
 
+    publish("tweet_updated", {
+        "event": "tweet_updated",
+        "id": tweet_id,
+        "status": "deleted",
+        "submitted_by": x_user_id,
+        "reject_reason": "deleted by user",
+    })
     return {"success": True}
 
 
@@ -259,6 +275,13 @@ async def x_refresh_mutual(request: Request):
     follows_us = mutual_result.get("follows_us", False)
     is_mutual = we_follow and follows_us
     await update_follow_status(x_user_id, we_follow, follows_us)
+    publish("user_status_changed", {
+        "event": "user_status_changed",
+        "x_user_id": x_user_id,
+        "is_mutual": is_mutual,
+        "we_follow": we_follow,
+        "follows_us": follows_us,
+    })
 
     x_user = await get_x_user_by_id(x_user_id)
     new_token = create_user_token(x_user_id, screen_name, is_mutual)
