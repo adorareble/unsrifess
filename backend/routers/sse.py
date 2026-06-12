@@ -71,6 +71,8 @@ async def admin_events(request: Request, token: str = Query("")):
         "announcement_changed",
         "user_status_changed",
         "sync_progress",
+        "keyword_updated",
+        "admin_updated",
     ]
     return StreamingResponse(
         _event_generator(topics),

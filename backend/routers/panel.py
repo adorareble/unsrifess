@@ -79,6 +79,7 @@ async def panel_register_api(
     hashed = hash_password(password)
     new_admin = await create_admin(username, hashed, display_name, "admin")
     await log_activity(admin["id"], "create_admin", "admin", new_admin["id"], f"Created admin {display_name}")
+    publish("admin_updated", {"event": "admin_updated", "action": "created", "admin_id": new_admin["id"]})
     return {"success": True, "admin": new_admin}
 
 
@@ -131,6 +132,7 @@ async def panel_deactivate_admin_api(admin_id: int, admin: dict = Depends(requir
         raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
     await deactivate_admin(admin_id)
     await log_activity(admin["id"], "deactivate_admin", "admin", admin_id)
+    publish("admin_updated", {"event": "admin_updated", "action": "deactivated", "admin_id": admin_id})
     return {"success": True}
 
 
@@ -138,6 +140,7 @@ async def panel_deactivate_admin_api(admin_id: int, admin: dict = Depends(requir
 async def panel_activate_admin_api(admin_id: int, admin: dict = Depends(require_superadmin)):
     await activate_admin(admin_id)
     await log_activity(admin["id"], "activate_admin", "admin", admin_id)
+    publish("admin_updated", {"event": "admin_updated", "action": "activated", "admin_id": admin_id})
     return {"success": True}
 
 
@@ -285,6 +288,7 @@ async def panel_add_keyword(
         except Exception:
             pass
     await log_activity(admin["id"], "add_keyword", details=f"Added keywords: {keywords}")
+    publish("keyword_updated", {"event": "keyword_updated", "action": "added", "keywords": [k["keyword"] for k in added]})
     return {"success": True, "added": added}
 
 
@@ -292,6 +296,7 @@ async def panel_add_keyword(
 async def panel_remove_keyword(keyword_id: int, admin: dict = Depends(get_current_admin)):
     await remove_keyword(keyword_id)
     await log_activity(admin["id"], "remove_keyword", "keyword", keyword_id)
+    publish("keyword_updated", {"event": "keyword_updated", "action": "removed", "keyword_id": keyword_id})
     return {"success": True}
 
 

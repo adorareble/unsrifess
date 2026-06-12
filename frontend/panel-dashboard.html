@@ -1449,6 +1449,22 @@ function connectSSE() {
     }
   });
 
+  es.addEventListener('keyword_updated', () => {
+    const stabService = document.getElementById('stabService');
+    if (stabService && !stabService.classList.contains('hidden')) {
+      loadKeywordsSection();
+    }
+  });
+
+  es.addEventListener('admin_updated', () => {
+    if (ADMIN.role === 'superadmin') {
+      const stabGeneral = document.getElementById('stabGeneral');
+      if (stabGeneral && !stabGeneral.classList.contains('hidden')) {
+        loadAdminsSection();
+      }
+    }
+  });
+
   es.onerror = () => {
     es.close();
     setTimeout(connectSSE, 3000);
