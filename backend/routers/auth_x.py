@@ -220,7 +220,8 @@ async def x_delete_tweet(tweet_id: int, request: Request):
 
     delete_window = int(await get_setting("delete_window") or "5")
     if tweet["reviewed_at"]:
-        elapsed = datetime.now(timezone.utc) - tweet["reviewed_at"]
+        reviewed = tweet["reviewed_at"].replace(tzinfo=timezone.utc) if tweet["reviewed_at"].tzinfo is None else tweet["reviewed_at"]
+        elapsed = datetime.now(timezone.utc) - reviewed
         if elapsed > timedelta(minutes=delete_window):
             raise HTTPException(status_code=400, detail=f"{delete_window}-minute deletion window has passed")
 
