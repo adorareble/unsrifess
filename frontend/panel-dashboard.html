@@ -8,107 +8,123 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #0e0e12; color: #e7e9ea; font-size: 14px;
+    background: #000; color: #e7e9ea; min-height: 100vh; min-height: 100dvh;
+    display: flex; justify-content: center;
   }
+  .container { width: 100%; max-width: 480px; padding: 12px 16px 24px; }
 
   /* ── Topbar ── */
   .topbar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 16px; border-bottom: 1px solid #2a2a38;
-    background: #0a0a0e; position: sticky; top: 0; z-index: 50;
+    padding: 12px 16px 0; max-width: 480px; margin: 0 auto;
   }
   .topbar h1 {
-    font-size: 0.9rem; font-weight: 700;
+    font-size: 1.15rem; font-weight: 700;
     background: linear-gradient(135deg, #1d9bf0, #8b5cf6);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   .topbar h1 span { -webkit-text-fill-color: #71767b; font-weight: 400; }
-  .topbar-right { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; }
-  .topbar-right .admin-name { color: #1d9bf0; }
+  .topbar-right { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #71767b; }
+  .topbar-right .admin-name { color: #1d9bf0; font-weight: 500; }
   .topbar-right .role-badge {
-    font-size: 0.65rem; padding: 1px 6px; border-radius: 10px;
+    font-size: 0.6rem; padding: 1px 6px; border-radius: 9999px;
     background: rgba(29,155,240,0.12); color: #1d9bf0; text-transform: uppercase;
   }
   .topbar-right .role-badge.super { background: rgba(244,196,48,0.12); color: #f4c430; }
   .logout-btn {
-    background: transparent; border: 1px solid #2a2a38; color: #e7e9ea;
-    padding: 4px 10px; border-radius: 10px; cursor: pointer; font-size: 0.75rem;
+    background: transparent; border: 1px solid #2f3336; color: #e7e9ea;
+    padding: 4px 10px; border-radius: 9999px; cursor: pointer; font-size: 0.72rem;
+    line-height: 1.4;
   }
   .logout-btn:hover { border-color: #f4212e; color: #f4212e; }
 
-  .container { max-width: 1200px; margin: 0 auto; padding: 12px 16px; }
-
   /* ── Stats ── */
-  .stats {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 6px; margin-bottom: 10px;
-  }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
   .stat-card {
-    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 8px;
-    padding: 8px 6px; text-align: center;
+    background: #16181c; border: 1px solid #2f3336; border-radius: 14px;
+    padding: 14px; text-align: center;
   }
-  .stat-card .num { font-size: 1rem; font-weight: 700; }
-  .stat-card .label { font-size: 0.65rem; color: #71767b; margin-top: 2px; }
+  .stat-card .num { font-size: 1.1rem; font-weight: 700; }
+  .stat-card .label { font-size: 0.68rem; color: #71767b; margin-top: 2px; }
   .stat-card .num.pending { color: #f4c430; }
   .stat-card .num.approved { color: #00ba7c; }
   .stat-card .num.rejected { color: #f4212e; }
   .stat-card .num.total { color: #1d9bf0; }
-  .stat-card .num.online { color: #00ba7c; }
-  .stat-card .num.offline { color: #f4212e; }
-  .stat-card.clickable { cursor: pointer; }
-  .stat-card.clickable:hover { background: #22222e; }
-  .badge-on, .badge-off { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+  .badge-on, .badge-off { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 600; }
   .badge-on { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .badge-off { background: rgba(244,33,46,0.12); color: #f4212e; }
 
   /* ── Tabs ── */
-  .tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 1px solid #2a2a38; overflow-x: auto; }
+  .tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 1px solid #2f3336; overflow-x: auto; }
   .tab {
-    padding: 8px 14px; cursor: pointer; font-size: 0.8rem; font-weight: 500;
+    padding: 10px 14px; cursor: pointer; font-size: 0.8rem; font-weight: 500;
     color: #71767b; border-bottom: 2px solid transparent; white-space: nowrap;
+    transition: color .15s;
   }
-  .tab:hover { color: #e7e9ea; background: rgba(239,243,244,0.02); }
+  .tab:hover { color: #e7e9ea; }
   .tab.active { color: #1d9bf0; border-bottom-color: #1d9bf0; }
   .tab .badge {
-    display: inline-block; margin-left: 4px; font-size: 0.65rem;
-    padding: 0 5px; border-radius: 10px; background: #1d9bf0; color: #fff;
+    display: inline-block; margin-left: 4px; font-size: 0.62rem;
+    padding: 0 6px; border-radius: 9999px; background: #1d9bf0; color: #fff;
   }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
   .stab-content { display: block; }
   .stab-content.hidden { display: none; }
 
-  /* ── Queue Card ── */
-  .queue-card {
-    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 12px;
+  /* ── Cards (generic) ── */
+  .item-card {
+    background: #16181c; border: 1px solid #2f3336; border-radius: 14px;
     padding: 14px; margin-bottom: 8px;
   }
-  .queue-card .meta { font-size: 0.7rem; color: #71767b; }
-  .queue-card .text {
-    font-size: 0.85rem; line-height: 1.5; margin-bottom: 10px;
+  .item-card:last-child { margin-bottom: 0; }
+  .item-card .meta { font-size: 0.72rem; color: #71767b; }
+  .item-card .text {
+    font-size: 0.88rem; line-height: 1.5; margin-bottom: 10px;
     white-space: pre-wrap; word-break: break-word;
   }
-  .queue-card .actions { display: flex; gap: 6px; margin-bottom: 10px; }
-  .queue-card .actions .btn {
-    padding: 6px 14px; border: none; border-radius: 10px;
-    font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  .item-card .meta-row {
+    display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.72rem; color: #71767b;
+    margin-top: 8px;
   }
-  .btn-approve { background: #00ba7c; color: #fff; }
-  .btn-approve:hover { background: #009d68; }
-  .btn-approve:disabled { background: #005f3f; color: #888; cursor: not-allowed; }
-  .btn-reject { background: #f4212e; color: #fff; }
-  .btn-reject:hover { background: #c8102e; }
+  .item-card .actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .item-card .actions .btn-action {
+    padding: 8px 18px; border: none; border-radius: 9999px;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #fff;
+    transition: opacity .2s;
+  }
+  .item-card .actions .btn-action:hover { opacity: .85; }
+  .btn-action {
+    padding: 8px 18px; border: none; border-radius: 9999px;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #fff;
+    transition: opacity .2s;
+  }
+  .btn-action:hover { opacity: .85; }
+  .btn-approve { background: #00ba7c; }
+  .btn-reject { background: #f4212e; }
+  .btn-delete { background: #f4212e; }
+  .btn-primary-sm { background: #1d9bf0; }
+  .btn-primary-sm:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-danger-sm { background: #f4212e; }
+  .btn-secondary-sm {
+    background: transparent; border: 1px solid #2f3336; color: #e7e9ea;
+  }
+  .btn-secondary-sm:hover { background: rgba(239,243,244,0.04); }
+  .btn-sm {
+    padding: 6px 14px; border: none; border-radius: 9999px;
+    font-size: 0.75rem; font-weight: 600; cursor: pointer; color: #fff;
+    transition: opacity .2s;
+  }
+  .btn-sm:hover { opacity: .85; }
 
   .empty-state { text-align: center; padding: 40px 16px; color: #71767b; font-size: 0.85rem; }
 
   /* ── Thumbnails ── */
-  .thumb-grid {
-    display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
-  }
+  .thumb-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
   .thumb {
-    width: 80px; height: 80px; border-radius: 8px; overflow: hidden;
-    border: 1px solid #2a2a38; cursor: pointer; flex-shrink: 0;
+    width: 72px; height: 72px; border-radius: 10px; overflow: hidden;
+    border: 1px solid #2f3336; cursor: pointer; flex-shrink: 0;
   }
   .thumb img { width: 100%; height: 100%; object-fit: cover; }
   .thumb:hover { border-color: #1d9bf0; }
@@ -138,72 +154,64 @@
   .lightbox .nav:hover { background: rgba(255,255,255,0.2); }
   .lightbox .nav.prev { left: 16px; }
   .lightbox .nav.next { right: 16px; }
-  .lightbox img {
-    max-width: 90%; max-height: 90%; border-radius: 8px;
-    object-fit: contain;
-  }
+  .lightbox img { max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain; }
 
-  /* ── Popup ── */
+  /* ── Popup (bottom sheet) ── */
   .popup-overlay {
     position: fixed; inset: 0; z-index: 150;
-    background: rgba(0,0,0,0.7); display: flex;
-    align-items: center; justify-content: center; padding: 20px;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: flex-end; justify-content: center;
   }
   .popup-overlay.hidden { display: none; }
   .popup-card {
-    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 16px;
-    padding: 24px; max-width: 380px; width: 100%; text-align: center;
+    width: 100%; max-width: 480px; background: #16181c;
+    border-radius: 24px 24px 0 0; padding: 28px 24px 32px;
+    text-align: center; animation: sheetUp .3s ease; max-height: 85vh; overflow-y: auto;
   }
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   .popup-card.large {
-    max-width: min(90vw, 800px);
+    max-width: min(90vw, 480px);
     text-align: left;
   }
-  .popup-icon { font-size: 1.8rem; margin-bottom: 10px; }
+  .popup-icon { font-size: 2rem; margin-bottom: 12px; }
   .popup-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
-  .popup-msg { font-size: 0.85rem; color: #71767b; margin-bottom: 16px; line-height: 1.5; }
-  .popup-actions { display: flex; gap: 8px; justify-content: center; }
+  .popup-msg { font-size: 0.88rem; color: #71767b; margin-bottom: 20px; line-height: 1.5; }
+  .popup-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   .popup-btn {
-    padding: 8px 20px; border: none; border-radius: 10px;
-    font-size: 0.85rem; font-weight: 600; cursor: pointer; color: #fff;
+    padding: 12px 28px; border: none; border-radius: 9999px;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer; color: #fff; transition: opacity .2s;
   }
+  .popup-btn:hover { opacity: .85; }
   .popup-btn-primary { background: #1d9bf0; }
   .popup-btn-danger { background: #f4212e; }
-  .popup-btn-ghost { background: #2a2a38; color: #e7e9ea; }
+  .popup-btn-ghost { background: #2f3336; color: #e7e9ea; }
 
   /* ── Filter bar ── */
   .filter-bar {
     display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center;
   }
   .filter-bar select, .filter-bar input {
-    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 8px;
-    color: #e7e9ea; padding: 6px 10px; font-size: 0.8rem; outline: none; font-family: inherit;
+    background: #0e0e12; border: 1px solid #2f3336; border-radius: 9999px;
+    color: #e7e9ea; padding: 8px 14px; font-size: 0.8rem; outline: none; font-family: inherit;
   }
   .filter-bar select:focus, .filter-bar input:focus { border-color: #1d9bf0; }
+  .filter-bar .btn-sm { padding: 8px 18px; }
 
-  /* ── Table ── */
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #2a2a38; }
-  th { color: #71767b; font-weight: 500; }
-  td { color: #e7e9ea; }
+  /* ── Status badges ── */
   .status-badge {
-    display: inline-block; padding: 1px 8px; border-radius: 10px;
-    font-size: 0.7rem; font-weight: 600;
+    display: inline-block; padding: 2px 10px; border-radius: 9999px;
+    font-size: 0.68rem; font-weight: 600;
   }
   .status-pending { background: rgba(244,196,48,0.12); color: #f4c430; }
   .status-approved { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .status-rejected { background: rgba(244,33,46,0.12); color: #f4212e; }
   .status-deleted { background: rgba(113,118,123,0.12); color: #71767b; }
-  .text-preview { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
-  .text-preview:hover { color: #1d9bf0; }
-  .img-badge { margin-left: 6px; font-size: 0.75rem; opacity: 0.7; }
-  table tbody tr { height: 48px; }
 
   /* ── Keyword tags ── */
   .keyword-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
   .keyword-tag {
     display: inline-flex; align-items: center; gap: 4px;
-    padding: 3px 10px; border-radius: 10px; font-size: 0.8rem;
+    padding: 4px 12px; border-radius: 9999px; font-size: 0.8rem;
     background: rgba(29,155,240,0.08); border: 1px solid rgba(29,155,240,0.2);
   }
   .keyword-tag .del {
@@ -211,27 +219,20 @@
   }
   .keyword-tag .del:hover { color: #c8102e; }
   .add-keyword-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .add-keyword-form input { flex: 1; min-width: 140px; }
 
   /* ── Pagination ── */
   .pagination {
     display: flex; gap: 6px; justify-content: center; margin-top: 12px; align-items: center;
   }
   .pagination button {
-    background: #1a1a24; border: 1px solid #2a2a38; border-radius: 8px;
-    color: #e7e9ea; padding: 4px 12px; cursor: pointer; font-size: 0.8rem;
+    background: #16181c; border: 1px solid #2f3336; border-radius: 9999px;
+    color: #e7e9ea; padding: 6px 16px; cursor: pointer; font-size: 0.8rem;
+    transition: border-color .2s;
   }
   .pagination button:hover { border-color: #1d9bf0; }
-  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
   .pagination .page-info { color: #71767b; font-size: 0.8rem; }
-
-  .btn-small {
-    padding: 3px 10px; border: none; border-radius: 8px;
-    font-size: 0.72rem; font-weight: 600; cursor: pointer; color: #fff;
-  }
-  .btn-small.danger { background: #f4212e; }
-  .btn-small.danger:hover { background: #c8102e; }
-  .btn-small.primary { background: #1d9bf0; }
-  .btn-small.primary:hover { background: #1a8cd8; }
 
   .msg { font-size: 0.8rem; min-height: 1.2em; margin-top: 6px; }
   .msg.ok { color: #00ba7c; }
@@ -241,26 +242,41 @@
   .heatmap-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .heatmap {
     display: grid;
-    grid-template-columns: 70px repeat(24, minmax(28px, 1fr));
-    gap: 2px; font-size: 0.7rem; min-width: 740px;
+    grid-template-columns: 50px repeat(24, minmax(22px, 1fr));
+    gap: 2px; font-size: 0.65rem; min-width: 0;
   }
-  .heatmap .cell { padding: 4px 2px; text-align: center; border-radius: 3px; }
-  .heatmap .label { color: #71767b; text-align: right; padding-right: 6px; }
-  .heatmap .header { color: #71767b; font-weight: 500; }
+  .heatmap .cell { padding: 4px 2px; text-align: center; border-radius: 4px; }
+  .heatmap .label { color: #71767b; text-align: right; padding-right: 6px; font-size: 0.6rem; }
+  .heatmap .header { color: #71767b; font-weight: 500; font-size: 0.6rem; }
 
-  @media (max-width: 768px) {
-    .container { padding: 8px 10px; }
-    .topbar { padding: 6px 10px; }
-    .tab { padding: 6px 10px; font-size: 0.75rem; }
-    .stats { grid-template-columns: repeat(2, 1fr); }
-    .thumb { width: 64px; height: 64px; }
-    table { font-size: 0.7rem; }
-    th, td { padding: 4px 6px; }
-    .heatmap { grid-template-columns: 50px repeat(24, minmax(18px, 1fr)); min-width: 0; gap: 1px; font-size: 0.6rem; }
-    .heatmap .cell { padding: 4px 1px; }
-    .heatmap .label { padding-right: 4px; font-size: 0.55rem; }
-    .heatmap .header { font-size: 0.55rem; }
+  /* ── Settings cards ── */
+  .settings-card {
+    background: #16181c; border: 1px solid #2f3336; border-radius: 14px; padding: 16px; margin-bottom: 12px;
   }
+  .settings-card:last-child { margin-bottom: 0; }
+  .settings-card .label { font-size: 0.85rem; color: #e7e9ea; margin-bottom: 8px; }
+  .settings-card .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .settings-card input, .settings-card textarea {
+    background: #0e0e12; border: 1px solid #2f3336; border-radius: 14px;
+    color: #e7e9ea; font-size: 0.85rem; padding: 10px 12px; outline: none; font-family: inherit;
+    width: 100%;
+  }
+  .settings-card input:focus, .settings-card textarea:focus { border-color: #1d9bf0; }
+  .settings-card textarea { resize: vertical; }
+  .settings-card input[type="number"] { width: 60px; text-align: center; }
+  .settings-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 10px 0; border-bottom: 1px solid #2f3336;
+  }
+  .settings-item:last-child { border-bottom: none; }
+  .settings-item span:first-child { font-size: 0.85rem; color: #e7e9ea; }
+
+  /* ── Section titles ── */
+  .section-title {
+    font-size: 1rem; font-weight: 700; margin: 24px 0 16px; color: #e7e9ea;
+  }
+
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
@@ -300,14 +316,14 @@
 </div>
 
 <!-- Popup -->
-<div class="popup-overlay hidden" id="popupOverlay" onclick="if(event.target===this)closePopup()">
-  <div class="popup-card" onclick="event.stopPropagation()">
-    <div class="popup-icon" id="popupIcon"></div>
-    <div class="popup-title" id="popupTitle"></div>
-    <div class="popup-msg" id="popupMsg"></div>
-    <div class="popup-actions" id="popupActions"></div>
+  <div class="popup-overlay hidden" id="popupOverlay">
+    <div class="popup-card" id="popupCard">
+      <div class="popup-icon" id="popupIcon"></div>
+      <div class="popup-title" id="popupTitle"></div>
+      <div class="popup-msg" id="popupMsg"></div>
+      <div class="popup-actions" id="popupActions"></div>
+    </div>
   </div>
-</div>
 
 <script>
 const TOKEN = localStorage.getItem('panel_token');
@@ -398,6 +414,12 @@ function showPopup(icon, title, msg, buttons, large) {
 function closePopup() {
   document.getElementById('popupOverlay').classList.add('hidden');
 }
+document.getElementById('popupOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closePopup();
+});
+document.getElementById('popupCard').addEventListener('click', function(e) {
+  e.stopPropagation();
+});
 
 // ── Lightbox ──
 let lbImages = [];
@@ -565,20 +587,20 @@ async function loadQueue() {
 
       const userInfo = t.user_screen_name
         ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:0.8rem">'
-          + '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#2a2a38;flex-shrink:0">'
+          + '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
           + (t.user_avatar_url ? '<img src="' + t.user_avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
           + '</div>'
           + '<span style="color:#1d9bf0;cursor:pointer;font-weight:500" onclick="showUserTweets(' + t.x_user_db_id + ')">@' + escHtml(t.user_screen_name) + '</span>'
           + '</div>'
         : '';
 
-      html += '<div class="queue-card" id="qt-' + t.id + '">'
+      html += '<div class="item-card" id="qt-' + t.id + '">'
         + userInfo
         + thumbsHtml
         + '<div class="text">' + escHtml(t.original_text) + '</div>'
         + '<div class="actions" id="qa-' + t.id + '">'
-        + '<button class="btn btn-approve" onclick="approveTweet(' + t.id + ')">Approve</button>'
-        + '<button class="btn btn-reject" onclick="rejectTweetPopup(' + t.id + ')">Reject</button>'
+        + '<button class="btn-action btn-approve" onclick="approveTweet(' + t.id + ')">Approve</button>'
+        + '<button class="btn-action btn-reject" onclick="rejectTweetPopup(' + t.id + ')">Reject</button>'
         + '</div>'
         + '<div class="meta">' + metaParts.join(' &middot; ') + '</div></div>';
     }
@@ -619,7 +641,7 @@ async function approveTweet(id) {
 async function rejectTweetPopup(id) {
   showPopup('', '', ''
     + '<div style="margin-bottom:12px">Reject tweet #' + id + '?</div>'
-    + '<textarea id="rr-' + id + '" placeholder="Reason (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
+    + '<textarea id="rr-' + id + '" placeholder="Reason (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Reject', cls: 'popup-btn-danger', fn: async () => {
       closePopup();
@@ -680,35 +702,34 @@ async function loadHistory() {
       return;
     }
 
-      let rows = '';
+    let cards = '';
     for (const t of tweets) {
       const urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : [];
       const images = imagesFromTweet(t);
       const fns = images.map(filenameFromPath);
       const imgBadge = images.length ? '<span class="img-badge" title="Has images">\u{1F5BC}\uFE0F</span>' : '';
       const dataImgs = fns.length ? ' data-images=\'' + JSON.stringify(fns).replace(/'/g, '&#39;') + '\'' : '';
-      rows += '<tr>'
-        + '<td>' + t.id + '</td>'
-        + '<td><span class="status-badge status-' + t.status + '">' + t.status + '</span></td>'
-        + '<td class="text-preview"' + dataImgs + ' data-full="' + escHtml(t.original_text).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)">' + escHtml(t.original_text) + imgBadge + '</td>'
-        + '<td>' + fmtTime(t.submitted_at) + '</td>'
-        + '<td>' + (t.reviewer_name || '-') + '</td>'
-        + '<td>' + (t.user_screen_name
-            ? '<a href="javascript:void(0)" onclick="showUserTweets(' + t.x_user_db_id + ')" style="color:#1d9bf0;text-decoration:none">@' + escHtml(t.user_screen_name) + '</a>'
-            : '-') + '</td>'
-        + '<td>' + (urls.length ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">link</a>' : '-') + '</td>'
-        + '<td>' + (t.reject_reason ? escHtml(t.reject_reason) : '-') + '</td>'
-        + '<td>' + (ADMIN.role === 'superadmin' && t.status === 'approved'
-            ? '<button class="btn-small danger" onclick="deleteTweet(' + t.id + ')">Delete</button>'
-            : '') + '</td>'
-        + '</tr>';
+      const deleteBtn = ADMIN.role === 'superadmin' && t.status === 'approved'
+        ? '<button class="btn-action btn-reject" onclick="deleteTweet(' + t.id + ')">Delete</button>' : '';
+      cards += '<div class="item-card">'
+        + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<strong>#' + t.id + '</strong>'
+        + '<span class="status-badge status-' + t.status + '">' + t.status + '</span>'
+        + '<span>' + fmtTime(t.submitted_at) + '</span>'
+        + '</div>'
+        + '<div class="text-preview' + (dataImgs ? '"' + dataImgs : '') + ' data-full="' + escHtml(t.original_text).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(t.original_text) + imgBadge + '</div>'
+        + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b">'
+        + '<span>Reviewer: ' + (t.reviewer_name || '-') + '</span>'
+        + '<span>User: ' + (t.user_screen_name ? '<a href="javascript:void(0)" onclick="showUserTweets(' + t.x_user_db_id + ')" style="color:#1d9bf0;text-decoration:none">@' + escHtml(t.user_screen_name) + '</a>' : '-') + '</span>'
+        + '<span>URL: ' + (urls.length ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">link</a>' : '-') + '</span>'
+        + '<span>Reason: ' + (t.reject_reason ? escHtml(t.reject_reason) : '-') + '</span>'
+        + '</div>'
+        + (deleteBtn ? '<div class="actions">' + deleteBtn + '</div>' : '')
+        + '</div>';
     }
 
     let html = filterHtml
-      + '<div class="table-wrap"><table><thead><tr>'
-      + '<th>#</th><th>Status</th><th>Text</th><th>Submitted</th>'
-        + '<th>Reviewer</th><th>User</th><th>URLs</th><th>Reason</th><th>' + (ADMIN.role === 'superadmin' ? 'Action' : '') + '</th>'
-      + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+      + cards
       + '<div class="pagination">'
       + '<button onclick="historyPage--;loadHistory()"' + (historyPage <= 1 ? ' disabled' : '') + '>Prev</button>'
       + '<span class="page-info">Page ' + historyPage + ' of ' + (d.total ? Math.ceil(d.total / 10) : 1) + '</span>'
@@ -736,34 +757,36 @@ async function showUserTweets(userId) {
     if (tweets.length === 0) {
       html += '<div class="empty-state">No tweets from this user</div>';
     } else {
-      html += '<table style="font-size:0.75rem;width:100%"><thead><tr>'
-        + '<th style="padding:6px 8px">#</th><th style="padding:6px 8px">Status</th><th style="padding:6px 8px">Text</th><th style="padding:6px 8px">Date</th><th style="padding:6px 8px">Reviewer</th><th style="padding:6px 8px">Reason</th><th style="padding:6px 8px">URL</th><th style="padding:6px 8px">Action</th>'
-        + '</tr></thead><tbody>';
+      let cardsHtml = '';
       for (const t of tweets) {
         const urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : [];
         const linkHtml = urls.length ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0">link</a>' : '';
         let actHtml = '';
         if (t.status === 'pending') {
-          actHtml = '<button class="btn-small primary" onclick="doApproval(' + t.id + ',\'' + d.screen_name + '\')" style="margin-right:4px">Approve</button>'
-            + '<button class="btn-small danger" onclick="doRejection(' + t.id + ',\'' + d.screen_name + '\')">Reject</button>';
+          actHtml = '<button class="btn-action btn-approve" onclick="doApproval(' + t.id + ',\'' + d.screen_name + '\')">Approve</button>'
+            + '<button class="btn-action btn-reject" onclick="doRejection(' + t.id + ',\'' + d.screen_name + '\')">Reject</button>';
         } else if (t.status === 'approved') {
           if (ADMIN.role === 'superadmin') {
-            actHtml = '<button class="btn-small danger" onclick="deleteTweetFromPopup(' + t.id + ')">Delete</button>';
+            actHtml = '<button class="btn-action btn-reject" onclick="deleteTweetFromPopup(' + t.id + ')">Delete</button>';
           }
         }
-        html += '<tr>'
-          + '<td style="padding:6px 8px">' + t.id + '</td>'
-          + '<td style="padding:6px 8px"><span class="status-badge status-' + t.status + '">' + t.status + '</span></td>'
-          + '<td style="padding:6px 8px;max-width:300px" title="' + escHtml(t.original_text).replace(/"/g, '&quot;') + '">' + escHtml(t.original_text) + '</td>'
-          + '<td style="padding:6px 8px;white-space:nowrap">' + fmtTime(t.submitted_at) + '</td>'
-          + '<td style="padding:6px 8px">' + (t.reviewer_name || '-') + '</td>'
-          + '<td style="padding:6px 8px;max-width:120px;color:#71767b">' + (t.reject_reason ? escHtml(t.reject_reason) : '-') + '</td>'
-          + '<td style="padding:6px 8px">' + linkHtml + '</td>'
-          + '<td style="padding:6px 8px;white-space:nowrap">' + actHtml + '</td>'
-          + '</tr>';
+        cardsHtml += '<div class="item-card" style="margin-bottom:8px">'
+          + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">'
+          + '<strong>#' + t.id + '</strong>'
+          + '<span class="status-badge status-' + t.status + '">' + t.status + '</span>'
+          + '<span style="font-size:0.75rem;color:#71767b">' + fmtTime(t.submitted_at) + '</span>'
+          + '</div>'
+          + '<div class="text" style="font-size:0.85rem">' + escHtml(t.original_text) + '</div>'
+          + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b;margin-top:6px">'
+          + '<span>Reviewer: ' + (t.reviewer_name || '-') + '</span>'
+          + '<span>Reason: ' + (t.reject_reason ? escHtml(t.reject_reason) : '-') + '</span>'
+          + '<span>URL: ' + linkHtml + '</span>'
+          + '</div>'
+          + (actHtml ? '<div class="actions" style="margin-top:8px">' + actHtml + '</div>' : '')
+          + '</div>';
       }
-      html += '</tbody></table>';
-      html += '<div class="pagination">'
+      html += cardsHtml;
+      html += '<div class="pagination" style="margin-top:12px">'
         + '<button onclick="userTweetsPages[' + userId + ']=' + (page - 1) + ';showUserTweets(' + userId + ')"' + (page <= 1 ? ' disabled' : '') + '>Prev</button>'
         + '<span class="page-info">Page ' + page + ' of ' + totalPages + '</span>'
         + '<button onclick="userTweetsPages[' + userId + ']=' + (page + 1) + ';showUserTweets(' + userId + ')"' + (page >= totalPages ? ' disabled' : '') + '>Next</button>'
@@ -796,7 +819,7 @@ async function doRejection(id, sn) {
   closePopup();
   showPopup('', 'Reject Tweet?', ''
     + '<div style="margin-bottom:12px">Reject this tweet from @' + sn + '?</div>'
-    + '<textarea id="rejectReason" placeholder="Reason (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
+    + '<textarea id="rejectReason" placeholder="Reason (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Reject', cls: 'popup-btn-danger', fn: async () => {
       const reason = document.getElementById('rejectReason').value;
@@ -822,7 +845,7 @@ async function deleteTweetFromPopup(id) {
   closePopup();
   showPopup('🗑️', 'Delete Tweet?', ''
     + '<div style="margin-bottom:12px">Tweet #' + id + ' will be deleted from X. This cannot be undone.</div>'
-    + '<textarea id="delReasonPopup" placeholder="Reason for deletion (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
+    + '<textarea id="delReasonPopup" placeholder="Reason for deletion (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Delete', cls: 'popup-btn-danger', fn: async () => {
       const reason = document.getElementById('delReasonPopup').value;
@@ -847,7 +870,7 @@ async function deleteTweetFromPopup(id) {
 async function deleteTweet(id) {
   showPopup('🗑️', 'Delete Tweet?', ''
     + '<div style="margin-bottom:12px">Tweet #' + id + ' will be deleted from X. This cannot be undone.</div>'
-    + '<textarea id="delReason" placeholder="Reason for deletion (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
+    + '<textarea id="delReason" placeholder="Reason for deletion (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Delete', cls: 'popup-btn-danger', fn: async () => { closePopup(); await doDelete(id, document.getElementById('delReason').value); } },
   ]);
@@ -879,7 +902,7 @@ async function loadSettings() {
   const isSuper = ADMIN.role === 'superadmin';
 
   let html = '<div style="max-width:800px;margin:0 auto;padding:24px 0">'
-    + '<div class="tabs" style="margin-bottom:16px;border-bottom:1px solid #2a2a38">'
+    + '<div class="tabs" style="margin-bottom:16px;border-bottom:1px solid #2f3336">'
     + '<div class="tab active" data-stab="general" onclick="switchSettingsTab(\'general\')">General</div>'
     + '<div class="tab" data-stab="service" onclick="switchSettingsTab(\'service\')">Service &amp; Moderation</div>'
     + '<div class="tab" data-stab="activity" onclick="switchSettingsTab(\'activity\')">Activity Log</div>'
@@ -890,13 +913,13 @@ async function loadSettings() {
     + '<div style="background:#22222e;border-radius:10px;padding:16px;margin-bottom:20px">'
     + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:10px">Display Name</div>'
     + '<div style="display:flex;gap:8px">'
-    + '<input id="dnInput" value="' + escHtml(currentName) + '" style="flex:1;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
+    + '<input id="dnInput" value="' + escHtml(currentName) + '" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
     + '<button class="btn-small primary" onclick="changeDisplayName()" style="padding:10px 16px;font-size:0.85rem">Save</button>'
     + '</div><div id="dnMsg" style="font-size:0.85rem;margin-top:8px"></div>'
     + '<div style="font-size:0.85rem;color:#e7e9ea;margin:16px 0 10px">Change Password</div>'
     + '<div style="display:flex;flex-direction:column;gap:10px">'
-    + '<input id="pwOld" type="password" placeholder="Current password" style="background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
-    + '<input id="pwNew" type="password" placeholder="New password" style="background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
+    + '<input id="pwOld" type="password" placeholder="Current password" style="background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
+    + '<input id="pwNew" type="password" placeholder="New password" style="background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
     + '<button class="btn-small primary" onclick="changePassword()" style="padding:10px;font-size:0.85rem">Save</button>'
     + '<div id="pwMsg" style="font-size:0.85rem"></div></div></div>';
 
@@ -905,9 +928,9 @@ async function loadSettings() {
       + '<div style="margin-bottom:12px;padding:14px;background:#22222e;border-radius:10px">'
       + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">Create New Admin</div>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      + '<input id="au" placeholder="Username" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
-      + '<input id="ap" type="password" placeholder="Password" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
-      + '<input id="an" placeholder="Display Name" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
+      + '<input id="au" placeholder="Username" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
+      + '<input id="ap" type="password" placeholder="Password" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
+      + '<input id="an" placeholder="Display Name" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
       + '<button class="btn-small primary" onclick="createAdmin()" style="padding:8px 16px">Create</button>'
       + '</div><div class="msg" id="adminMsg"></div></div>'
       + '<div id="adminsTableWrap"></div>';
@@ -916,35 +939,25 @@ async function loadSettings() {
   // ── Service & Moderation tab (superadmin only) ──
   html += '<div id="stabService" class="stab-content hidden">';
   if (isSuper) {
-    html += '<div class="table-wrap"><table style="font-size:0.85rem">'
-      + '<thead><tr><th style="padding:10px 8px">Setting</th><th style="padding:10px 8px;width:120px">Value</th><th style="padding:10px 8px;width:100px">Action</th></tr></thead>'
-      + '<tbody>'
-      + '<tr><td style="padding:10px 8px">Online / Offline</td>'
-      + '<td style="padding:10px 8px"><span class="badge-off" id="settingsOnline">-</span></td>'
-      + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="toggleOnline()">Toggle</button></td></tr>'
-      + '<tr><td style="padding:10px 8px">Auto-approve</td>'
-      + '<td style="padding:10px 8px"><span class="badge-off" id="settingsBypass">-</span></td>'
-      + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="toggleBypass()">Toggle</button></td></tr>'
-      + '<tr><td style="padding:10px 8px">Bypass Mutual</td>'
-      + '<td style="padding:10px 8px"><span class="badge-off" id="settingsBypassMutual">-</span></td>'
-      + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="toggleBypassMutual()">Toggle</button></td></tr>'
-      + '<tr><td style="padding:10px 8px">Delete Window</td>'
-      + '<td style="padding:10px 8px"><div style="display:flex;gap:4px;align-items:center"><input id="dwInput" type="number" min="1" value="5" style="width:50px;background:#0e0e12;border:1px solid #2a2a38;border-radius:6px;color:#e7e9ea;padding:4px 6px;font-size:0.8rem;outline:none;text-align:center"><span style="font-size:0.75rem;color:#71767b">min</span></div></td>'
-      + '<td style="padding:10px 8px"><button class="btn-small primary" onclick="setDeleteWindow()">Save</button><span id="dwMsg" style="margin-left:6px;font-size:0.75rem;color:#71767b"></span></td></tr>'
-      + '</tbody></table></div>'
+    html += '<div class="settings-card" style="margin-bottom:16px">'
+      + '<div class="settings-item"><span>Online / Offline</span><span class="badge-off" id="settingsOnline">-</span><button class="btn-action btn-approve" onclick="toggleOnline()">Toggle</button></div>'
+      + '<div class="settings-item"><span>Auto-approve</span><span class="badge-off" id="settingsBypass">-</span><button class="btn-action btn-approve" onclick="toggleBypass()">Toggle</button></div>'
+      + '<div class="settings-item"><span>Bypass Mutual</span><span class="badge-off" id="settingsBypassMutual">-</span><button class="btn-action btn-approve" onclick="toggleBypassMutual()">Toggle</button></div>'
+      + '<div class="settings-item"><span>Delete Window</span><div style="display:flex;gap:4px;align-items:center"><input id="dwInput" type="number" min="1" value="5" style="width:50px;background:#0e0e12;border:1px solid #2f3336;border-radius:6px;color:#e7e9ea;padding:4px 6px;font-size:0.8rem;outline:none;text-align:center"><span style="font-size:0.75rem;color:#71767b">min</span></div><button class="btn-action btn-approve" onclick="setDeleteWindow()">Save</button><span id="dwMsg" style="margin-left:6px;font-size:0.75rem;color:#71767b"></span></div>'
+      + '</div>'
       + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">Announcement</h3>'
       + '<div style="margin-bottom:24px">'
-      + '<textarea id="announcementInput" placeholder="Running text shown to users..." rows="3" style="width:100%;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none;resize:vertical;font-family:inherit;margin-bottom:8px"></textarea>'
+      + '<textarea id="announcementInput" placeholder="Running text shown to users..." rows="3" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none;resize:vertical;font-family:inherit;margin-bottom:8px"></textarea>'
       + '<div style="display:flex;gap:8px;align-items:center">'
 + '<button class="btn-small primary" onclick="setAnnouncement()" style="padding:10px 20px">Save</button>'
-+ '<button class="btn-small" onclick="clearAnnouncement()" style="padding:10px 20px;background:#2a2a38;border:1px solid #2a2a38;border-radius:8px;color:#f4212e;cursor:pointer;font-size:0.85rem">Clear</button>'
++ '<button class="btn-small" onclick="clearAnnouncement()" style="padding:10px 20px;background:#2f3336;border:1px solid #2f3336;border-radius:8px;color:#f4212e;cursor:pointer;font-size:0.85rem">Clear</button>'
 + '<span id="announcementMsg" style="font-size:0.75rem;color:#71767b"></span>'
       + '</div></div>';
   }
   html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
     + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
     + '<div class="add-keyword-form" style="margin-bottom:10px">'
-    + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
+    + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
     + '<button class="btn-small primary" onclick="addKeyword()" style="padding:10px 20px">Add</button>'
     + '</div><div class="msg" id="kwMsg"></div>'
     + '<div class="keyword-list" id="kwList"><div class="empty-state">Loading...</div></div>'
@@ -1044,25 +1057,31 @@ async function loadAdminsSection() {
   try {
     const r = await api('/panel/api/admins');
     const admins = await r.json();
-    let rows = '';
+    let cards = '';
     for (const a of admins) {
       const lastLogin = a.last_login ? fmtTime(a.last_login) : '-';
-      rows += '<tr>'
-        + '<td>' + a.id + '</td>'
-        + '<td>' + escHtml(a.username) + '</td>'
-        + '<td>' + escHtml(a.display_name) + '</td>'
-        + '<td><span class="status-badge ' + (a.role === 'superadmin' ? 'status-approved' : 'status-pending') + '">' + a.role + '</span></td>'
-        + '<td>' + (a.is_active ? '<span style="color:#00ba7c">Active</span>' : '<span style="color:#71767b">Inactive</span>') + '</td>'
-        + '<td>' + fmtTime(a.created_at) + '</td>'
-        + '<td>' + lastLogin + '</td>'
-        + '<td>' + (a.id !== ADMIN.id
-            ? (a.is_active
-                ? '<button class="btn-small danger" onclick="deactivateAdmin(' + a.id + ')">Deactivate</button>'
-                : '<button class="btn-small primary" onclick="activateAdmin(' + a.id + ')">Reactivate</button>')
-            : '-')
-        + '</td></tr>';
+      const activeHtml = a.is_active ? '<span style="color:#00ba7c">Active</span>' : '<span style="color:#71767b">Inactive</span>';
+      const actionHtml = a.id !== ADMIN.id
+        ? (a.is_active
+            ? '<button class="btn-action btn-reject" onclick="deactivateAdmin(' + a.id + ')">Deactivate</button>'
+            : '<button class="btn-action btn-approve" onclick="activateAdmin(' + a.id + ')">Reactivate</button>')
+        : '<span style="color:#71767b;font-size:0.8rem">You</span>';
+      cards += '<div class="item-card">'
+        + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">'
+        + '<strong>#' + a.id + '</strong>'
+        + '<span class="status-badge ' + (a.role === 'superadmin' ? 'status-approved' : 'status-pending') + '">' + a.role + '</span>'
+        + '<span>' + activeHtml + '</span>'
+        + '</div>'
+        + '<div style="font-weight:500">' + escHtml(a.display_name) + '</div>'
+        + '<div style="color:#71767b;font-size:0.85rem">@' + escHtml(a.username) + '</div>'
+        + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b;margin-top:6px">'
+        + '<span>Created: ' + fmtTime(a.created_at) + '</span>'
+        + '<span>Last login: ' + lastLogin + '</span>'
+        + '</div>'
+        + '<div class="actions" style="margin-top:8px">' + actionHtml + '</div>'
+        + '</div>';
     }
-    el.innerHTML = '<div class="table-wrap"><table style="font-size:0.8rem"><thead><tr><th>ID</th><th>Username</th><th>Display Name</th><th>Role</th><th>Status</th><th>Created</th><th>Last Login</th><th>Action</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    el.innerHTML = cards;
   } catch(e) {
     el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load admins</div>';
   }
@@ -1200,17 +1219,22 @@ async function loadSettingsActivity() {
       return;
     }
 
-    let rows = '';
+    let cards = '';
     for (const a of activities) {
-      rows += '<tr>'
-        + '<td>' + escHtml(a.admin_name || 'Admin #' + a.admin_id) + '</td>'
-        + '<td><span class="status-badge status-pending">' + a.action + '</span></td>'
-        + '<td>' + (a.target_type ? a.target_type + ' #' + a.target_id : '-') + '</td>'
-        + '<td>' + (a.details ? escHtml(a.details) : '-') + '</td>'
-        + '<td>' + fmtTime(a.created_at) + '</td></tr>';
+      cards += '<div class="item-card" style="margin-bottom:8px">'
+        + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px">'
+        + '<strong>' + escHtml(a.admin_name || 'Admin #' + a.admin_id) + '</strong>'
+        + '<span class="status-badge status-pending">' + a.action + '</span>'
+        + '<span style="font-size:0.75rem;color:#71767b">' + fmtTime(a.created_at) + '</span>'
+        + '</div>'
+        + '<div style="font-size:0.85rem;color:#e7e9ea">'
+        + (a.target_type ? a.target_type + ' #' + a.target_id : '')
+        + (a.details ? ' — ' + escHtml(a.details) : '')
+        + '</div>'
+        + '</div>';
     }
     const totalPages = Math.ceil(d.total / 10);
-    el.innerHTML = '<div class="table-wrap"><table style="font-size:0.8rem"><thead><tr><th>Admin</th><th>Action</th><th>Target</th><th>Details</th><th>Time</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    el.innerHTML = cards;
     pagination.innerHTML = '<button onclick="stabActivityPage--;loadSettingsActivity()"' + (stabActivityPage <= 1 ? ' disabled' : '') + '>Prev</button>'
       + '<span class="page-info">Page ' + stabActivityPage + ' of ' + totalPages + '</span>'
       + '<button onclick="stabActivityPage++;loadSettingsActivity()"' + (stabActivityPage >= totalPages ? ' disabled' : '') + '>Next</button>';
@@ -1236,7 +1260,7 @@ async function loadUsers() {
       + '<span id="syncMsg" style="font-size:0.8rem;color:#71767b"></span>'
       + '<input id="usersSearchInput" placeholder="Search username..." value="' + escHtml(usersSearch) + '"'
       + ' onkeydown="if(event.key===\'Enter\'){usersSearch=this.value;usersPage=1;loadUsers()}"'
-      + ' style="margin-left:auto;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;padding:6px 10px;font-size:0.8rem;outline:none;width:180px">'
+      + ' style="margin-left:auto;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:6px 10px;font-size:0.8rem;outline:none;width:180px">'
       + '<button class="btn-small primary" onclick="usersSearch=document.getElementById(\'usersSearchInput\').value;usersPage=1;loadUsers()">Search</button>'
       + '</div>';
 
@@ -1246,7 +1270,7 @@ async function loadUsers() {
       return;
     }
 
-    let rows = '';
+    let cards = '';
     for (const u of users) {
       const followsClass = u.we_follow ? 'status-approved' : 'status-rejected';
       const followsText = u.we_follow ? 'Yes' : 'No';
@@ -1254,32 +1278,36 @@ async function loadUsers() {
       const fbText = u.follows_us ? 'Yes' : 'No';
       const blockedClass = u.blocked ? 'status-rejected' : 'status-approved';
       const blockedText = u.blocked ? 'Blocked' : 'Active';
-      rows += '<tr>'
-        + '<td><div style="display:flex;align-items:center;gap:8px">'
-        + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2a2a38;flex-shrink:0">'
+      cards += '<div class="item-card">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
+        + '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
         + (u.avatar_url ? '<img src="' + u.avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
         + '</div>'
-        + '<a href="javascript:void(0)" onclick="showUserTweets(' + u.id + ')" style="color:#1d9bf0;text-decoration:none">@' + escHtml(u.screen_name) + '</a>'
-        + '</div></td>'
-        + '<td>' + escHtml(u.name || '-') + '</td>'
-        + '<td><span class="status-badge ' + followsClass + '">' + followsText + '</span></td>'
-        + '<td><span class="status-badge ' + fbClass + '">' + fbText + '</span></td>'
-        + '<td><span class="status-badge ' + blockedClass + '">' + blockedText + '</span></td>'
-        + '<td>' + fmtTime(u.last_login_at) + '</td>'
-        + '<td>'
+        + '<div style="flex:1">'
+        + '<div><a href="javascript:void(0)" onclick="showUserTweets(' + u.id + ')" style="color:#1d9bf0;text-decoration:none;font-weight:500">@' + escHtml(u.screen_name) + '</a></div>'
+        + '<div style="font-size:0.8rem;color:#71767b">' + escHtml(u.name || '-') + '</div>'
+        + '</div>'
+        + '</div>'
+        + '<div class="meta" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'
+        + '<span class="status-badge ' + followsClass + '">Follows us: ' + followsText + '</span>'
+        + '<span class="status-badge ' + fbClass + '">Followed back: ' + fbText + '</span>'
+        + '<span class="status-badge ' + blockedClass + '">' + blockedText + '</span>'
+        + '</div>'
+        + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b">'
+        + '<span>Last login: ' + fmtTime(u.last_login_at) + '</span>'
+        + '</div>'
+        + '<div class="actions" style="margin-top:8px">'
         + (u.blocked
-            ? '<button class="btn-small primary" onclick="unblockUser(' + u.id + ')" style="margin-right:4px">Unblock</button>'
-            : '<button class="btn-small danger" onclick="blockUser(' + u.id + ')" style="margin-right:4px">Block</button>')
+            ? '<button class="btn-action btn-approve" onclick="unblockUser(' + u.id + ')">Unblock</button>'
+            : '<button class="btn-action btn-reject" onclick="blockUser(' + u.id + ')">Block</button>')
         + (u.follows_us
-            ? '<button class="btn-small danger" onclick="unfollowUser(' + u.id + ')" style="margin-right:4px">Unfollow</button>'
-            : '<button class="btn-small primary" onclick="followUser(' + u.id + ')" style="margin-right:4px">Follow</button>')
-        + '</td></tr>';
+            ? '<button class="btn-action btn-reject" onclick="unfollowUser(' + u.id + ')">Unfollow</button>'
+            : '<button class="btn-action btn-approve" onclick="followUser(' + u.id + ')">Follow</button>')
+        + '</div></div>';
     }
 
     const totalPages = Math.ceil((d.total || users.length) / 20);
-    html += '<div class="table-wrap"><table style="font-size:0.8rem"><thead><tr>'
-      + '<th>User</th><th>Name</th><th>Follows @unsrifess</th><th>Followed Back</th><th>Status</th><th>Last Login</th><th>Action</th>'
-      + '</tr></thead><tbody>' + rows + '</tbody></table></div>'
+    html += cards
       + '<div class="pagination">'
       + '<button onclick="usersPage--;loadUsers()"' + (usersPage <= 1 ? ' disabled' : '') + '>Prev</button>'
       + '<span class="page-info">Page ' + usersPage + ' of ' + totalPages + '</span>'
@@ -1391,11 +1419,11 @@ function connectSSE() {
       const el = document.getElementById('tabQueue');
       const empty = el.querySelector('.empty-state');
       const card = document.createElement('div');
-      card.className = 'queue-card';
+      card.className = 'item-card';
       card.id = 'qt-' + d.id;
       const userHtml = d.user_screen_name && d.x_user_db_id
         ? '<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:0.8rem">'
-          + '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#2a2a38;flex-shrink:0">'
+          + '<div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
           + (d.user_avatar_url ? '<img src="' + d.user_avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
           + '</div>'
           + '<span style="color:#1d9bf0;cursor:pointer;font-weight:500" onclick="showUserTweets(' + d.x_user_db_id + ')">@' + escHtml(d.user_screen_name) + '</span>'
@@ -1414,8 +1442,8 @@ function connectSSE() {
       card.innerHTML = userHtml + thumbsHtml
         + '<div class="text">' + escHtml(d.original_text) + '</div>'
         + '<div class="actions" id="qa-' + d.id + '">'
-        + '<button class="btn btn-approve" onclick="approveTweet(' + d.id + ')">Approve</button>'
-        + '<button class="btn btn-reject" onclick="rejectTweetPopup(' + d.id + ')">Reject</button>'
+        + '<button class="btn-action btn-approve" onclick="approveTweet(' + d.id + ')">Approve</button>'
+        + '<button class="btn-action btn-reject" onclick="rejectTweetPopup(' + d.id + ')">Reject</button>'
         + '</div>'
         + '<div class="meta">' + meta + '</div>';
       if (empty) {
