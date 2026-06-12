@@ -117,6 +117,10 @@
     transition: opacity .2s;
   }
   .btn-sm:hover { opacity: .85; }
+  .btn-small { padding: 6px 14px; border: none; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; cursor: pointer; color: #fff; transition: opacity .2s; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-small:hover { opacity: .85; }
+  .btn-small.primary { background: #1d9bf0; }
+  .btn-small.danger { background: #f4212e; }
 
   .empty-state { text-align: center; padding: 40px 16px; color: #71767b; font-size: 0.85rem; }
 
@@ -248,6 +252,7 @@
   .heatmap .cell { padding: 4px 2px; text-align: center; border-radius: 4px; }
   .heatmap .label { color: #71767b; text-align: right; padding-right: 6px; font-size: 0.6rem; }
   .heatmap .header { color: #71767b; font-weight: 500; font-size: 0.6rem; }
+  .img-badge { margin-left: 4px; font-size: 0.75rem; }
 
   /* ── Settings cards ── */
   .settings-card {
@@ -546,6 +551,7 @@ async function toggleBypassMutual() {
 
 // ─── Queue Tab ──────────────────────────────────────────
 let queuePage = 1;
+const loadPending = loadQueue;
 
 function imagesFromTweet(t) {
   if (!t.image_paths) return [];
@@ -901,16 +907,20 @@ async function loadSettings() {
   const currentName = ADMIN.display_name || ADMIN.username;
   const isSuper = ADMIN.role === 'superadmin';
 
+  // Preserve currently active sub-tab
+  const curActiveStab = el.querySelector('.stab-content:not(.hidden)');
+  const curTab = curActiveStab ? curActiveStab.id.replace('stab', '').toLowerCase() : 'general';
+
   let html = '<div style="max-width:800px;margin:0 auto;padding:24px 0">'
     + '<div class="tabs" style="margin-bottom:16px;border-bottom:1px solid #2f3336">'
-    + '<div class="tab active" data-stab="general" onclick="switchSettingsTab(\'general\')">General</div>'
-    + '<div class="tab" data-stab="service" onclick="switchSettingsTab(\'service\')">Service &amp; Moderation</div>'
-    + '<div class="tab" data-stab="activity" onclick="switchSettingsTab(\'activity\')">Activity Log</div>'
+    + '<div class="tab' + (curTab === 'general' ? ' active' : '') + '" data-stab="general" onclick="switchSettingsTab(\'general\')">General</div>'
+    + '<div class="tab' + (curTab === 'service' ? ' active' : '') + '" data-stab="service" onclick="switchSettingsTab(\'service\')">Service &amp; Moderation</div>'
+    + '<div class="tab' + (curTab === 'activity' ? ' active' : '') + '" data-stab="activity" onclick="switchSettingsTab(\'activity\')">Activity Log</div>'
     + '</div>';
 
   // ── General tab ──
-  html += '<div id="stabGeneral" class="stab-content">'
-    + '<div style="background:#22222e;border-radius:10px;padding:16px;margin-bottom:20px">'
+  html += '<div id="stabGeneral" class="stab-content' + (curTab !== 'general' ? ' hidden' : '') + '">'
+    + '<div style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
     + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:10px">Display Name</div>'
     + '<div style="display:flex;gap:8px">'
     + '<input id="dnInput" value="' + escHtml(currentName) + '" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
@@ -925,7 +935,7 @@ async function loadSettings() {
 
   if (isSuper) {
     html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Admin Management</h3>'
-      + '<div style="margin-bottom:12px;padding:14px;background:#22222e;border-radius:10px">'
+      + '<div style="margin-bottom:12px;padding:14px;background:#16181c;border:1px solid #2f3336;border-radius:14px">'
       + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">Create New Admin</div>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
       + '<input id="au" placeholder="Username" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
@@ -937,7 +947,7 @@ async function loadSettings() {
   }
   html += '</div>';
   // ── Service & Moderation tab (superadmin only) ──
-  html += '<div id="stabService" class="stab-content hidden">';
+  html += '<div id="stabService" class="stab-content' + (curTab !== 'service' ? ' hidden' : '') + '">';
   if (isSuper) {
     html += '<div class="settings-card" style="margin-bottom:16px">'
       + '<div class="settings-item"><span>Online / Offline</span><span class="badge-off" id="settingsOnline">-</span><button class="btn-action btn-approve" onclick="toggleOnline()">Toggle</button></div>'
@@ -965,7 +975,7 @@ async function loadSettings() {
   html += '</div>';
 
   // ── Activity Log tab ──
-  html += '<div id="stabActivity" class="stab-content hidden">'
+  html += '<div id="stabActivity" class="stab-content' + (curTab !== 'activity' ? ' hidden' : '') + '">'
     + '<div class="filter-bar" style="margin-bottom:8px">'
     + '<select id="af-action" onchange="stabActivityPage=1;loadSettingsActivity()">'
     + '<option value="">All actions</option>'
@@ -1467,13 +1477,6 @@ function connectSSE() {
 
   es.addEventListener('status_changed', (e) => {
     loadStats();
-    const settingsTab = document.getElementById('tabSettings');
-    if (settingsTab && settingsTab.classList.contains('active')) {
-      const activeStab = settingsTab.querySelector('.stab-content:not(.hidden)');
-      if (activeStab && activeStab.id !== 'stabActivity') {
-        loadSettings();
-      }
-    }
   });
 
   es.addEventListener('announcement_changed', (e) => {
