@@ -133,7 +133,7 @@ body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
 @auth_x_router.get("/api/auth/me")
 async def x_me(request: Request):
     from auth import decode_token
-    from database import get_x_user_by_id, get_setting
+    from database import get_x_user_by_id, get_setting, get_user_streak
     auth = request.headers.get("Authorization", "")
     token = ""
     if auth.startswith("Bearer "):
@@ -148,6 +148,7 @@ async def x_me(request: Request):
     x_user_id = payload["sub"].replace("x_user:", "")
     x_user = await get_x_user_by_id(x_user_id)
     bypass_mutual = await get_setting("bypass_mutual")
+    streak = await get_user_streak(x_user_id)
     return {
         "x_user_id": x_user_id,
         "screen_name": payload.get("screen_name"),
@@ -156,6 +157,7 @@ async def x_me(request: Request):
         "follows_us": x_user["follows_us"] if x_user else False,
         "blocked": x_user["blocked"] if x_user else False,
         "bypass_mutual": bypass_mutual == "true",
+        "streak": streak,
     }
 
 

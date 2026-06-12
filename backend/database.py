@@ -488,6 +488,38 @@ async def get_user_tweets(x_user_id: str, page: int = 1, limit: int = 10):
         return {"submissions": [dict(r) for r in rows], "total": total}
 
 
+async def get_user_streak(x_user_id: str) -> int:
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT DISTINCT DATE(submitted_at) AS d "
+            "FROM tweets WHERE submitted_by = $1 "
+            "ORDER BY d DESC",
+            x_user_id,
+        )
+    if not rows:
+        return 0
+    dates = [r["d"] for r in rows]
+    from datetime import date, timedelta
+    today = date.today()
+    streak = 0
+    if dates[0] == today:
+        streak = 1
+        for i in range(1, len(dates)):
+            if dates[i] == dates[i - 1] - timedelta(days=1):
+                streak += 1
+            else:
+                break
+    elif dates[0] == today - timedelta(days=1):
+        streak = 1
+        for i in range(1, len(dates)):
+            if dates[i] == dates[i - 1] - timedelta(days=1):
+                streak += 1
+            else:
+                break
+    return streak
+
+
 async def block_x_user(x_user_id: int):
     pool = await get_pool()
     async with pool.acquire() as conn:

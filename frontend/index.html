@@ -881,7 +881,8 @@ async function loadUser() {
     userArea.className = 'user-card';
     userArea.innerHTML = ''
       + '<div class="avatar"><img src="https://unavatar.io/twitter/' + encodeURIComponent(d.screen_name) + '" onerror="this.parentElement.innerHTML=\'\'"></div>'
-      + '<div class="info"><div class="name">@' + escHtml(d.screen_name) + '</div></div>'
+      + '<div class="info"><div class="name">@' + escHtml(d.screen_name) + '</div>'
+      + (d.streak > 0 ? '<div style="font-size:0.75rem;color:#ffd700;margin-top:2px">🔥 ' + d.streak + '-day streak</div>' : '') + '</div>'
       + '<button onclick="logout()" style="background:transparent;border:1px solid #2f3336;color:#e7e9ea;padding:4px 10px;border-radius:9999px;cursor:pointer;font-size:0.75rem;margin-left:auto">Logout</button>';
     document.getElementById('loginArea').classList.add('hidden');
     userArea.classList.remove('hidden');
