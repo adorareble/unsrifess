@@ -320,7 +320,7 @@ if (!TOKEN) { window.location.href = '/panel/login'; }
 try {
   const b64 = TOKEN.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
   const payload = JSON.parse(atob(b64));
-  if (payload.exp && payload.exp * 1000 < Date.now()) {
+  if (payload.type !== 'admin' || (payload.exp && payload.exp * 1000 < Date.now())) {
     logout();
   }
 } catch (_) {}
@@ -1490,9 +1490,14 @@ function connectSSE() {
 
   es.onerror = () => {
     es.close();
-    fetch('/panel/api/me', { headers: { 'Authorization': 'Bearer ' + TOKEN } })
-      .then(r => { if (r.status === 401) logout(); })
-      .catch(() => {});
+    try {
+      const b64 = TOKEN.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(b64));
+      if (payload.type !== 'admin' || (payload.exp && payload.exp * 1000 < Date.now())) {
+        logout();
+        return;
+      }
+    } catch (_) {}
     setTimeout(connectSSE, 3000);
   };
 }
