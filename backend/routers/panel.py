@@ -546,7 +546,7 @@ async def panel_set_online(
     online_flag = value.lower() in ("1", "true", "yes")
     await set_setting("online", str(online_flag).lower())
     await log_activity(admin["id"], "set_online", details=f"Set online={online_flag}")
-    publish("status_changed", {"event": "status_changed", "online": online_flag})
+    publish("status_changed", {"event": "status_changed", "online": online_flag, "logged_in": client.is_logged_in()})
     return {"success": True, "online": online_flag}
 
 

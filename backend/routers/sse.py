@@ -18,7 +18,10 @@ async def _event_generator(topics: list[str]):
             get_tasks[task] = topic
 
         while True:
-            done, _ = await asyncio.wait(get_tasks.keys(), return_when=asyncio.FIRST_COMPLETED)
+            done, _ = await asyncio.wait(get_tasks.keys(), timeout=30, return_when=asyncio.FIRST_COMPLETED)
+            if not done:
+                yield ":ping\n\n"
+                continue
             for task in done:
                 topic = get_tasks[task]
                 data = task.result()
