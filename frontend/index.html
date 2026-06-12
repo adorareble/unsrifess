@@ -73,6 +73,7 @@
 
   .tweet-count { font-size: 0.8rem; font-weight: 500; margin-top: 6px; min-height: 0; }
   .tweet-count.over { color: #f4212e; }
+  .tweet-count.multi { color: #1d9bf0; }
   .tweet-count.ok { color: #00ba7c; }
   .tweet-count.info { color: #71767b; }
 
@@ -578,8 +579,14 @@ function updateTweetCount() {
     el.textContent = '';
   } else if (len > MAX_CHARS) {
     const n = estimateTweets(text);
-    el.className = 'tweet-count over';
-    el.textContent = len + ' chars \u2192 ' + n + ' tweets';
+    const maxTweets = 10;
+    if (n > maxTweets) {
+      el.className = 'tweet-count over';
+      el.textContent = len.toLocaleString('id') + ' chars \u00b7 ' + n + ' tweet thread (max ' + maxTweets + ')';
+    } else {
+      el.className = 'tweet-count multi';
+      el.textContent = len.toLocaleString('id') + ' chars \u00b7 ' + n + ' tweet thread';
+    }
   } else {
     el.className = 'tweet-count ok';
     el.textContent = len + '/' + MAX_CHARS;
@@ -589,7 +596,8 @@ function updateTweetCount() {
 function checkSubmitReady() {
   const text = tweetText.value.trim();
   const valid = /unsr!/i.test(text);
-  submitBtn.disabled = !valid || rateLimited;
+  const tooLong = text.length > MAX_CHARS && estimateTweets(text) > 10;
+  submitBtn.disabled = !valid || rateLimited || tooLong;
 }
 
 function updateFilePreview() {
