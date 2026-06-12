@@ -1052,6 +1052,7 @@ function connectSSE() {
       }
     }
     if (d.delete_window !== undefined) deleteWindowMinutes = d.delete_window;
+    if (d.bypass_mutual !== undefined) loadUser();
   });
 
   es.addEventListener('announcement_changed', (e) => {
