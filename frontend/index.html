@@ -111,7 +111,8 @@
   .btn-primary:hover:not(:disabled) { opacity: .85; }
   .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
   .btn-ghost { background: transparent; border: 1px solid #2f3336; color: #e7e9ea; }
-  .btn-ghost:hover { background: rgba(239,243,244,0.04); }
+  .btn-ghost:hover:not(:disabled) { background: rgba(239,243,244,0.04); }
+  .btn-ghost:disabled { opacity: 0.3; cursor: not-allowed; }
   .btn-success { background: #00ba7c; }
   .btn-success:hover { opacity: .85; }
   .btn-row { display: flex; gap: 10px; margin-top: 14px; }
@@ -707,6 +708,7 @@ function checkSubmitReady() {
   const valid = /unsr!/i.test(text);
   const tooLong = text.length > MAX_CHARS && estimateTweets(text) > 10;
   submitBtn.disabled = !valid || rateLimited || tooLong;
+  document.getElementById('previewBtn').disabled = text.length === 0;
 }
 
 function updateFilePreview() {
