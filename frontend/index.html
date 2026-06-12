@@ -1035,10 +1035,12 @@ function connectSSE() {
         dot.className = 'status-dot offline';
         text.textContent = 'Closed';
         showStatusMsg('Submission is closed', 'Please check back later.');
+        document.getElementById('submissionsSection').innerHTML = '';
       } else if (d.logged_in === false) {
         dot.className = 'status-dot offline';
         text.textContent = 'Offline';
         showStatusMsg('Twitter offline', 'Twitter session is offline.');
+        document.getElementById('submissionsSection').innerHTML = '';
       } else {
         dot.className = 'status-dot online';
         text.textContent = 'Online';
@@ -1049,10 +1051,14 @@ function connectSSE() {
         if (!userArea.classList.contains('hidden')) {
           document.getElementById('composeArea').classList.remove('hidden');
         }
+        loadSubmissions();
       }
     }
     if (d.delete_window !== undefined) deleteWindowMinutes = d.delete_window;
-    if (d.bypass_mutual !== undefined) loadUser();
+    if (d.bypass_mutual !== undefined) {
+      loadUser();
+      setTimeout(loadSubmissions, 200);
+    }
   });
 
   es.addEventListener('announcement_changed', (e) => {
@@ -1083,7 +1089,8 @@ function connectSSE() {
   es.addEventListener('user_status_changed', (e) => {
     const d = JSON.parse(e.data);
     if (d.x_user_id !== currentUserId) return;
-    setTimeout(loadUser, 100);
+    loadUser();
+    setTimeout(loadSubmissions, 200);
   });
 
   es.onerror = () => {
