@@ -317,6 +317,13 @@ let userTweetsPages = {};
 
 if (!TOKEN) { window.location.href = '/panel/login'; }
 
+try {
+  const payload = JSON.parse(atob(TOKEN.split('.')[1]));
+  if (payload.exp && payload.exp * 1000 < Date.now()) {
+    logout();
+  }
+} catch (_) {}
+
 const headers = { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/x-www-form-urlencoded' };
 const api = (path, opts = {}) =>
   fetch(path, { ...opts, headers: { ...headers, ...opts.headers } }).then(r => {
@@ -1482,6 +1489,13 @@ function connectSSE() {
 
   es.onerror = () => {
     es.close();
+    try {
+      const payload = JSON.parse(atob(TOKEN.split('.')[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        logout();
+        return;
+      }
+    } catch (_) {}
     setTimeout(connectSSE, 3000);
   };
 }
