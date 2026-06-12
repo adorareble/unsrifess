@@ -1095,6 +1095,18 @@ function connectSSE() {
 
   es.onerror = () => {
     es.close();
+    const token = localStorage.getItem('x_token');
+    if (token) {
+      try {
+        const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(atob(b64));
+        if (payload.type !== 'user' || (payload.exp && payload.exp * 1000 < Date.now())) {
+          localStorage.removeItem('x_token');
+          window.location.reload();
+          return;
+        }
+      } catch (_) {}
+    }
     setTimeout(connectSSE, 3000);
   };
 }
