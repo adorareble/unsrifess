@@ -280,6 +280,7 @@
   .preview-empty {
     text-align: center; color: #71767b; font-size: 0.85rem; padding: 32px 0;
   }
+  .preview-images { margin-top: 16px; }
 
   .tnc-overlay {
     position: fixed; inset: 0; z-index: 200;
@@ -519,16 +520,27 @@ function showPreview() {
   if (!text) return;
   const chunks = splitText(text);
   const body = document.getElementById('previewBody');
+  let html = '';
   if (chunks.length === 0) {
-    body.innerHTML = '<div class="preview-empty">Nothing to preview</div>';
+    html = '<div class="preview-empty">Nothing to preview</div>';
   } else {
-    body.innerHTML = chunks.map((c, i) =>
+    html = chunks.map((c, i) =>
       '<div class="preview-chunk">'
       + '<div class="preview-chunk-label">Tweet ' + (i + 1) + '/' + chunks.length + ' — ' + c.length + ' chars</div>'
       + '<div class="preview-chunk-text">' + escHtml(c) + '</div>'
       + '</div>'
     ).join('');
   }
+  if (selectedFiles.length > 0) {
+    html += '<div class="preview-images">'
+      + '<div class="preview-chunk-label" style="margin-bottom:8px">' + selectedFiles.length + ' image(s) attached</div>'
+      + '<div class="file-grid">'
+      + selectedFiles.map((f, i) =>
+        '<div class="file-preview"><img src="' + URL.createObjectURL(f) + '"></div>'
+      ).join('')
+      + '</div></div>';
+  }
+  body.innerHTML = html;
   document.getElementById('previewOverlay').classList.remove('hidden');
 }
 document.getElementById('previewCloseBtn').addEventListener('click', () => {
