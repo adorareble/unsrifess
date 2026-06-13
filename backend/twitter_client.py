@@ -117,7 +117,20 @@ class TwitterClient:
         if image_paths is None:
             image_paths = []
 
-        chunks = split_into_chunks(text.strip())
+        stripped = text.strip()
+        logging.info(
+            f"=== post_tweet called === text.len={len(stripped)} cp "
+            f"text.repr={repr(stripped[:200])}...{repr(stripped[-200:])}"
+        )
+
+        chunks = split_into_chunks(stripped)
+        logging.info(f"--- post_tweet: {len(chunks)} chunks from {len(text)} cp text ---")
+        for ci, c in enumerate(chunks):
+            logging.info(
+                f"  chunk[{ci}] len={len(c)} cp | "
+                f"start={repr(c[:80])} | "
+                f"end={repr(c[-80:])}"
+            )
         tweet_urls = []
         reply_to_id = None
         posted = 0
@@ -149,7 +162,18 @@ class TwitterClient:
                 if reply_to_id:
                     kwargs["reply_to"] = reply_to_id
 
+                logging.info(
+                    f"  -> sending chunk[{i}] len={len(chunk)} cp "
+                    f"reply_to={reply_to_id} "
+                    f"text={repr(chunk)}"
+                )
                 tweet = await self._client.create_tweet(**kwargs)
+                if tweet is not None:
+                    tweet_text = getattr(tweet, 'text', None) or getattr(tweet, 'full_text', '') or ''
+                    logging.info(
+                        f"  <- response chunk[{i}] id={tweet.id} "
+                        f"text={repr(tweet_text)[:300]}"
+                    )
 
                 if tweet is None:
                     err_msg = f"Failed to post tweet {i + 1}: create_tweet returned None"
