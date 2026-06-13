@@ -69,6 +69,8 @@ async def tweet_sync(
     if not text or not text.strip():
         return {"success": False, "error": "Text is empty"}
 
+    text = text.replace('\r\n', '\n')
+
     x_user = await get_x_user_by_id(user["x_user_id"])
     if not x_user:
         return {"success": False, "error": "Not mutual. You need to be followed back by @unsrifess."}
