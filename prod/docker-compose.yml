@@ -12,10 +12,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - temp_images:/app/temp_images
       - ./twitter_state.json:/app/twitter_state.json
       - ../frontend:/app/frontend
+      - ../backend:/app/backend
 
   postgres:
     image: postgres:16-alpine
