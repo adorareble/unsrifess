@@ -207,7 +207,10 @@ async def panel_approve_tweet(tweet_id: int, admin: dict = Depends(get_current_a
             "submitted_by": tweet["submitted_by"],
             "tweet_urls": result["urls"],
         })
-        return {"success": True, "urls": result["urls"]}
+        resp = {"success": True, "urls": result["urls"]}
+        if result.get("partial"):
+            resp["warning"] = result.get("warning", "Only some tweets were posted.")
+        return resp
     else:
         return result
 

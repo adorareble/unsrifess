@@ -119,6 +119,8 @@ class TwitterClient:
 
         chunks = split_into_chunks(text.strip())
         tweet_urls = []
+        reply_to_id = None
+        posted = 0
 
         try:
             media_ids = []
@@ -133,7 +135,6 @@ class TwitterClient:
                     media_id = await self._client.upload_media(fp)
                     media_ids.append(media_id)
 
-            reply_to_id = None
             for i, chunk in enumerate(chunks):
                 if progress_callback:
                     progress_callback(
@@ -149,8 +150,19 @@ class TwitterClient:
                     kwargs["reply_to"] = reply_to_id
 
                 tweet = await self._client.create_tweet(**kwargs)
-                tweet_urls.append(f"https://x.com/{tweet.user.screen_name}/status/{tweet.id}")
+
+                if tweet is None:
+                    err_msg = f"Failed to post tweet {i + 1}: create_tweet returned None"
+                    logging.error(err_msg)
+                    if posted == 0:
+                        raise Exception(err_msg)
+                    break
+
+                tweet_urls.append(
+                    f"https://x.com/{tweet.user.screen_name}/status/{tweet.id}"
+                )
                 reply_to_id = tweet.id
+                posted += 1
 
                 if i < len(chunks) - 1:
                     await asyncio.sleep(2)
@@ -158,13 +170,30 @@ class TwitterClient:
             if progress_callback:
                 progress_callback(len(chunks), len(chunks), "Done")
 
-            return {"success": True, "urls": tweet_urls}
+            if posted == len(chunks):
+                return {"success": True, "urls": tweet_urls}
+
+            return {
+                "success": True,
+                "urls": tweet_urls,
+                "partial": True,
+                "warning": f"Only {posted} of {len(chunks)} tweets posted.",
+            }
 
         except Exception as e:
             err_msg = str(e)
             if "403" in err_msg or "Forbidden" in err_msg or "Cloudflare" in err_msg or "blocked" in err_msg:
                 err_msg = "Session blocked by Cloudflare. Run setup_login.py again to refresh session."
             logging.exception(f"post_tweet failed: {e}")
+
+            if tweet_urls:
+                return {
+                    "success": True,
+                    "urls": tweet_urls,
+                    "partial": True,
+                    "warning": f"Posted {len(tweet_urls)} of {len(chunks)} tweets before error: {err_msg}",
+                }
+
             if progress_callback:
                 progress_callback(0, 0, f"Error: {err_msg}")
             return {"success": False, "error": err_msg}

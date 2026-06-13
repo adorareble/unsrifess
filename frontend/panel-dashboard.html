@@ -640,6 +640,9 @@ async function approveTweet(id) {
       const card = document.getElementById('qt-' + id);
       if (card) card.style.display = 'none';
       loadStats();
+      if (d.warning) {
+        showPopup('⚠️', 'Partial Success', d.warning, [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
+      }
     } else {
       if (btn) { btn.disabled = false; btn.textContent = 'Approve'; }
       showPopup('⚠️', 'Approve Failed', d.error || 'Could not approve tweet.', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
@@ -821,6 +824,9 @@ async function doApproval(id, sn) {
       loadPending();
       loadStats();
       loadHistory();
+      if (d.warning) {
+        showPopup('⚠️', 'Partial Success', d.warning, [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
+      }
     } else {
       showPopup('⚠️', 'Approve Failed', d.error || 'Failed to approve tweet', null, true);
     }
