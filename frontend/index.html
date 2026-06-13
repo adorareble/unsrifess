@@ -368,7 +368,7 @@
         <span>&#9432;</span>
         <span>Your message must contain <code>unsr!</code> to be sent.</span>
       </div>
-      <textarea id="tweetText" placeholder="What's on your mind?" maxlength="3000" style="min-height:140px"></textarea>
+      <textarea id="tweetText" placeholder="What's on your mind?" maxlength="1000" style="min-height:140px"></textarea>
       <div class="tweet-count info" id="tweetCount"></div>
       <div class="validate-msg" id="validateMsg"></div>
       <div class="upload-area" id="uploadArea">
@@ -714,14 +714,9 @@ function updateTweetCount() {
     el.textContent = '';
   } else if (len > MAX_CHARS) {
     const n = estimateTweets(text);
-    const maxTweets = 10;
-    if (n > maxTweets) {
-      el.className = 'tweet-count over';
-      el.textContent = len.toLocaleString('id') + ' chars \u00b7 ' + n + ' tweet thread (max ' + maxTweets + ')';
-    } else {
-      el.className = 'tweet-count multi';
-      el.textContent = len.toLocaleString('id') + ' chars \u00b7 ' + n + ' tweet thread';
-    }
+    const over = n > MAX_CHUNKS;
+    el.className = 'tweet-count ' + (over ? 'over' : 'multi');
+    el.textContent = len.toLocaleString('id') + ' chars \u00b7 ' + n + '/' + MAX_CHUNKS + ' tweets';
   } else {
     el.className = 'tweet-count ok';
     el.textContent = len + '/' + MAX_CHARS;
@@ -731,7 +726,7 @@ function updateTweetCount() {
 function checkSubmitReady() {
   const text = tweetText.value.trim();
   const valid = /unsr!/i.test(text);
-  const tooLong = text.length > MAX_CHARS && estimateTweets(text) > 10;
+  const tooLong = text.length > MAX_CHARS && estimateTweets(text) > MAX_CHUNKS;
   submitBtn.disabled = !valid || rateLimited || tooLong;
   document.getElementById('previewBtn').disabled = text.length === 0;
 }
@@ -1055,6 +1050,10 @@ function resetForm() {
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const text = tweetText.value.trim();
   if (!text || !/unsr!/i.test(text)) return;
+  if (estimateTweets(text) > MAX_CHUNKS) {
+    showPopup('\u26a0\ufe0f', 'Too Long', 'Your message would be ' + estimateTweets(text) + ' tweets (max ' + MAX_CHUNKS + '). Please shorten it.');
+    return;
+  }
 
   const token = localStorage.getItem('x_token');
   if (!token) { showPopup('⚠️', 'Not logged in', 'Please login with X first.'); return; }
