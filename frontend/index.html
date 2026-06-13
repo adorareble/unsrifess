@@ -368,7 +368,7 @@
         <span>&#9432;</span>
         <span>Your message must contain <code>unsr!</code> to be sent.</span>
       </div>
-      <textarea id="tweetText" placeholder="What's on your mind?" maxlength="1000" style="min-height:140px"></textarea>
+      <textarea id="tweetText" placeholder="What's on your mind? (max 1000 chars)" maxlength="1000" style="min-height:140px"></textarea>
       <div class="tweet-count info" id="tweetCount"></div>
       <div class="validate-msg" id="validateMsg"></div>
       <div class="upload-area" id="uploadArea">
@@ -465,8 +465,8 @@
 </div>
 
 <script>
-const MAX_CHARS = 280;
-const MAX_CHUNKS = 3;
+const MAX_TWEET = 280;
+const MAX_CHARS = 1000;
 let subPage = 1;
 const MAX_IMAGES = 4;
 let deleteWindowMinutes = 5;
@@ -645,36 +645,36 @@ function _rfindCP(chars, sep, end) {
 
 function splitText(text) {
   const chars = [...text.trim()];
-  if (chars.length <= MAX_CHARS) return [chars.join('')];
+  if (chars.length <= MAX_TWEET) return [chars.join('')];
   const chunks = [];
   let start = 0;
   while (start < chars.length) {
     const remaining = chars.slice(start);
-    if (remaining.length <= MAX_CHARS) {
+    if (remaining.length <= MAX_TWEET) {
       chunks.push(remaining.join(''));
       break;
     }
     let splitAt = -1;
     for (const sep of [". ", ".\n", "!\n", "?\n", "\n\n"]) {
-      const idx = _rfindCP(remaining, sep, MAX_CHARS + 1);
+      const idx = _rfindCP(remaining, sep, MAX_TWEET + 1);
       if (idx > splitAt) splitAt = idx + sep.length;
     }
-    if (splitAt <= 0 || splitAt > MAX_CHARS) {
+    if (splitAt <= 0 || splitAt > MAX_TWEET) {
       splitAt = -1;
-      for (let i = Math.min(remaining.length - 1, MAX_CHARS); i >= 0; i--) {
+      for (let i = Math.min(remaining.length - 1, MAX_TWEET); i >= 0; i--) {
         if (remaining[i] === ' ') { splitAt = i; break; }
       }
     }
-    if (splitAt <= 0) splitAt = MAX_CHARS;
+    if (splitAt <= 0) splitAt = MAX_TWEET;
     const chunkChars = remaining.slice(0, splitAt);
     const chunk = chunkChars.join('').trim();
     if (chunk) chunks.push(chunk);
     start += splitAt;
     while (start < chars.length && chars[start].trim() === '') start++;
     if (!chunk) {
-      const hc = chars.slice(start, start + MAX_CHARS).join('');
+      const hc = chars.slice(start, start + MAX_TWEET).join('');
       if (hc) chunks.push(hc);
-      start += MAX_CHARS;
+      start += MAX_TWEET;
     }
   }
   return chunks;
@@ -713,11 +713,10 @@ function updateTweetCount() {
   if (len === 0) {
     el.className = 'tweet-count info';
     el.textContent = '';
-  } else if (len > MAX_CHARS) {
+  } else if (len > MAX_TWEET) {
     const n = estimateTweets(text);
-    const over = n > MAX_CHUNKS;
-    el.className = 'tweet-count ' + (over ? 'over' : 'multi');
-    el.textContent = len.toLocaleString('id') + ' chars \u00b7 ' + n + '/' + MAX_CHUNKS + ' tweets';
+    el.className = 'tweet-count multi';
+    el.textContent = len.toLocaleString('id') + '/' + MAX_CHARS + ' chars \u00b7 ' + n + ' tweet thread';
   } else {
     el.className = 'tweet-count ok';
     el.textContent = len + '/' + MAX_CHARS;
@@ -727,8 +726,7 @@ function updateTweetCount() {
 function checkSubmitReady() {
   const text = tweetText.value.trim();
   const valid = /unsr!/i.test(text);
-  const tooLong = text.length > MAX_CHARS && estimateTweets(text) > MAX_CHUNKS;
-  submitBtn.disabled = !valid || rateLimited || tooLong;
+  submitBtn.disabled = !valid || rateLimited;
   document.getElementById('previewBtn').disabled = text.length === 0;
 }
 
@@ -1051,10 +1049,6 @@ function resetForm() {
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const text = tweetText.value.trim();
   if (!text || !/unsr!/i.test(text)) return;
-  if (estimateTweets(text) > MAX_CHUNKS) {
-    showPopup('\u26a0\ufe0f', 'Too Long', 'Your message would be ' + estimateTweets(text) + ' tweets (max ' + MAX_CHUNKS + '). Please shorten it.');
-    return;
-  }
 
   const token = localStorage.getItem('x_token');
   if (!token) { showPopup('⚠️', 'Not logged in', 'Please login with X first.'); return; }

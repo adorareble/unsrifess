@@ -10,7 +10,7 @@ from database import (
     get_x_user_by_id,
     reject_tweet, approve_tweet,
 )
-from twitter_client import client, split_into_chunks
+from twitter_client import client, split_into_chunks, MAX_TEXT_LENGTH
 from image import TEMP_DIR, process_image_async
 from auth import get_current_user
 from event_bus import publish
@@ -108,7 +108,17 @@ async def tweet_sync(
                 await process_image_async(saved_path)
                 saved_paths.append(saved_path)
 
-        chunks = split_into_chunks(text.strip())
+        stripped_text = text.strip()
+        if len(stripped_text) > MAX_TEXT_LENGTH:
+            for p in saved_paths:
+                try: os.remove(p)
+                except OSError: pass
+            return {
+                "success": False,
+                "error": f"Message too long ({len(stripped_text)} chars, max {MAX_TEXT_LENGTH})."
+            }
+
+        chunks = split_into_chunks(stripped_text)
         chunk_count = len(chunks)
 
         matched = await check_keywords(text)

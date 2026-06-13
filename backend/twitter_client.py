@@ -9,6 +9,7 @@ STATE_FILE = os.path.join(
     "twitter_state.json"
 )
 MAX_CHARS = 280
+MAX_TEXT_LENGTH = 1000
 
 
 def split_into_chunks(text, max_length=MAX_CHARS):
