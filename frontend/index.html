@@ -625,36 +625,55 @@ async function loadSubmissions() {
   } catch {}
 }
 
-function rfindPy(str, sub, end) {
-  const maxStart = end - sub.length;
+function _rfindCP(chars, sep, end) {
+  const sp = [...sep];
+  const sl = sp.length;
+  if (sl === 0) return -1;
+  if (end > chars.length) end = chars.length;
+  const maxStart = end - sl;
   if (maxStart < 0) return -1;
-  return str.lastIndexOf(sub, maxStart);
+  for (let i = maxStart; i >= 0; i--) {
+    let ok = true;
+    for (let j = 0; j < sl; j++) {
+      if (chars[i + j] !== sp[j]) { ok = false; break; }
+    }
+    if (ok) return i;
+  }
+  return -1;
 }
 
 function splitText(text) {
-  if (text.length <= MAX_CHARS) return [text];
+  const chars = [...text.trim()];
+  if (chars.length <= MAX_CHARS) return [chars.join('')];
   const chunks = [];
-  let remaining = text.trim();
-  while (remaining) {
+  let start = 0;
+  while (start < chars.length) {
+    const remaining = chars.slice(start);
     if (remaining.length <= MAX_CHARS) {
-      chunks.push(remaining);
+      chunks.push(remaining.join(''));
       break;
     }
     let splitAt = -1;
     for (const sep of [". ", ".\n", "!\n", "?\n", "\n\n"]) {
-      const idx = rfindPy(remaining, sep, MAX_CHARS + 1);
+      const idx = _rfindCP(remaining, sep, MAX_CHARS + 1);
       if (idx > splitAt) splitAt = idx + sep.length;
     }
     if (splitAt <= 0 || splitAt > MAX_CHARS) {
-      splitAt = rfindPy(remaining, " ", MAX_CHARS + 1);
+      splitAt = -1;
+      for (let i = Math.min(remaining.length - 1, MAX_CHARS); i >= 0; i--) {
+        if (remaining[i] === ' ') { splitAt = i; break; }
+      }
     }
     if (splitAt <= 0) splitAt = MAX_CHARS;
-    const chunk = remaining.slice(0, splitAt).trim();
+    const chunkChars = remaining.slice(0, splitAt);
+    const chunk = chunkChars.join('').trim();
     if (chunk) chunks.push(chunk);
-    remaining = remaining.slice(splitAt).trim();
+    start += splitAt;
+    while (start < chars.length && chars[start].trim() === '') start++;
     if (!chunk) {
-      chunks.push(remaining.slice(0, MAX_CHARS));
-      remaining = remaining.slice(MAX_CHARS).trim();
+      const hc = chars.slice(start, start + MAX_CHARS).join('');
+      if (hc) chunks.push(hc);
+      start += MAX_CHARS;
     }
   }
   return chunks;
