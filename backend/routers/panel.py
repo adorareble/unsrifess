@@ -254,13 +254,13 @@ async def panel_delete_tweet(
 
     tweet_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
 
-    for url in tweet_urls:
-        try:
-            tweet_id_str = url.rstrip("/").split("/")[-1]
-            await client.delete_tweet(tweet_id_str)
-            await asyncio.sleep(1)
-        except Exception:
-            pass
+    if tweet_urls:
+        result = await client.delete_tweet_chain(tweet_urls)
+        if result.get("failed", 0) > 0:
+            logging.warning(
+                f"Deleted {result['deleted']} of {len(tweet_urls)} tweets "
+                f"({result['failed']} failed): {result['errors']}"
+            )
 
     updated = await delete_tweet(tweet_id, admin["id"], reason.strip() if reason else None)
     publish("tweet_updated", {

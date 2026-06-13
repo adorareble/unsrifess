@@ -58,6 +58,7 @@ class TwitterClient:
         )
         self._cookies_cache = None
         self._cookies_mtime = 0
+        self._lock = asyncio.Lock()
         self._ensure_state_format()
 
     def _load_cookies(self):
@@ -104,103 +105,110 @@ class TwitterClient:
         cookies = self._load_cookies()
         return bool(cookies and cookies.get("auth_token"))
 
+    def _set_client_cookies(self):
+        cookies = self._load_cookies()
+        if cookies is not None:
+            self._client.set_cookies(cookies, clear_cookies=True)
+        return cookies
+
     async def post_tweet(self, text, image_paths=None, progress_callback=None):
         if not text or not text.strip():
             return {"success": False, "error": "Text is empty"}
 
-        cookies = self._load_cookies()
-        if cookies is None:
-            return {
-                "success": False,
-                "error": "Not logged in. Run setup_login.py first.",
-            }
-        self._client.set_cookies(cookies, clear_cookies=True)
+        async with self._lock:
+            cookies = self._load_cookies()
+            if cookies is None:
+                return {
+                    "success": False,
+                    "error": "Not logged in. Run setup_login.py first.",
+                }
+            self._client.set_cookies(cookies, clear_cookies=True)
 
-        if image_paths is None:
-            image_paths = []
+            if image_paths is None:
+                image_paths = []
 
-        stripped = text.strip().replace('\r\n', '\n')
-        chunks = split_into_chunks(stripped)
-        logging.info(f"post_tweet: {len(chunks)} chunks from {len(stripped)} cp text")
-        tweet_urls = []
-        reply_to_id = None
-        posted = 0
+            stripped = text.strip().replace('\r\n', '\n')
+            chunks = split_into_chunks(stripped)
+            logging.info(f"post_tweet: {len(chunks)} chunks from {len(stripped)} cp text")
+            tweet_urls = []
+            reply_to_id = None
+            posted = 0
 
-        try:
-            media_ids = []
-            if image_paths:
-                for idx, fp in enumerate(image_paths):
+            try:
+                media_ids = []
+                if image_paths:
+                    for idx, fp in enumerate(image_paths):
+                        if progress_callback:
+                            progress_callback(
+                                idx + 1,
+                                len(image_paths),
+                                f"Uploading image {idx + 1} of {len(image_paths)}...",
+                            )
+                        media_id = await self._client.upload_media(fp)
+                        media_ids.append(media_id)
+
+                for i, chunk in enumerate(chunks):
                     if progress_callback:
                         progress_callback(
-                            idx + 1,
-                            len(image_paths),
-                            f"Uploading image {idx + 1} of {len(image_paths)}...",
+                            i + 1,
+                            len(chunks),
+                            f"Posting tweet {i + 1} of {len(chunks)}...",
                         )
-                    media_id = await self._client.upload_media(fp)
-                    media_ids.append(media_id)
 
-            for i, chunk in enumerate(chunks):
-                if progress_callback:
-                    progress_callback(
-                        i + 1,
-                        len(chunks),
-                        f"Posting tweet {i + 1} of {len(chunks)}...",
+                    kwargs = {"text": chunk}
+                    if media_ids and i == 0:
+                        kwargs["media_ids"] = media_ids
+                    if reply_to_id:
+                        kwargs["reply_to"] = reply_to_id
+
+                    tweet = await self._client.create_tweet(**kwargs)
+
+                    if tweet is None:
+                        err_msg = f"Failed to post tweet {i + 1}: create_tweet returned None"
+                        logging.error(err_msg)
+                        if posted == 0:
+                            raise Exception(err_msg)
+                        break
+
+                    tweet_urls.append(
+                        f"https://x.com/{tweet.user.screen_name}/status/{tweet.id}"
                     )
+                    reply_to_id = tweet.id
+                    posted += 1
 
-                kwargs = {"text": chunk}
-                if media_ids and i == 0:
-                    kwargs["media_ids"] = media_ids
-                if reply_to_id:
-                    kwargs["reply_to"] = reply_to_id
+                    if i < len(chunks) - 1:
+                        await asyncio.sleep(2)
 
-                tweet = await self._client.create_tweet(**kwargs)
+                if progress_callback:
+                    progress_callback(len(chunks), len(chunks), "Done")
 
-                if tweet is None:
-                    err_msg = f"Failed to post tweet {i + 1}: create_tweet returned None"
-                    logging.error(err_msg)
-                    if posted == 0:
-                        raise Exception(err_msg)
-                    break
+                if posted == len(chunks):
+                    return {"success": True, "urls": tweet_urls}
 
-                tweet_urls.append(
-                    f"https://x.com/{tweet.user.screen_name}/status/{tweet.id}"
-                )
-                reply_to_id = tweet.id
-                posted += 1
-
-                if i < len(chunks) - 1:
-                    await asyncio.sleep(2)
-
-            if progress_callback:
-                progress_callback(len(chunks), len(chunks), "Done")
-
-            if posted == len(chunks):
-                return {"success": True, "urls": tweet_urls}
-
-            return {
-                "success": True,
-                "urls": tweet_urls,
-                "partial": True,
-                "warning": f"Only {posted} of {len(chunks)} tweets posted.",
-            }
-
-        except Exception as e:
-            err_msg = str(e)
-            if "403" in err_msg or "Forbidden" in err_msg or "Cloudflare" in err_msg or "blocked" in err_msg:
-                err_msg = "Session blocked by Cloudflare. Run setup_login.py again to refresh session."
-            logging.exception(f"post_tweet failed: {e}")
-
-            if tweet_urls:
                 return {
                     "success": True,
                     "urls": tweet_urls,
                     "partial": True,
-                    "warning": f"Posted {len(tweet_urls)} of {len(chunks)} tweets before error: {err_msg}",
+                    "warning": f"Only {posted} of {len(chunks)} tweets posted.",
                 }
 
-            if progress_callback:
-                progress_callback(0, 0, f"Error: {err_msg}")
-            return {"success": False, "error": err_msg}
+            except Exception as e:
+                err_msg = str(e)
+                if "403" in err_msg or "Forbidden" in err_msg or "Cloudflare" in err_msg or "blocked" in err_msg:
+                    err_msg = "Session blocked by Cloudflare. Run setup_login.py again to refresh session."
+                logging.exception(f"post_tweet failed: {e}")
+
+                if tweet_urls:
+                    return {
+                        "success": True,
+                        "urls": tweet_urls,
+                        "partial": True,
+                        "warning": f"Posted {len(tweet_urls)} of {len(chunks)} tweets before error: {err_msg}",
+                    }
+
+                if progress_callback:
+                    progress_callback(0, 0, f"Error: {err_msg}")
+                return {"success": False, "error": err_msg}
 
 
     async def check_mutual(self, target_screen_name: str) -> dict:
@@ -266,17 +274,46 @@ class TwitterClient:
             return {"success": False, "error": str(e)}
 
     async def delete_tweet(self, tweet_id_str: str) -> dict:
-        cookies = self._load_cookies()
-        if cookies is None:
-            return {"success": False, "error": "Not logged in"}
-        self._client.set_cookies(cookies, clear_cookies=True)
+        async with self._lock:
+            cookies = self._load_cookies()
+            if cookies is None:
+                return {"success": False, "error": "Not logged in"}
+            self._client.set_cookies(cookies, clear_cookies=True)
 
-        try:
-            await self._client.delete_tweet(tweet_id_str)
-            return {"success": True}
-        except Exception as e:
-            logging.exception(f"delete_tweet failed: {e}")
-            return {"success": False, "error": str(e)}
+            try:
+                await self._client.delete_tweet(tweet_id_str)
+                return {"success": True}
+            except Exception as e:
+                logging.warning(f"delete_tweet({tweet_id_str}) failed: {e}")
+                return {"success": False, "error": str(e)}
+
+    async def delete_tweet_chain(self, tweet_urls: list[str]) -> dict:
+        async with self._lock:
+            cookies = self._set_client_cookies()
+            if cookies is None:
+                return {"success": False, "error": "Not logged in"}
+
+            deleted = 0
+            failed = 0
+            errors = []
+
+            for url in reversed(tweet_urls):
+                tweet_id_str = url.rstrip("/").split("/")[-1]
+                try:
+                    await self._client.delete_tweet(tweet_id_str)
+                    deleted += 1
+                    await asyncio.sleep(2)
+                except Exception as e:
+                    logging.warning(f"delete_tweet_chain: {tweet_id_str} failed: {e}")
+                    failed += 1
+                    errors.append(str(e))
+
+            return {
+                "success": deleted > 0,
+                "deleted": deleted,
+                "failed": failed,
+                "errors": errors,
+            }
 
 
 client = TwitterClient()
