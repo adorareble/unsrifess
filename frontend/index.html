@@ -625,6 +625,12 @@ async function loadSubmissions() {
   } catch {}
 }
 
+function rfindPy(str, sub, end) {
+  const maxStart = end - sub.length;
+  if (maxStart < 0) return -1;
+  return str.lastIndexOf(sub, maxStart);
+}
+
 function splitText(text) {
   if (text.length <= MAX_CHARS) return [text];
   const chunks = [];
@@ -636,37 +642,27 @@ function splitText(text) {
     }
     let splitAt = -1;
     for (const sep of [". ", ".\n", "!\n", "?\n", "\n\n"]) {
-      const idx = remaining.lastIndexOf(sep, MAX_CHARS + 1);
+      const idx = rfindPy(remaining, sep, MAX_CHARS + 1);
       if (idx > splitAt) splitAt = idx + sep.length;
     }
     if (splitAt <= 0 || splitAt > MAX_CHARS) {
-      splitAt = remaining.lastIndexOf(" ", MAX_CHARS + 1);
+      splitAt = rfindPy(remaining, " ", MAX_CHARS + 1);
     }
     if (splitAt <= 0) splitAt = MAX_CHARS;
     const chunk = remaining.slice(0, splitAt).trim();
     if (chunk) chunks.push(chunk);
     remaining = remaining.slice(splitAt).trim();
+    if (!chunk) {
+      chunks.push(remaining.slice(0, MAX_CHARS));
+      remaining = remaining.slice(MAX_CHARS).trim();
+    }
   }
   return chunks;
 }
 
 function estimateTweets(text) {
-  const len = text.length;
-  if (len === 0) return 0;
-  if (len <= MAX_CHARS) return 1;
-  let remaining = text.trim();
-  let count = 0;
-  while (remaining.length > 0) {
-    count++;
-    if (remaining.length <= MAX_CHARS) break;
-    let splitAt = remaining.lastIndexOf('. ', MAX_CHARS);
-    if (splitAt < 0) splitAt = remaining.lastIndexOf('\n', MAX_CHARS);
-    if (splitAt < 0) splitAt = remaining.lastIndexOf(' ', MAX_CHARS);
-    if (splitAt < 0) splitAt = MAX_CHARS;
-    else splitAt++;
-    remaining = remaining.slice(splitAt).trim();
-  }
-  return count;
+  if (!text || !text.trim()) return 0;
+  return splitText(text).length;
 }
 
 function updateValidation() {
