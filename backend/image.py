@@ -64,6 +64,9 @@ def compress_image(image_path):
         print(f"Compress failed: {e}", flush=True)
 
 
-async def process_image_async(image_path):
+async def process_image_async(image_path, watermark=True):
     loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, lambda p: (compress_image(p), add_watermark(p)), image_path)
+    if watermark:
+        await loop.run_in_executor(None, lambda p: (compress_image(p), add_watermark(p)), image_path)
+    else:
+        await loop.run_in_executor(None, compress_image, image_path)

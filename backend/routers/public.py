@@ -118,7 +118,7 @@ async def tweet_sync(
                 saved_path = os.path.join(TEMP_DIR, filename)
                 with open(saved_path, "wb") as f:
                     f.write(content)
-                await process_image_async(saved_path)
+                await process_image_async(saved_path, watermark=not send_as_image)
                 saved_paths.append(saved_path)
 
         stripped_text = text.strip()

@@ -87,7 +87,11 @@
   .text-preview {
     font-size: 0.88rem; line-height: 1.5; margin-bottom: 10px;
     white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;
+    max-height: 4.5em; overflow: hidden;
   }
+  .img-tag { display: inline-block; font-size: 0.65rem; font-weight: 600; letter-spacing: .3px; border-radius: 4px; padding: 2px 6px; margin-bottom: 6px; }
+  .img-tag.card-tag { background: rgba(29,155,240,0.12); color: #1d9bf0; }
+  .img-tag.media-tag { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .item-card .meta-row {
     display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.72rem; color: #71767b;
     margin-top: 8px;
@@ -262,8 +266,6 @@
   .heatmap .cell { padding: 4px 2px; text-align: center; border-radius: 4px; }
   .heatmap .label { color: #71767b; text-align: right; padding-right: 6px; font-size: 0.6rem; }
   .heatmap .header { color: #71767b; font-weight: 500; font-size: 0.6rem; }
-  .img-badge { margin-left: 4px; font-size: 0.75rem; }
-
   /* ── Settings cards ── */
   .settings-card {
     background: #16181c; border: 1px solid #2f3336; border-radius: 14px; padding: 16px; margin-bottom: 12px;
@@ -621,11 +623,12 @@ async function loadQueue() {
     let html = '';
     for (const t of tweets) {
       const isCard = t.send_as_image;
-      const displayText = isCard ? (t.card_text || '(empty card)') : t.original_text;
+      const displayText = t.original_text || '';
       const images = imagesFromTweet(t);
       const fns = images.map(filenameFromPath);
+      const hasImgs = fns.length > 0;
       let thumbsHtml = '';
-      if (images.length) {
+      if (hasImgs) {
         thumbsHtml = '<div class="thumb-grid">';
         images.forEach((fp, idx) => {
           thumbsHtml += '<div class="thumb" onclick=\'openLightbox(' + JSON.stringify(fns) + ',' + idx + ')\'><img src="/panel/api/images/' + fns[idx] + '?token=' + TOKEN + '"></div>';
@@ -633,9 +636,15 @@ async function loadQueue() {
         thumbsHtml += '</div>';
       }
 
+      var tagHtml = '';
+      if (isCard) {
+        tagHtml = '<span class="img-tag card-tag">\u{1F5BC} Card</span>';
+      } else if (hasImgs) {
+        tagHtml = '<span class="img-tag media-tag">\u{1F5BC} ' + fns.length + ' image' + (fns.length > 1 ? 's' : '') + '</span>';
+      }
+
       let metaParts = ['#' + t.id, fmtTime(t.submitted_at)];
       if (t.chunk_count > 1) metaParts.push(t.chunk_count + ' tweets');
-      if (isCard) metaParts.push('\u{1F5BC}\uFE0F Image Card');
 
       const userInfo = t.user_screen_name
         ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
@@ -649,9 +658,7 @@ async function loadQueue() {
           + '</div>'
         : '<div class="meta" style="margin-bottom:10px">' + metaParts.join(' · ') + '</div>';
 
-      const displayFull = isCard
-        ? 'Tweet: ' + t.original_text + '\n\u2014\u2014\u2014 Card Content \u2014\u2014\u2014\n' + (t.card_text || '')
-        : t.original_text;
+      const displayFull = t.original_text || '';
 
       html += '<div class="item-card" id="qt-' + t.id + '">'
         + userInfo
@@ -832,22 +839,26 @@ async function loadHistory() {
       const urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : [];
       const images = imagesFromTweet(t);
       const fns = images.map(filenameFromPath);
-      const imgBadge = (images.length || isCard) ? '<span class="img-badge" title="Has images">\u{1F5BC}\uFE0F</span>' : '';
-      const dataImgs = fns.length ? ' data-images=\'' + JSON.stringify(fns).replace(/'/g, '&#39;') + '\'' : '';
-      const displayText = isCard ? (t.card_text || '(empty card)') : t.original_text;
-      const displayFull = isCard
-        ? 'Tweet: ' + t.original_text + '\n\u2014\u2014\u2014 Card Content \u2014\u2014\u2014\n' + (t.card_text || '')
-        : t.original_text;
+      const hasImgs = fns.length > 0;
+      const dataImgs = hasImgs ? ' data-images=\'' + JSON.stringify(fns).replace(/'/g, '&#39;') + '\'' : '';
+      const displayText = t.original_text || '';
+      const displayFull = t.original_text || '';
       const deleteBtn = ADMIN.role === 'superadmin' && t.status === 'approved'
         ? '<button class="btn-action btn-reject" onclick="deleteTweet(' + t.id + ')">Delete</button>' : '';
+      var tagHtml = '';
+      if (isCard) {
+        tagHtml = '<span class="img-tag card-tag">\u{1F5BC} Card</span>';
+      } else if (hasImgs) {
+        tagHtml = '<span class="img-tag media-tag">\u{1F5BC} ' + fns.length + ' image' + (fns.length > 1 ? 's' : '') + '</span>';
+      }
       cards += '<div class="item-card">'
         + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
         + '<strong>#' + t.id + '</strong>'
         + '<span class="status-badge status-' + t.status + '">' + t.status + '</span>'
         + '<span>' + fmtTime(t.submitted_at) + '</span>'
-        + (isCard ? '<span style="font-size:0.72rem;color:#71767b">\u{1F5BC}\uFE0F Card</span>' : '')
+        + (tagHtml ? ' ' + tagHtml : '')
         + '</div>'
-        + '<div class="text-preview"' + (dataImgs ? ' ' + dataImgs : '') + ' data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + imgBadge + '</div>'
+        + '<div class="text-preview"' + (dataImgs ? ' ' + dataImgs : '') + ' data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + '</div>'
         + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b">'
         + '<span>Reviewer: ' + (t.reviewer_name || '-') + '</span>'
         + '<span>User: ' + (t.user_screen_name ? '<a href="javascript:void(0)" onclick="showUserTweets(' + t.x_user_db_id + ')" style="color:#1d9bf0;text-decoration:none">@' + escHtml(t.user_screen_name) + '</a>' : '-') + '</span>'
@@ -900,11 +911,21 @@ async function showUserTweets(userId) {
             actHtml = '<button class="btn-action btn-reject" onclick="deleteTweetFromPopup(' + t.id + ')">Delete</button>';
           }
         }
+        const tIsCard = t.send_as_image;
+        const tImgs = t.image_paths ? (function(){try{return JSON.parse(t.image_paths).map(function(p){var parts=p.replace(/\\/g,'/').split('/');return parts[parts.length-1];});}catch(e){return [];}})() : [];
+        const tHasImgs = tImgs.length > 0;
+        var tTagHtml = '';
+        if (tIsCard) {
+          tTagHtml = '<span class="img-tag card-tag" style="margin-left:8px">\u{1F5BC} Card</span>';
+        } else if (tHasImgs) {
+          tTagHtml = '<span class="img-tag media-tag" style="margin-left:8px">\u{1F5BC} ' + tImgs.length + ' image' + (tImgs.length > 1 ? 's' : '') + '</span>';
+        }
         cardsHtml += '<div class="item-card" style="margin-bottom:8px">'
           + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">'
           + '<strong>#' + t.id + '</strong>'
           + '<span class="status-badge status-' + t.status + '">' + t.status + '</span>'
           + '<span style="font-size:0.75rem;color:#71767b">' + fmtTime(t.submitted_at) + '</span>'
+          + tTagHtml
           + '</div>'
           + '<div class="text" style="font-size:0.85rem">' + escHtml(t.original_text) + '</div>'
           + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b;margin-top:6px">'
@@ -1581,14 +1602,18 @@ function connectSSE() {
       card.className = 'item-card';
       card.id = 'qt-' + d.id;
       const isCard = d.send_as_image;
-      const displayText = isCard ? (d.card_text || '(empty card)') : d.original_text;
-      const displayFull = isCard
-        ? 'Tweet: ' + d.original_text + '\n\u2014\u2014\u2014 Card Content \u2014\u2014\u2014\n' + (d.card_text || '')
-        : d.original_text;
+      const displayText = d.original_text || '';
+      const displayFull = d.original_text || '';
       const metaParts = ['#' + d.id, fmtTime(d.submitted_at)];
       if (d.chunk_count > 1) metaParts.push(d.chunk_count + ' tweets');
-      if (isCard) metaParts.push('\u{1F5BC}\uFE0F Image Card');
-      const metaStr = metaParts.join(' · ');
+
+      var tagHtml = '';
+      if (isCard) {
+        tagHtml = '<span class="img-tag card-tag" style="margin-left:8px">\u{1F5BC} Card</span>';
+      } else if (d.image_paths && d.image_paths.length) {
+        tagHtml = '<span class="img-tag media-tag" style="margin-left:8px">\u{1F5BC} ' + d.image_paths.length + ' image' + (d.image_paths.length > 1 ? 's' : '') + '</span>';
+      }
+      const metaStr = metaParts.join(' · ') + tagHtml;
       const userHtml = d.user_screen_name && d.x_user_db_id
         ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
           + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
