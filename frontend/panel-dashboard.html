@@ -50,8 +50,6 @@
   }
   .stat-card .num { font-size: 0.8rem; font-weight: 700; line-height: 1.2; }
   .stat-card .label { font-size: 0.5rem; color: #71767b; line-height: 1.1; margin-top: 1px; }
-  .stat-card .num.pending { color: #f4c430; }
-  .stat-card .num.partial { color: #ffad1f; }
   .stat-card .num.approved { color: #00ba7c; }
   .stat-card .num.rejected { color: #f4212e; }
   .stat-card .num.deleted { color: #71767b; }
@@ -529,8 +527,6 @@ async function loadStats() {
       <div class="section-label">All Time</div>
       <div class="stat-row">
       <div class="stat-card"><div class="num total-subs">${d.total_submissions}</div><div class="label">Confessions</div></div>
-      <div class="stat-card"><div class="num pending">${d.pending_count}</div><div class="label">Pending</div></div>
-      <div class="stat-card"><div class="num partial">${d.partial_count}</div><div class="label">Partial</div></div>
       <div class="stat-card"><div class="num approved">${d.approved_count}</div><div class="label">Posted</div></div>
       <div class="stat-card"><div class="num rejected">${d.rejected_count}</div><div class="label">Declined</div></div>
       <div class="stat-card"><div class="num deleted">${d.deleted_count}</div><div class="label">Removed</div></div></div>
