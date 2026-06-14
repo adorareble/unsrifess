@@ -11,7 +11,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 
-from database import upsert_x_user, update_follow_status, update_x_user_profile, get_pool, get_tweet, get_setting
+from database import upsert_x_user, update_follow_status, update_x_user_profile, get_pool, get_tweet, get_setting, update_x_user_status
 from twitter_client import client
 from auth import create_user_token, decode_token
 from event_bus import publish
