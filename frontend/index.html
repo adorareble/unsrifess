@@ -830,7 +830,7 @@ function showFullFromAttr(el) {
       }
     } catch(e) {}
   }
-  var textHtml = '<div style="white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto">' + escHtml(full) + '</div>';
+  var textHtml = '<div style="white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto;text-align:left">' + escHtml(full) + '</div>';
   showPopup('', '', imgsHtml + textHtml, [{text:'Close',cls:'popup-btn-ghost',fn:closePopup}]);
 }
 function lbOpenFrom(el) {

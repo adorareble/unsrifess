@@ -425,7 +425,7 @@ function showFullFromAttr(el) {
       imgsHtml += '</div>';
     }
   }
-  const textHtml = '<div style="white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto">' + escHtml(el.dataset.full) + '</div>';
+  const textHtml = '<div style="white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto;text-align:left">' + escHtml(el.dataset.full) + '</div>';
   showPopup('', '', imgsHtml + textHtml, [{text:'Close',cls:'popup-btn-ghost',fn:closePopup}]);
 }
 function escHtml(s) {
