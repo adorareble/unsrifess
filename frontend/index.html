@@ -571,11 +571,10 @@ const MAX_CHARS = 1000;
 let subPage = 1;
 const MAX_IMAGES = 4;
 let deleteWindowMinutes = 5;
-const MAX_SUBMISSIONS = 10;
 let selectedFiles = [];
 let rateLimited = false;
-let isDone = false;
-let xToken = localStorage.getItem('x_token');
+const _blobUrls = [];
+function _revokeBlobs() { _blobUrls.forEach(u => URL.revokeObjectURL(u)); _blobUrls.length = 0; }
 let tncAccepted = localStorage.getItem('tnc_accepted');
 let currentUserId = '';
 let imageMode = false;
@@ -682,7 +681,7 @@ function showPreview() {
         + '<div class="preview-chunk-text">' + escHtml(c) + '</div>';
       if (i === 0 && selectedFiles.length > 0) {
         chunkHtml += '<div class="preview-imgs">'
-          + selectedFiles.map(f => '<img src="' + URL.createObjectURL(f) + '">').join('')
+          + selectedFiles.map(f => { const u = URL.createObjectURL(f); _blobUrls.push(u); return '<img src="' + u + '">'; }).join('')
           + '</div>';
       }
       chunkHtml += '</div>';
@@ -694,10 +693,12 @@ function showPreview() {
 }
 document.getElementById('previewCloseBtn').addEventListener('click', () => {
   document.getElementById('previewOverlay').classList.add('hidden');
+  _revokeBlobs();
 });
 document.getElementById('previewOverlay').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) {
     document.getElementById('previewOverlay').classList.add('hidden');
+    _revokeBlobs();
   }
 });
 
@@ -757,7 +758,8 @@ async function loadSubmissions() {
       const date = new Date(s.submitted_at + 'Z');
       const timeStr = date.toLocaleDateString('en-US', { year: 'numeric', day: 'numeric', month: 'short' })
         + ' ' + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-      const urls = s.tweet_urls ? JSON.parse(s.tweet_urls) : [];
+      var urls = [];
+      try { urls = s.tweet_urls ? JSON.parse(s.tweet_urls) : []; } catch(e) { urls = []; }
       const tweetLink = (s.status === 'approved' && urls.length)
         ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>' : '';
       const rejectReason = (s.status === 'rejected' || s.status === 'deleted') && s.reject_reason
@@ -799,7 +801,10 @@ async function loadSubmissions() {
       + '<button class="sub-page-btn"' + (subPage >= totalPages ? ' disabled' : '') + ' onclick="subPage++;loadSubmissions()">Next</button>'
       + '</div>';
     el.innerHTML = html;
-  } catch {}
+  } catch(e) {
+    console.warn('loadSubmissions failed:', e);
+    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load submissions</div>';
+  }
 }
 
 // ── Lightbox ──
@@ -992,6 +997,7 @@ function updateFilePreview() {
   const grid = document.getElementById('fileGrid');
   const area = document.getElementById('uploadArea');
   grid.innerHTML = '';
+  _revokeBlobs();
   const remaining = MAX_IMAGES - selectedFiles.length;
   area.classList.toggle('has-file', selectedFiles.length > 0);
   area.classList.toggle('disabled', remaining === 0);
@@ -1000,13 +1006,15 @@ function updateFilePreview() {
   selectedFiles.forEach((file, idx) => {
     const div = document.createElement('div');
     div.className = 'file-preview';
+    const url = URL.createObjectURL(file);
+    _blobUrls.push(url);
     const img = document.createElement('img');
-    img.src = URL.createObjectURL(file);
+    img.src = url;
     div.appendChild(img);
     const btn = document.createElement('button');
     btn.className = 'remove';
     btn.innerHTML = '&times;';
-    btn.onclick = (e) => { e.stopPropagation(); selectedFiles.splice(idx, 1); updateFilePreview(); };
+    btn.onclick = (e) => { e.stopPropagation(); selectedFiles.splice(idx, 1); _revokeBlobs(); updateFilePreview(); };
     div.appendChild(btn);
     grid.appendChild(div);
   });
@@ -1029,7 +1037,6 @@ function hideLoading() {
 }
 
 function showDone() {
-  isDone = true;
   document.getElementById('composeArea').classList.add('hidden');
   document.getElementById('doneArea').classList.remove('hidden');
 }
@@ -1299,7 +1306,6 @@ document.getElementById('fileInput').addEventListener('change', (e) => {
 document.getElementById('newBtn').addEventListener('click', resetForm);
 
 function resetForm() {
-  isDone = false;
   tweetText.value = '';
   cardText.value = '';
   document.getElementById('result').className = 'result';

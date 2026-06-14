@@ -22,7 +22,7 @@ async def close_pool():
     global _pool
     if _pool:
         await _pool.close()
-_pool = None
+        _pool = None
 _settings_cache: dict[str, str | None] = {}
 
 

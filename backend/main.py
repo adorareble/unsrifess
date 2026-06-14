@@ -15,7 +15,7 @@ from routers.panel import panel_router
 from routers.auth_x import auth_x_router
 from routers.sse import sse_router
 
-app = FastAPI(title="TwitterTools")
+app = FastAPI(title="Unsr!fess")
 
 app.include_router(public_router)
 app.include_router(panel_router)

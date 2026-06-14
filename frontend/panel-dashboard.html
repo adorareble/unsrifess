@@ -485,6 +485,8 @@ function openLightbox(images, idx) {
 function closeLightbox() {
   document.getElementById('lightbox').classList.add('hidden');
   document.getElementById('lbImg').src = '';
+  lbImages = [];
+  lbIndex = 0;
 }
 function lbNav(dir) {
   lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
@@ -708,7 +710,7 @@ function showLoading(taskId, label) {
         if (d.status === 'done') {
           _handleTaskDone(d);
         }
-      } catch (_) {}
+      } catch (_) { console.warn('task_progress parse failed'); }
       if (_currentTaskId) hideLoading();
     }, 60000);
   }
@@ -838,7 +840,8 @@ async function loadHistory() {
     let cards = '';
     for (const t of tweets) {
       const isCard = t.send_as_image;
-      const urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : [];
+      var urls = [];
+      try { urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : []; } catch(e) { urls = []; }
       const images = imagesFromTweet(t);
       const fns = images.map(filenameFromPath);
       const hasImgs = fns.length > 0;
@@ -896,13 +899,14 @@ async function showUserTweets(userId) {
     const total = d.total || 0;
     const totalPages = Math.ceil(total / 10) || 1;
     let html = '<div style="max-height:70vh;overflow-y:auto;text-align:left">';
-    html += '<div style="margin-bottom:10px;font-size:0.85rem">Tweets by <a href="https://x.com/' + encodeURIComponent(d.screen_name) + '" target="_blank" style="color:#1d9bf0">@' + d.screen_name + '</a></div>';
+    html += '<div style="margin-bottom:10px;font-size:0.85rem">Tweets by <a href="https://x.com/' + encodeURIComponent(d.screen_name) + '" target="_blank" style="color:#1d9bf0">@' + escHtml(d.screen_name) + '</a></div>';
     if (tweets.length === 0) {
       html += '<div class="empty-state">No tweets from this user</div>';
     } else {
       let cardsHtml = '';
       for (const t of tweets) {
-        const urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : [];
+        var urls = [];
+        try { urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : []; } catch(e) { urls = []; }
         const linkHtml = urls.length ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0">link</a>' : '';
         let actHtml = '';
         if (t.status === 'pending') {
@@ -1637,7 +1641,6 @@ function connectSSE() {
             }).join('') + '</div>';
           }()
         : '';
-      const meta = '#' + d.id + ' ' + fmtTime(d.submitted_at) + (d.chunk_count > 1 ? ' ' + d.chunk_count + ' tweets' : '');
       card.innerHTML = userHtml + thumbsHtml
         + '<div class="text" data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + '</div>'
         + '<div class="actions" id="qa-' + d.id + '">'
@@ -1648,10 +1651,13 @@ function connectSSE() {
         el.innerHTML = '';
         el.appendChild(card);
       } else {
-        el.insertBefore(card, el.firstChild);
+        const pages = el.querySelector('.pagination');
+        if (pages) {
+          el.insertBefore(card, pages);
+        } else {
+          el.insertBefore(card, el.firstChild);
+        }
       }
-      const pages = el.querySelector('.pagination');
-      if (pages) el.insertBefore(card, pages);
     }
   });
 
