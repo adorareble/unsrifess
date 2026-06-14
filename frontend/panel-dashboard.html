@@ -93,6 +93,7 @@
   .img-tag { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.68rem; font-weight: 600; }
   .img-tag.card-tag { background: rgba(29,155,240,0.12); color: #1d9bf0; }
   .img-tag.media-tag { background: rgba(0,186,124,0.12); color: #00ba7c; }
+  .partial-badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.68rem; font-weight: 600; background: rgba(255,173,31,0.15); color: #ffad1f; align-self:center; }
   .item-card .meta-row {
     display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.72rem; color: #71767b;
     margin-top: 8px;
@@ -647,7 +648,15 @@ async function loadQueue() {
       }
 
       let metaParts = [fmtTime(t.submitted_at)];
-      if (t.chunk_count > 1) metaParts.push(t.chunk_count + ' tweets');
+      if (t.chunk_count > 1) {
+        let postedCount = 0;
+        try { postedCount = JSON.parse(t.tweet_urls || '[]').length; } catch(e) {}
+        if (t.status === 'partial') {
+          metaParts.push(postedCount + '/' + t.chunk_count + ' posted');
+        } else {
+          metaParts.push(t.chunk_count + ' tweets');
+        }
+      }
       const metaStr = '<strong>#' + t.id + '</strong>' + (metaParts.length ? ' · ' + metaParts.join(' · ') : '');
 
       const userInfo = t.user_screen_name
@@ -669,7 +678,8 @@ async function loadQueue() {
         + thumbsHtml
         + '<div class="text" data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + '</div>'
         + '<div class="actions" id="qa-' + t.id + '">'
-        + '<button class="btn-action btn-approve" onclick="approveTweet(' + t.id + ')">Approve</button>'
+        + (t.status === 'partial' ? '<span class="partial-badge">Partial</span>' : '')
+        + '<button class="btn-action btn-approve" onclick="approveTweet(' + t.id + ')">' + (t.status === 'partial' ? 'Retry' : 'Approve') + '</button>'
         + '<button class="btn-action btn-reject" onclick="rejectTweetPopup(' + t.id + ')">Reject</button>'
         + '</div>'
         + '</div>';
@@ -824,6 +834,7 @@ async function loadHistory() {
       + '<select id="hf-status" onchange="historyPage=1;loadHistory()">'
       + '<option value="">All status</option>'
       + '<option value="pending"' + (status === 'pending' ? ' selected' : '') + '>Pending</option>'
+      + '<option value="partial"' + (status === 'partial' ? ' selected' : '') + '>Partial</option>'
       + '<option value="approved"' + (status === 'approved' ? ' selected' : '') + '>Approved</option>'
       + '<option value="rejected"' + (status === 'rejected' ? ' selected' : '') + '>Rejected</option>'
       + '<option value="deleted"' + (status === 'deleted' ? ' selected' : '') + '>Deleted</option>'
@@ -1663,8 +1674,10 @@ function connectSSE() {
 
   es.addEventListener('tweet_updated', (e) => {
     const d = JSON.parse(e.data);
-    const card = document.getElementById('qt-' + d.id);
-    if (card) card.style.display = 'none';
+    if (d.status !== 'partial') {
+      const card = document.getElementById('qt-' + d.id);
+      if (card) card.style.display = 'none';
+    }
     loadStats();
     loadQueue();
   });

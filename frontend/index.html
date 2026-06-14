@@ -208,6 +208,7 @@
   .submission-meta { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: #71767b; flex-wrap: wrap; margin-top: 6px; }
   .submission-status { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
   .status-pending { background: rgba(244,196,48,0.12); color: #f4c430; }
+  .status-partial { background: rgba(255,173,31,0.15); color: #ffad1f; }
   .status-approved { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .status-rejected { background: rgba(244,33,46,0.12); color: #f4212e; }
   .status-deleted { background: rgba(113,118,123,0.12); color: #71767b; }
@@ -715,19 +716,30 @@ function deleteRemaining(reviewedAt) {
   return (m > 0 ? m + 'm' : s + 's') + ' left';
 }
 
-async function deleteTweet(id) {
+async function deleteTweet(id, total) {
   const token = localStorage.getItem('x_token');
   if (!token) { showPopup('⚠️', 'Not logged in', 'Please login with X first.'); return; }
   showPopup('🗑️', 'Delete from X?', 'This tweet will be deleted from X and cannot be restored.', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Delete', cls: 'popup-btn-danger', fn: async () => {
       closePopup();
-      showLoading('Deleting...');
+      showLoading(total > 1 ? 'Deleting ' + total + ' tweets...' : 'Deleting...');
       try {
         const r = await fetch('/api/auth/tweets/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
         const d = await r.json();
         hideLoading();
         if (d.success) {
+          if (d.partial) {
+            var msg = 'Deleted ' + d.deleted + ' of ' + d.total + ' tweets from X.';
+            if (d.deleted > 0) {
+              msg += ' The remaining ' + d.failed + ' can be retried by clicking Delete again.';
+            } else {
+              msg += ' None could be deleted. Click Delete again to retry.';
+            }
+            showPopup('⚠️', 'Partial delete', msg, [
+              { text: 'OK', cls: 'popup-btn-ghost', fn: closePopup },
+            ]);
+          }
           loadSubmissions();
         } else {
           showPopup('⚠️', 'Failed', d.detail || 'Failed to delete tweet.');
@@ -784,15 +796,18 @@ async function loadSubmissions() {
       const displayText = s.original_text || '';
 
       const delBtn = s.status === 'approved' && canDelete(s.reviewed_at)
-        ? '<button class="submission-del" onclick="deleteTweet(' + s.id + ')" title="Delete from X">🗑️</button>' : '';
+        ? '<button class="submission-del" onclick="deleteTweet(' + s.id + ', ' + urls.length + ')" title="Delete from X">🗑️</button>' : '';
       const delInfo = s.status === 'approved' && s.reviewed_at
         ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>' : '';
+      const statusLabel = s.status === 'partial' ? 'Partial' : s.status;
+      const partialInfo = s.status === 'partial'
+        ? '<span style="color:#ffad1f;font-size:0.72rem">⏳ Partially posted — awaiting retry</span>' : '';
       html += '<div class="submission-item" data-tweet-id="' + s.id + '"><div class="submission-header">'
         + '<div class="submission-text"' + dataImgsAttr + ' data-full="' + escHtml(dataFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)">'
         + escHtml(displayText) + '</div>'
         + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">' + delInfo + delBtn + '</div></div>'
         + '<div class="submission-meta" style="margin-bottom:2px"><span>' + timeStr + '</span></div>'
-        + '<div class="submission-meta"><span class="submission-status ' + statusClass + '" id="ss-' + s.id + '">' + s.status + '</span> ' + (tagHtml || '') + ' ' + rejectReason + ' ' + tweetLink + '</div></div>';
+        + '<div class="submission-meta"><span class="submission-status ' + statusClass + '" id="ss-' + s.id + '">' + statusLabel + '</span> ' + (tagHtml || '') + ' ' + rejectReason + ' ' + tweetLink + ' ' + partialInfo + '</div></div>';
     }
     html += '<div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:12px">'
       + '<button class="sub-page-btn"' + (subPage <= 1 ? ' disabled' : '') + ' onclick="subPage--;loadSubmissions()">Prev</button>'
@@ -1021,7 +1036,7 @@ function updateFilePreview() {
 
 function showLoading(text) {
   loadingOverlay.classList.remove('hidden');
-  document.querySelector('.loading-text').textContent = text || 'Posting...';
+  document.querySelector('.loading-text').textContent = text;
   progressBar.style.width = '0%';
   let p = 0;
   const interval = setInterval(() => {
@@ -1381,7 +1396,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   const token = localStorage.getItem('x_token');
   if (!token) { showPopup('⚠️', 'Not logged in', 'Please login with X first.'); return; }
 
-  showLoading();
+  showLoading('Sending...');
   submitBtn.disabled = true;
 
   const formData = new FormData();

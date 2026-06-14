@@ -147,7 +147,7 @@ async def approve_tweet(tweet_id: int, admin_id: int | None, tweet_urls, record_
         async with conn.transaction():
             row = await conn.fetchrow(
                 "UPDATE tweets SET status = 'approved', reviewed_by = $1, reviewed_at = NOW(), "
-                "tweet_urls = $2 WHERE id = $3 AND status = 'pending' "
+                "tweet_urls = $2 WHERE id = $3 AND status IN ('pending', 'partial') "
                 "RETURNING id, status, original_text, image_paths",
                 admin_id, json.dumps(tweet_urls), tweet_id,
             )
@@ -158,6 +158,18 @@ async def approve_tweet(tweet_id: int, admin_id: int | None, tweet_urls, record_
                     admin_id, "approve", "tweet", str(tweet_id),
                 )
             return dict(row) if row else None
+
+
+async def update_tweet_urls(tweet_id: int, tweet_urls: list, status: str = "partial"):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "UPDATE tweets SET status = $1, tweet_urls = $2 "
+            "WHERE id = $3 AND status IN ('pending', 'partial') "
+            "RETURNING id",
+            status, json.dumps(tweet_urls), tweet_id,
+        )
+        return dict(row) if row else None
 
 
 async def update_tweet_image_paths(tweet_id: int, image_paths: list):
@@ -204,7 +216,7 @@ async def get_pending_tweets(limit=20, offset=0):
     pool = await get_pool()
     async with pool.acquire() as conn:
         total_row = await conn.fetchrow(
-            "SELECT COUNT(*) FROM tweets t WHERE t.status = 'pending'"
+            "SELECT COUNT(*) FROM tweets t WHERE t.status IN ('pending', 'partial')"
         )
         total = total_row["count"]
 
@@ -214,7 +226,7 @@ async def get_pending_tweets(limit=20, offset=0):
             "u.id AS x_user_db_id FROM tweets t "
             "LEFT JOIN admins a ON t.reviewed_by = a.id "
             "LEFT JOIN x_users u ON t.submitted_by = u.x_user_id "
-            "WHERE t.status = 'pending' "
+            "WHERE t.status IN ('pending', 'partial') "
             "ORDER BY t.submitted_at DESC LIMIT $1 OFFSET $2",
             limit, offset,
         )
@@ -230,6 +242,8 @@ async def get_tweets(status=None, admin_id=None, search=None, from_date=None, to
         conditions.append(f"t.status = ${idx}")
         params.append(status)
         idx += 1
+    else:
+        conditions.append(f"t.status NOT IN ('pending', 'partial')")
     if admin_id:
         conditions.append(f"t.reviewed_by = ${idx}")
         params.append(admin_id)

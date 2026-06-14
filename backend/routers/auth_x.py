@@ -1,16 +1,19 @@
 import os
 import secrets
 import json
+import logging
+import asyncio
 from urllib.parse import quote, urlencode
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 
-from database import upsert_x_user, update_follow_status
+from database import upsert_x_user, update_follow_status, get_pool, get_tweet, get_setting
 from twitter_client import client
-from auth import create_user_token
+from auth import create_user_token, decode_token
 from event_bus import publish
 
 auth_x_router = APIRouter()
@@ -196,13 +199,6 @@ async def x_my_submissions(
 
 @auth_x_router.delete("/api/auth/tweets/{tweet_id}")
 async def x_delete_tweet(tweet_id: int, request: Request):
-    import json
-    import asyncio
-    from datetime import datetime, timedelta, timezone
-    from auth import decode_token
-    from database import get_pool, get_tweet, get_setting
-    from twitter_client import client
-
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
@@ -228,29 +224,40 @@ async def x_delete_tweet(tweet_id: int, request: Request):
             raise HTTPException(status_code=400, detail=f"{delete_window}-minute deletion window has passed")
 
     tweet_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
+    remaining = []
+    deleted = 0
     for url in tweet_urls:
         try:
             tid = url.rstrip("/").split("/")[-1]
             await client.delete_tweet(tid)
+            deleted += 1
             await asyncio.sleep(1)
-        except Exception:
-            pass
+        except Exception as e:
+            logging.warning(f"x_delete_tweet: failed to delete {url}: {e}")
+            remaining.append(url)
 
+    failed = len(remaining)
     pool = await get_pool()
     async with pool.acquire() as conn:
-        await conn.execute(
-            "UPDATE tweets SET status = 'deleted', reject_reason = 'deleted by user' WHERE id = $1",
-            tweet_id,
-        )
+        if failed > 0:
+            await conn.execute(
+                "UPDATE tweets SET tweet_urls = $1 WHERE id = $2",
+                json.dumps(remaining), tweet_id,
+            )
+        else:
+            await conn.execute(
+                "UPDATE tweets SET status = 'deleted', reject_reason = 'deleted by user' WHERE id = $1",
+                tweet_id,
+            )
 
     publish("tweet_updated", {
         "event": "tweet_updated",
         "id": tweet_id,
-        "status": "deleted",
+        "status": "deleted" if failed == 0 else "approved",
         "submitted_by": x_user_id,
-        "reject_reason": "deleted by user",
+        "reject_reason": "deleted by user" if failed == 0 else None,
     })
-    return {"success": True}
+    return {"success": True, "deleted": deleted, "failed": failed, "total": len(tweet_urls), "partial": failed > 0}
 
 
 @auth_x_router.post("/api/auth/refresh-mutual")

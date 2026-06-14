@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 
 from database import (
     get_pool, get_tweet, get_pending_tweets, get_tweets,
-    approve_tweet, reject_tweet, delete_tweet, get_stats,
+    approve_tweet, update_tweet_urls, reject_tweet, delete_tweet, get_stats,
     create_admin, get_admin_by_username, get_admin_by_id, get_all_admins,
     deactivate_admin, activate_admin,
     add_keyword, remove_keyword, get_keywords,
@@ -190,14 +190,21 @@ async def panel_approve_tweet(
     tweet = await get_tweet(tweet_id)
     if not tweet:
         raise HTTPException(status_code=404, detail="Tweet not found")
-    if tweet["status"] != "pending":
-        raise HTTPException(status_code=400, detail=f"Tweet is {tweet['status']}, not pending")
+    if tweet["status"] not in ("pending", "partial"):
+        raise HTTPException(status_code=400, detail=f"Tweet is {tweet['status']}, not pending or partial")
 
     online = await get_setting("online")
     if online == "false":
         return {"success": False, "error": "Feature is currently offline."}
 
     image_paths = json.loads(tweet["image_paths"]) if tweet.get("image_paths") else []
+
+    existing_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
+    first_chunk_index = len(existing_urls)
+    reply_to_id = None
+    if existing_urls:
+        last_url = existing_urls[-1]
+        reply_to_id = last_url.rstrip("/").split("/")[-1]
 
     task_id = str(uuid.uuid4())
     _tasks[task_id] = {
@@ -218,20 +225,31 @@ async def panel_approve_tweet(
             result = await client.post_tweet(
                 tweet["original_text"], image_paths,
                 progress_callback=progress_callback,
+                first_chunk_index=first_chunk_index,
+                reply_to_id=reply_to_id,
             )
 
             if result.get("success"):
-                updated = await approve_tweet(tweet_id, admin["id"], result["urls"])
+                new_urls = result["urls"]
+                all_urls = existing_urls + new_urls
+
+                if len(all_urls) >= tweet.get("chunk_count", len(all_urls)) and not result.get("partial"):
+                    updated = await approve_tweet(tweet_id, admin["id"], all_urls)
+                    status = "approved"
+                else:
+                    updated = await update_tweet_urls(tweet_id, all_urls, "partial")
+                    status = "partial"
+
                 publish("tweet_updated", {
                     "event": "tweet_updated",
                     "id": tweet_id,
-                    "status": "approved",
+                    "status": status,
                     "submitted_by": tweet["submitted_by"],
-                    "tweet_urls": result["urls"],
+                    "tweet_urls": all_urls,
                 })
-                resp = {"result": "success", "urls": result["urls"]}
-                if result.get("partial"):
-                    resp["warning"] = result.get("warning", "Only some tweets were posted.")
+                resp = {"result": "success", "urls": all_urls}
+                if result.get("partial") or status == "partial":
+                    resp["warning"] = result.get("warning", f"Only {len(new_urls)} of {tweet.get('chunk_count', 0) - first_chunk_index} remaining tweets posted.")
                 _tasks[task_id].update(status="done", **resp)
                 publish("task_progress", {
                     "event": "task_progress", "task_id": task_id,

@@ -111,7 +111,7 @@ class TwitterClient:
             self._client.set_cookies(cookies, clear_cookies=True)
         return cookies
 
-    async def post_tweet(self, text, image_paths=None, progress_callback=None):
+    async def post_tweet(self, text, image_paths=None, progress_callback=None, first_chunk_index=0, reply_to_id=None):
         if not text or not text.strip():
             return {"success": False, "error": "Text is empty"}
 
@@ -129,10 +129,10 @@ class TwitterClient:
 
             stripped = text.strip().replace('\r\n', '\n')
             chunks = split_into_chunks(stripped)
-            logging.info(f"post_tweet: {len(chunks)} chunks from {len(stripped)} cp text")
+            logging.info(f"post_tweet: {len(chunks)} chunks from {len(stripped)} cp text, starting at chunk {first_chunk_index}")
             tweet_urls = []
-            reply_to_id = None
             posted = 0
+            remaining = len(chunks) - first_chunk_index
 
             try:
                 media_ids = []
@@ -147,7 +147,8 @@ class TwitterClient:
                         media_id = await self._client.upload_media(fp)
                         media_ids.append(media_id)
 
-                for i, chunk in enumerate(chunks):
+                for i in range(first_chunk_index, len(chunks)):
+                    chunk = chunks[i]
                     if progress_callback:
                         progress_callback(
                             i + 1,
@@ -182,14 +183,14 @@ class TwitterClient:
                 if progress_callback:
                     progress_callback(len(chunks), len(chunks), "Done")
 
-                if posted == len(chunks):
+                if posted == remaining:
                     return {"success": True, "urls": tweet_urls}
 
                 return {
                     "success": True,
                     "urls": tweet_urls,
                     "partial": True,
-                    "warning": f"Only {posted} of {len(chunks)} tweets posted.",
+                    "warning": f"Only {posted} of {remaining} remaining tweets posted.",
                 }
 
             except Exception as e:
@@ -203,7 +204,7 @@ class TwitterClient:
                         "success": True,
                         "urls": tweet_urls,
                         "partial": True,
-                        "warning": f"Posted {len(tweet_urls)} of {len(chunks)} tweets before error: {err_msg}",
+                        "warning": f"Posted {len(tweet_urls)} of {remaining} remaining tweets before error: {err_msg}",
                     }
 
                 if progress_callback:
