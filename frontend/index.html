@@ -210,6 +210,22 @@
   .status-rejected { background: rgba(244,33,46,0.12); color: #f4212e; }
   .status-deleted { background: rgba(113,118,123,0.12); color: #71767b; }
 
+  .sub-img-badge { display: inline-flex; align-items: center; gap: 3px; color: #1d9bf0; font-size: 0.75rem; cursor: pointer; margin-left: 4px; }
+  .sub-img-badge:hover { text-decoration: underline; }
+
+  .lightbox-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,0.92); display: flex; align-items: center; justify-content: center;
+  }
+  .lightbox-overlay.hidden { display: none; }
+  .lightbox-overlay .close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: #e7e9ea; font-size: 2rem; cursor: pointer; z-index: 10; line-height: 1; padding: 4px 8px; border-radius: 8px; }
+  .lightbox-overlay .close:hover { background: rgba(255,255,255,0.12); }
+  .lightbox-overlay .nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.08); border: none; color: #e7e9ea; font-size: 1.5rem; cursor: pointer; padding: 12px 14px; border-radius: 8px; z-index: 10; }
+  .lightbox-overlay .nav:hover { background: rgba(255,255,255,0.16); }
+  .lightbox-overlay .nav.prev { left: 16px; }
+  .lightbox-overlay .nav.next { right: 16px; }
+  .lightbox-overlay img { max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain; }
+
   .sub-page-btn {
     background: #16181c; border: 1px solid #2f3336; border-radius: 9999px;
     color: #e7e9ea; padding: 8px 16px; cursor: pointer;
@@ -343,9 +359,7 @@
   .card-preview { margin-top: 14px; border-radius: 16px; overflow: hidden; background: #15202b; width: 100%; position: relative; }
   .card-preview.hidden { display: none; }
   .card-preview-inner { padding: 24px 28px 20px; display: flex; flex-direction: column; min-height: 140px; }
-  .card-preview-text-wrap { display: flex; gap: 10px; flex: 1; align-items: stretch; }
-  .card-preview-accent { width: 4px; flex-shrink: 0; border-radius: 2px; background: #1d9bf0; margin: 2px 0; }
-  .card-preview-text { flex: 1; font-size: 1rem; font-weight: 600; line-height: 1.6; text-align: justify; text-justify: inter-word; color: #fff; white-space: pre-wrap; word-break: break-word; padding: 0; min-height: 60px; display: flex; align-items: center; }
+  .card-preview-text { flex: 1; font-size: 1rem; font-weight: 600; line-height: 1.6; text-align: justify; text-justify: inter-word; color: #fff; white-space: pre-wrap; word-break: break-word; min-height: 60px; display: flex; align-items: center; }
   .card-preview-text.empty { color: rgba(255,255,255,0.25); font-weight: 400; font-size: 0.9rem; }
   .card-preview-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; gap: 3px; flex-wrap: wrap; font-size: 0.65rem; color: rgba(255,255,255,0.55); }
   .card-preview-footer svg.x-logo { width: 12px; height: 12px; fill: currentColor; vertical-align: middle; }
@@ -413,10 +427,7 @@
         <textarea id="cardText" placeholder="Write the confession text for the card..." style="min-height:100px"></textarea>
         <div class="card-preview hidden" id="cardPreview">
           <div class="card-preview-inner">
-            <div class="card-preview-text-wrap">
-              <div class="card-preview-accent"></div>
-              <div class="card-preview-text empty" id="cardPreviewText">Your confession will appear here...</div>
-            </div>
+            <div class="card-preview-text empty" id="cardPreviewText">Your confession will appear here...</div>
             <div class="card-preview-footer">
               <a href="https://x.unsrifess.my.id" target="_blank" rel="noopener">x.unsrifess.my.id</a>
               <span>·</span>
@@ -512,6 +523,13 @@
   </div>
 </div>
 
+<div class="lightbox-overlay hidden" id="lbOverlay">
+  <button class="close" onclick="lbClose()">&times;</button>
+  <button class="nav prev hidden" id="lbPrev" onclick="lbNav(-1)">&#8249;</button>
+  <button class="nav next hidden" id="lbNext" onclick="lbNav(1)">&#8250;</button>
+  <img id="lbImg" src="" alt="preview">
+</div>
+
 <div id="loadingOverlay" class="loading-overlay hidden">
   <div class="spinner"></div>
   <div class="loading-text">Posting...</div>
@@ -566,6 +584,7 @@ function toggleImageMode() {
     submitBtn.textContent = 'Post as Image';
     cardText.placeholder = 'Write the confession text for the card...';
     tweetText.maxLength = MAX_TWEET;
+    previewBtn.style.display = 'none';
     updateCardPreview();
   } else {
     cardArea.classList.add('hidden');
@@ -573,6 +592,7 @@ function toggleImageMode() {
     submitBtn.textContent = 'Send';
     previewBody.classList.add('hidden');
     tweetText.maxLength = MAX_CHARS;
+    previewBtn.style.display = '';
   }
   updateTweetCount();
   updateValidation();
@@ -714,12 +734,18 @@ async function loadSubmissions() {
         ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">View on X →</a>' : '';
       const rejectReason = (s.status === 'rejected' || s.status === 'deleted') && s.reject_reason
         ? '<span style="color:#71767b;font-size:0.75rem">' + escHtml(s.reject_reason) + '</span>' : '';
+      let imgs = [];
+      if (s.image_paths) {
+        try { imgs = JSON.parse(s.image_paths).map(function(p) { var parts = p.replace(/\\/g, '/').split('/'); return parts[parts.length - 1]; }); } catch (e) { imgs = []; }
+      }
+      const imgBadge = imgs.length
+        ? '<span class="sub-img-badge" onclick="lbOpen(' + JSON.stringify(imgs) + ',0)">\u{1F5BC} ' + imgs.length + '</span>' : '';
       const delBtn = s.status === 'approved' && canDelete(s.reviewed_at)
         ? '<button class="submission-del" onclick="deleteTweet(' + s.id + ')" title="Delete from X">🗑️</button>' : '';
       const delInfo = s.status === 'approved' && s.reviewed_at
         ? '<span class="del-info">' + deleteRemaining(s.reviewed_at) + '</span>' : '';
       html += '<div class="submission-item" data-tweet-id="' + s.id + '"><div class="submission-header">'
-        + '<div class="submission-text">' + escHtml(s.original_text) + '</div>'
+        + '<div class="submission-text">' + escHtml(s.original_text) + imgBadge + '</div>'
         + '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">' + delInfo + delBtn + '</div></div>'
         + '<div class="submission-meta" style="margin-bottom:2px"><span>' + timeStr + '</span></div>'
         + '<div class="submission-meta"><span class="submission-status ' + statusClass + '" id="ss-' + s.id + '">' + s.status + '</span> ' + rejectReason + ' ' + tweetLink + '</div></div>';
@@ -731,6 +757,28 @@ async function loadSubmissions() {
       + '</div>';
     el.innerHTML = html;
   } catch {}
+}
+
+let lbImages = [];
+let lbIndex = 0;
+function lbOpen(images, idx) {
+  lbImages = images;
+  lbIndex = idx;
+  document.getElementById('lbOverlay').classList.remove('hidden');
+  document.getElementById('lbPrev').classList.toggle('hidden', images.length <= 1);
+  document.getElementById('lbNext').classList.toggle('hidden', images.length <= 1);
+  lbShow();
+}
+function lbShow() {
+  document.getElementById('lbImg').src = '/api/images/' + lbImages[lbIndex];
+}
+function lbClose() {
+  document.getElementById('lbOverlay').classList.add('hidden');
+  document.getElementById('lbImg').src = '';
+}
+function lbNav(dir) {
+  lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
+  lbShow();
 }
 
 function _rfindCP(chars, sep, end) {
@@ -1330,6 +1378,15 @@ function connectSSE() {
   };
 }
 connectSSE();
+
+document.addEventListener('keydown', function(e) {
+  var lb = document.getElementById('lbOverlay');
+  if (!lb.classList.contains('hidden')) {
+    if (e.key === 'Escape') { lbClose(); }
+    if (e.key === 'ArrowLeft') { lbNav(-1); }
+    if (e.key === 'ArrowRight') { lbNav(1); }
+  }
+});
 </script>
 </body>
 </html>

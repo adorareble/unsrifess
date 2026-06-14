@@ -17,7 +17,6 @@ JPEG_QUALITY = 80
 CARD_WIDTH = 800
 CARD_PADDING = 72
 CARD_FONT_SIZE = 32
-ACCENT_COLOR = (29, 155, 240)
 CARD_FOOTER_LINK = "https://x.unsrifess.my.id"
 
 
@@ -137,7 +136,6 @@ def generate_card_image(text):
     TEXT_COLOR = (255, 255, 255)
     FOOTER_COLOR = (255, 255, 255, 179)
     SEP_COLOR = (255, 255, 255, 40)
-    ACCENT = ACCENT_COLOR
     FOOTER_FONT_SIZE = 18
     LINE_SPACING = 1.5
 
@@ -147,7 +145,7 @@ def generate_card_image(text):
     dummy = Image.new("RGB", (CARD_WIDTH, CARD_WIDTH), BG)
     draw_d = ImageDraw.Draw(dummy)
 
-    max_text_width = CARD_WIDTH - 2 * CARD_PADDING - 16
+    max_text_width = CARD_WIDTH - 2 * CARD_PADDING
     wrapped_lines, space_w = _wrap_text_justified(text, font, max_text_width, draw_d)
     line_height = int(CARD_FONT_SIZE * LINE_SPACING)
     text_block_height = len(wrapped_lines) * line_height
@@ -170,14 +168,8 @@ def generate_card_image(text):
     img = Image.new("RGB", (CARD_WIDTH, card_height), BG)
     draw = ImageDraw.Draw(img)
 
-    text_x = CARD_PADDING + 16
+    text_x = CARD_PADDING
     text_y = content_origin + content_top_extra
-    indent_left = CARD_PADDING + 4
-    bar_x = indent_left
-    bar_top = text_y - 4
-    bar_bottom = text_y + text_block_height + 4
-    bar_w = 4
-    draw.rectangle([bar_x, bar_top, bar_x + bar_w, bar_bottom], fill=ACCENT)
 
     for i, (words, line_w) in enumerate(wrapped_lines):
         if i < len(wrapped_lines) - 1 and len(words) > 1 and line_w < max_text_width:

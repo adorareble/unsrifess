@@ -493,7 +493,7 @@ async def get_user_tweets(x_user_id: str, page: int = 1, limit: int = 10):
         total = count_row["count"]
         rows = await conn.fetch(
             "SELECT id, original_text, status, submitted_at, reviewed_at, "
-            "tweet_urls, reject_reason, matched_keyword, send_as_image, card_text "
+            "tweet_urls, reject_reason, matched_keyword, send_as_image, card_text, image_paths "
             "FROM tweets WHERE submitted_by = $1 "
             "ORDER BY submitted_at DESC LIMIT $2 OFFSET $3",
             x_user_id, limit, offset,
