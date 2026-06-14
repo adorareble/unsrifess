@@ -559,19 +559,20 @@ function toggleImageMode() {
   const cardArea = document.getElementById('cardInputArea');
   const uploadArea = document.getElementById('uploadArea');
   const previewBody = document.getElementById('cardPreview');
-  const tweetCountEl = document.getElementById('tweetCount');
 
   if (imageMode) {
     cardArea.classList.remove('hidden');
     uploadArea.classList.add('hidden');
     submitBtn.textContent = 'Post as Image';
     cardText.placeholder = 'Write the confession text for the card...';
+    tweetText.maxLength = MAX_TWEET;
     updateCardPreview();
   } else {
     cardArea.classList.add('hidden');
     uploadArea.classList.remove('hidden');
     submitBtn.textContent = 'Send';
     previewBody.classList.add('hidden');
+    tweetText.maxLength = MAX_CHARS;
   }
   updateTweetCount();
   updateValidation();
@@ -821,26 +822,17 @@ function updateTweetCount() {
   const text = tweetText.value;
   const el = tweetCount;
   const len = text.length;
-  if (imageMode) {
-    if (len === 0) {
-      el.className = 'tweet-count info';
-      el.textContent = '';
-    } else {
-      el.className = 'tweet-count ok';
-      el.textContent = len + '/' + MAX_CHARS + ' chars \u00b7 posted as image card';
-    }
-    return;
-  }
+  const limit = imageMode ? MAX_TWEET : MAX_CHARS;
   if (len === 0) {
     el.className = 'tweet-count info';
     el.textContent = '';
-  } else if (len > MAX_TWEET) {
+  } else if (!imageMode && len > MAX_TWEET) {
     const n = estimateTweets(text);
     el.className = 'tweet-count multi';
-    el.textContent = len.toLocaleString('id') + '/' + MAX_CHARS + ' chars \u00b7 ' + n + ' tweet thread';
+    el.textContent = len.toLocaleString('id') + '/' + limit + ' chars \u00b7 ' + n + ' tweet thread';
   } else {
     el.className = 'tweet-count ok';
-    el.textContent = len + '/' + MAX_CHARS;
+    el.textContent = len + '/' + limit + ' chars';
   }
 }
 
