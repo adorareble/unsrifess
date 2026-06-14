@@ -1546,6 +1546,25 @@ function connectSSE() {
 }
 connectSSE();
 
+// Visitor ping
+(function(){
+  var vid = localStorage.getItem('visitor_id');
+  if (!vid) {
+    vid = crypto.randomUUID();
+    localStorage.setItem('visitor_id', vid);
+  }
+  var lastPing = localStorage.getItem('last_ping_date');
+  var today = new Date().toISOString().slice(0,10);
+  if (lastPing !== today) {
+    fetch('/api/ping', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({visitor_id: vid}),
+    });
+    localStorage.setItem('last_ping_date', today);
+  }
+})();
+
 document.addEventListener('keydown', function(e) {
   var lb = document.getElementById('lbOverlay');
   if (!lb.classList.contains('hidden')) {

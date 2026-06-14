@@ -65,6 +65,14 @@ CREATE TABLE IF NOT EXISTS x_users (
     status VARCHAR(20) NOT NULL DEFAULT 'active'
 );
 
+CREATE TABLE IF NOT EXISTS page_views (
+    id          SERIAL PRIMARY KEY,
+    visitor_id  VARCHAR(36) NOT NULL,
+    date        DATE NOT NULL DEFAULT CURRENT_DATE,
+    visited_at  TIMESTAMP DEFAULT NOW(),
+    UNIQUE(visitor_id, date)
+);
+
 INSERT INTO settings (key, value) VALUES ('online', 'true') ON CONFLICT (key) DO NOTHING;
 
 CREATE INDEX IF NOT EXISTS idx_tweets_status_submitted_at ON tweets(status, submitted_at DESC);
@@ -74,3 +82,4 @@ CREATE INDEX IF NOT EXISTS idx_activity_admin_id ON activity_log(admin_id);
 CREATE INDEX IF NOT EXISTS idx_activity_created_at ON activity_log(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_keyword_is_active ON keyword_filters(keyword) WHERE is_active = TRUE;
 CREATE INDEX IF NOT EXISTS idx_x_users_screen_name ON x_users(screen_name);
+CREATE INDEX IF NOT EXISTS idx_page_views_date ON page_views(date);

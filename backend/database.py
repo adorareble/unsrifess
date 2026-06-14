@@ -366,19 +366,67 @@ async def get_stats():
     pool = await get_pool()
     async with pool.acquire() as conn:
         pending = await conn.fetchval("SELECT COUNT(*) FROM tweets WHERE status = 'pending'")
+        partial = await conn.fetchval("SELECT COUNT(*) FROM tweets WHERE status = 'partial'")
+        approved = await conn.fetchval("SELECT COUNT(*) FROM tweets WHERE status = 'approved'")
+        rejected = await conn.fetchval("SELECT COUNT(*) FROM tweets WHERE status = 'rejected'")
+        deleted = await conn.fetchval("SELECT COUNT(*) FROM tweets WHERE status = 'deleted'")
+        total_submissions = await conn.fetchval("SELECT COUNT(*) FROM tweets")
+
         approved_today = await conn.fetchval(
             "SELECT COUNT(*) FROM tweets WHERE status = 'approved' AND reviewed_at::date = CURRENT_DATE"
         )
         rejected_today = await conn.fetchval(
             "SELECT COUNT(*) FROM tweets WHERE status = 'rejected' AND reviewed_at::date = CURRENT_DATE"
         )
-        total_tweets = await conn.fetchval("SELECT COUNT(*) FROM tweets")
+        deleted_today = await conn.fetchval(
+            "SELECT COUNT(*) FROM tweets WHERE status = 'deleted' AND reviewed_at::date = CURRENT_DATE"
+        )
+        submissions_today = await conn.fetchval(
+            "SELECT COUNT(*) FROM tweets WHERE submitted_at::date = CURRENT_DATE"
+        )
+
+        total_users = await conn.fetchval("SELECT COUNT(*) FROM x_users")
+        active_users = await conn.fetchval("SELECT COUNT(*) FROM x_users WHERE status = 'active'")
+        inactive_users = await conn.fetchval("SELECT COUNT(*) FROM x_users WHERE status = 'inactive'")
+        active_submitters_30d = await conn.fetchval(
+            "SELECT COUNT(DISTINCT submitted_by) FROM tweets WHERE submitted_at >= NOW() - INTERVAL '30 days'"
+        )
+
+        unique_today = await conn.fetchval(
+            "SELECT COUNT(*) FROM page_views WHERE date = CURRENT_DATE"
+        )
+        total_unique = await conn.fetchval(
+            "SELECT COUNT(DISTINCT visitor_id) FROM page_views"
+        )
+
         return {
             "pending_count": pending,
+            "partial_count": partial,
+            "approved_count": approved,
+            "rejected_count": rejected,
+            "deleted_count": deleted,
+            "total_submissions": total_submissions,
             "approved_today": approved_today,
             "rejected_today": rejected_today,
-            "total_tweets": total_tweets,
+            "deleted_today": deleted_today,
+            "submissions_today": submissions_today,
+            "total_users": total_users,
+            "active_users": active_users,
+            "inactive_users": inactive_users,
+            "active_submitters_30d": active_submitters_30d,
+            "unique_today": unique_today,
+            "total_unique": total_unique,
         }
+
+
+async def log_page_view(visitor_id: str):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "INSERT INTO page_views (visitor_id, date) VALUES ($1, CURRENT_DATE) "
+            "ON CONFLICT (visitor_id, date) DO NOTHING",
+            visitor_id,
+        )
 
 
 async def get_setting(key):

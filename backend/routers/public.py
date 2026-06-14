@@ -2,13 +2,13 @@ import os
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Depends, Request
 from fastapi.responses import HTMLResponse, FileResponse
 
 from database import (
     create_tweet, check_keywords, get_setting,
     get_x_user_by_id,
-    reject_tweet, approve_tweet,
+    reject_tweet, approve_tweet, log_page_view,
 )
 from twitter_client import client, split_into_chunks, MAX_TEXT_LENGTH
 from image import TEMP_DIR, process_image_async
@@ -199,3 +199,12 @@ async def tweet_sync(
             except Exception:
                 pass
         return {"success": False, "error": str(e)}
+
+
+@public_router.post("/api/ping")
+async def page_ping(request: Request):
+    body = await request.json()
+    visitor_id = body.get("visitor_id")
+    if visitor_id:
+        await log_page_view(visitor_id)
+    return {"ok": True}
