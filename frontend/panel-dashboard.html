@@ -87,9 +87,10 @@
   .text-preview {
     font-size: 0.88rem; line-height: 1.5; margin-bottom: 10px;
     white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;
-    max-height: 4.5em; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden;
   }
-  .img-tag { display: inline-block; font-size: 0.65rem; font-weight: 600; letter-spacing: .3px; border-radius: 4px; padding: 2px 6px; margin-bottom: 6px; }
+  .img-tag { display: inline-block; font-size: 0.65rem; font-weight: 600; letter-spacing: .3px; border-radius: 4px; padding: 2px 6px; margin-bottom: 6px; line-height: 1.4; }
   .img-tag.card-tag { background: rgba(29,155,240,0.12); color: #1d9bf0; }
   .img-tag.media-tag { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .item-card .meta-row {
@@ -638,9 +639,9 @@ async function loadQueue() {
 
       var tagHtml = '';
       if (isCard) {
-        tagHtml = '<span class="img-tag card-tag">\u{1F5BC} Card</span>';
+        tagHtml = '<span class="img-tag card-tag">Card</span>';
       } else if (hasImgs) {
-        tagHtml = '<span class="img-tag media-tag">\u{1F5BC} ' + fns.length + ' image' + (fns.length > 1 ? 's' : '') + '</span>';
+        tagHtml = '<span class="img-tag media-tag">' + fns.length + ' image' + (fns.length > 1 ? 's' : '') + '</span>';
       }
 
       let metaParts = ['#' + t.id, fmtTime(t.submitted_at)];
@@ -847,9 +848,9 @@ async function loadHistory() {
         ? '<button class="btn-action btn-reject" onclick="deleteTweet(' + t.id + ')">Delete</button>' : '';
       var tagHtml = '';
       if (isCard) {
-        tagHtml = '<span class="img-tag card-tag">\u{1F5BC} Card</span>';
+        tagHtml = '<span class="img-tag card-tag">Card</span>';
       } else if (hasImgs) {
-        tagHtml = '<span class="img-tag media-tag">\u{1F5BC} ' + fns.length + ' image' + (fns.length > 1 ? 's' : '') + '</span>';
+        tagHtml = '<span class="img-tag media-tag">' + fns.length + ' image' + (fns.length > 1 ? 's' : '') + '</span>';
       }
       cards += '<div class="item-card">'
         + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
@@ -916,9 +917,9 @@ async function showUserTweets(userId) {
         const tHasImgs = tImgs.length > 0;
         var tTagHtml = '';
         if (tIsCard) {
-          tTagHtml = '<span class="img-tag card-tag" style="margin-left:8px">\u{1F5BC} Card</span>';
+          tTagHtml = '<span class="img-tag card-tag" style="margin-left:8px">Card</span>';
         } else if (tHasImgs) {
-          tTagHtml = '<span class="img-tag media-tag" style="margin-left:8px">\u{1F5BC} ' + tImgs.length + ' image' + (tImgs.length > 1 ? 's' : '') + '</span>';
+          tTagHtml = '<span class="img-tag media-tag" style="margin-left:8px">' + tImgs.length + ' image' + (tImgs.length > 1 ? 's' : '') + '</span>';
         }
         cardsHtml += '<div class="item-card" style="margin-bottom:8px">'
           + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">'
@@ -1609,9 +1610,9 @@ function connectSSE() {
 
       var tagHtml = '';
       if (isCard) {
-        tagHtml = '<span class="img-tag card-tag" style="margin-left:8px">\u{1F5BC} Card</span>';
+        tagHtml = '<span class="img-tag card-tag" style="margin-left:8px">Card</span>';
       } else if (d.image_paths && d.image_paths.length) {
-        tagHtml = '<span class="img-tag media-tag" style="margin-left:8px">\u{1F5BC} ' + d.image_paths.length + ' image' + (d.image_paths.length > 1 ? 's' : '') + '</span>';
+        tagHtml = '<span class="img-tag media-tag" style="margin-left:8px">' + d.image_paths.length + ' image' + (d.image_paths.length > 1 ? 's' : '') + '</span>';
       }
       const metaStr = metaParts.join(' · ') + tagHtml;
       const userHtml = d.user_screen_name && d.x_user_db_id

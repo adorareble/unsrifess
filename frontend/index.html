@@ -193,9 +193,9 @@
   .submission-text {
     font-size: 0.88rem; color: #e7e9ea;
     white-space: pre-wrap; word-break: break-word;
-    flex: 1; min-width: 0; line-height: 1.5;
-    max-height: 4.5em; overflow: hidden; cursor: pointer;
-    transition: max-height .2s;
+    flex: 1; min-width: 0; line-height: 1.5; cursor: pointer;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .submission-del {
     background: none; border: none; color: #71767b;
@@ -212,7 +212,7 @@
   .status-rejected { background: rgba(244,33,46,0.12); color: #f4212e; }
   .status-deleted { background: rgba(113,118,123,0.12); color: #71767b; }
 
-  .img-tag { display: inline-block; font-size: 0.65rem; font-weight: 600; letter-spacing: .3px; border-radius: 4px; padding: 2px 6px; margin-bottom: 6px; }
+  .img-tag { display: inline-block; font-size: 0.65rem; font-weight: 600; letter-spacing: .3px; border-radius: 4px; padding: 2px 6px; margin-bottom: 6px; line-height: 1.4; }
   .img-tag.card-tag { background: rgba(29,155,240,0.12); color: #1d9bf0; }
   .img-tag.media-tag { background: rgba(0,186,124,0.12); color: #00ba7c; }
 
@@ -772,9 +772,9 @@ async function loadSubmissions() {
 
       var tagHtml = '';
       if (hasCard) {
-        tagHtml = '<div class="img-tag card-tag">\u{1F5BC} Card</div>';
+        tagHtml = '<div class="img-tag card-tag">Card</div>';
       } else if (hasImgs) {
-        tagHtml = '<div class="img-tag media-tag">\u{1F5BC} ' + imgs.length + ' image' + (imgs.length > 1 ? 's' : '') + '</div>';
+        tagHtml = '<div class="img-tag media-tag">' + imgs.length + ' image' + (imgs.length > 1 ? 's' : '') + '</div>';
       }
 
       const hasMedia = hasCard || hasImgs;
