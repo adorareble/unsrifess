@@ -90,7 +90,7 @@
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .img-tag { display: inline-block; font-size: 0.65rem; font-weight: 600; letter-spacing: .3px; border-radius: 4px; padding: 2px 6px; margin-bottom: 6px; line-height: 1.4; }
+  .img-tag { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.68rem; font-weight: 600; }
   .img-tag.card-tag { background: rgba(29,155,240,0.12); color: #1d9bf0; }
   .img-tag.media-tag { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .item-card .meta-row {
@@ -856,8 +856,8 @@ async function loadHistory() {
       cards += '<div class="item-card">'
         + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
         + '<strong>#' + t.id + '</strong>'
-        + (tagHtml ? ' ' + tagHtml + ' ' : '')
         + '<span class="status-badge status-' + t.status + '">' + t.status + '</span>'
+        + (tagHtml ? ' ' + tagHtml : '')
         + '<span>' + fmtTime(t.submitted_at) + '</span>'
         + '</div>'
         + '<div class="text-preview"' + (dataImgs ? ' ' + dataImgs : '') + ' data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + '</div>'
@@ -925,8 +925,8 @@ async function showUserTweets(userId) {
         cardsHtml += '<div class="item-card" style="margin-bottom:8px">'
           + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">'
           + '<strong>#' + t.id + '</strong>'
-          + (tTagHtml ? ' ' + tTagHtml + ' ' : '')
           + '<span class="status-badge status-' + t.status + '">' + t.status + '</span>'
+          + (tTagHtml ? ' ' + tTagHtml : '')
           + '<span style="font-size:0.75rem;color:#71767b">' + fmtTime(t.submitted_at) + '</span>'
           + '</div>'
           + '<div class="text" style="font-size:0.85rem">' + escHtml(t.original_text) + '</div>'
