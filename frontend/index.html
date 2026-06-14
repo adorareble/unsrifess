@@ -822,7 +822,7 @@ function showFullFromAttr(el) {
     try {
       var fns = JSON.parse(imgsRaw.replace(/&#39;/g, "'"));
       if (fns.length) {
-        imgsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">';
+        imgsHtml = '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px">';
         fns.forEach(function(fn, i) {
           imgsHtml += '<div style="width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid #2f3336;cursor:pointer;flex-shrink:0" onclick=\'openLightbox(' + JSON.stringify(fns) + ',' + i + ')\'><img src="/api/images/' + fn + '" style="width:100%;height:100%;object-fit:cover"></div>';
         });

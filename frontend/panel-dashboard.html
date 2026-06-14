@@ -418,7 +418,7 @@ function showFullFromAttr(el) {
   if (imgs) {
     const fns = JSON.parse(imgs);
     if (fns.length) {
-      imgsHtml = '<div class="thumb-grid" style="margin-bottom:12px">';
+      imgsHtml = '<div class="thumb-grid" style="margin-bottom:12px;justify-content:center">';
       fns.forEach((fn, i) => {
         imgsHtml += '<div class="thumb" onclick=\'openLightbox(' + JSON.stringify(fns) + ',' + i + ')\'><img src="/panel/api/images/' + fn + '?token=' + TOKEN + '"></div>';
       });
@@ -646,7 +646,7 @@ async function loadQueue() {
 
       let metaParts = [fmtTime(t.submitted_at)];
       if (t.chunk_count > 1) metaParts.push(t.chunk_count + ' tweets');
-      const metaStr = '<strong>#' + t.id + '</strong>' + (tagHtml ? ' ' + tagHtml : '') + (metaParts.length ? ' · ' + metaParts.join(' · ') : '');
+      const metaStr = '<strong>#' + t.id + '</strong>' + (metaParts.length ? ' · ' + metaParts.join(' · ') : '');
 
       const userInfo = t.user_screen_name
         ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
@@ -1614,7 +1614,7 @@ function connectSSE() {
       }
       const metaParts = [fmtTime(d.submitted_at)];
       if (d.chunk_count > 1) metaParts.push(d.chunk_count + ' tweets');
-      const metaStr = '<strong>#' + d.id + '</strong>' + (tagHtml ? ' ' + tagHtml : '') + (metaParts.length ? ' · ' + metaParts.join(' · ') : '');
+      const metaStr = '<strong>#' + d.id + '</strong>' + (metaParts.length ? ' · ' + metaParts.join(' · ') : '');
       const userHtml = d.user_screen_name && d.x_user_db_id
         ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
           + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
