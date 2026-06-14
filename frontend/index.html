@@ -571,15 +571,18 @@ async function deleteTweet(id) {
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Delete', cls: 'popup-btn-danger', fn: async () => {
       closePopup();
+      showLoading();
+      document.querySelector('.loading-text').textContent = 'Deleting...';
       try {
         const r = await fetch('/api/auth/tweets/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
         const d = await r.json();
+        hideLoading();
         if (d.success) {
           loadSubmissions();
         } else {
           showPopup('⚠️', 'Failed', d.detail || 'Failed to delete tweet.');
         }
-      } catch(e) { showPopup('⚠️', 'Failed', 'Failed to delete tweet.'); }
+      } catch(e) { hideLoading(); showPopup('⚠️', 'Failed', 'Failed to delete tweet.'); }
     } },
   ]);
 }
@@ -587,6 +590,8 @@ async function deleteTweet(id) {
 async function loadSubmissions() {
   const token = localStorage.getItem('x_token');
   if (!token) { document.getElementById('submissionsSection').innerHTML = ''; return; }
+  const el = document.getElementById('submissionsSection');
+  el.innerHTML = '<h3 style="font-size:0.8rem;color:#71767b;font-weight:500;text-transform:uppercase;letter-spacing:.5px">My Confessions</h3><div class="empty-state" style="color:#71767b;padding:20px">Loading...</div>';
   try {
     const r = await fetch('/api/auth/my-submissions?page=' + subPage + '&limit=5', { headers: { 'Authorization': 'Bearer ' + token } });
     if (!r.ok) return;
@@ -882,6 +887,9 @@ async function loadUser() {
   if (!localStorage.getItem('tnc_accepted')) return;
   const token = localStorage.getItem('x_token');
   if (!token) return;
+  document.getElementById('userArea').innerHTML = '<div style="text-align:center;padding:20px;color:#71767b">Loading...</div>';
+  document.getElementById('userArea').className = '';
+
   try {
     const r = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
     if (!r.ok) { localStorage.removeItem('x_token'); return; }
@@ -922,7 +930,7 @@ async function loadUser() {
       }
       sm.classList.remove('hidden');
     }
-  } catch { localStorage.removeItem('x_token'); }
+  } catch { localStorage.removeItem('x_token'); document.getElementById('userArea').innerHTML = ''; }
 }
 
 async function refreshMutual(btn) {

@@ -74,6 +74,7 @@ async def admin_events(request: Request, token: str = Query("")):
         "announcement_changed",
         "user_status_changed",
         "sync_progress",
+        "task_progress",
         "keyword_updated",
         "admin_updated",
     ]

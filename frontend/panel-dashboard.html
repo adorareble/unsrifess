@@ -286,6 +286,24 @@
   }
 
   .hidden { display: none !important; }
+
+  /* ── Loading Overlay ── */
+  .loading-overlay {
+    position: fixed; inset: 0; z-index: 250;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 16px;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+  }
+  .loading-overlay.hidden { display: none; }
+  .loading-overlay .spinner {
+    width: 40px; height: 40px; border: 3px solid #2f3336;
+    border-top-color: #1d9bf0; border-radius: 50%;
+    animation: lspin .7s linear infinite;
+  }
+  @keyframes lspin { to { transform: rotate(360deg); } }
+  .loading-overlay .loading-text { color: #e7e9ea; font-size: 0.9rem; font-weight: 500; }
+  .loading-overlay .progress-track { width: 60%; height: 3px; background: #2f3336; border-radius: 3px; overflow: hidden; }
+  .loading-overlay .progress-bar { height: 100%; width: 0%; background: #1d9bf0; transition: width .3s; }
 </style>
 </head>
 <body>
@@ -331,6 +349,15 @@
       <div class="popup-title" id="popupTitle"></div>
       <div class="popup-msg" id="popupMsg"></div>
       <div class="popup-actions" id="popupActions"></div>
+    </div>
+  </div>
+
+  <!-- Loading overlay for approve/delete -->
+  <div class="loading-overlay hidden" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Loading...</div>
+    <div class="progress-track">
+      <div class="progress-bar" id="progressBar"></div>
     </div>
   </div>
 
@@ -630,22 +657,81 @@ async function loadQueue() {
   }
 }
 
+// ── Loading overlay (SSE-based for approve/delete) ──
+let _currentTaskId = null;
+let _taskFallbackTimer = null;
+
+function showLoading(taskId, label) {
+  if (_currentTaskId) hideLoading();
+  const overlay = document.getElementById('loadingOverlay');
+  const bar = document.getElementById('progressBar');
+  const text = document.getElementById('loadingText');
+  _currentTaskId = taskId || null;
+  bar.style.width = '0%';
+  text.textContent = label || 'Loading...';
+  overlay.classList.remove('hidden');
+
+  if (taskId) {
+    _taskFallbackTimer = setTimeout(async () => {
+      try {
+        const r = await api('/panel/api/tasks/' + taskId + '/progress');
+        const d = await r.json();
+        if (d.status === 'done') {
+          _handleTaskDone(d);
+        }
+      } catch (_) {}
+      if (_currentTaskId) hideLoading();
+    }, 60000);
+  }
+}
+
+function hideLoading() {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.add('hidden');
+  document.getElementById('progressBar').style.width = '0%';
+  if (_taskFallbackTimer) { clearTimeout(_taskFallbackTimer); _taskFallbackTimer = null; }
+  _currentTaskId = null;
+}
+
+function _handleTaskDone(d) {
+  hideLoading();
+  if (d.type === 'approve') {
+    loadStats();
+    if (d.result === 'success') {
+      if (d.warning) {
+        showPopup('⚠️', 'Partial Success', d.warning, [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
+      }
+    } else {
+      showPopup('⚠️', 'Approve Failed', d.error || 'Unknown error', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
+    }
+  } else if (d.type === 'delete') {
+    loadStats();
+    loadHistory();
+    if (d.result === 'success') {
+      const deleted = d.deleted || 0;
+      const failed = d.failed || 0;
+      if (failed > 0) {
+        showPopup('⚠️', 'Partial Delete', deleted + ' deleted, ' + failed + ' failed.', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
+      }
+    } else {
+      showPopup('⚠️', 'Delete Failed', d.error || 'Unknown error', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
+    }
+  }
+}
+
 async function approveTweet(id) {
   const btn = document.querySelector('#qa-' + id + ' .btn-approve');
   if (btn) { btn.disabled = true; btn.textContent = 'Approving...'; }
   try {
     const r = await api('/panel/api/tweets/' + id + '/approve', { method: 'POST' });
     const d = await r.json();
-    if (d.success) {
+    if (d.success && d.task_id) {
       const card = document.getElementById('qt-' + id);
       if (card) card.style.display = 'none';
-      loadStats();
-      if (d.warning) {
-        showPopup('⚠️', 'Partial Success', d.warning, [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
-      }
+      showLoading(d.task_id, 'Starting...');
     } else {
       if (btn) { btn.disabled = false; btn.textContent = 'Approve'; }
-      showPopup('⚠️', 'Approve Failed', d.error || 'Could not approve tweet.', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
+      showPopup('⚠️', 'Approve Failed', d.error || 'Could not start approval.', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
     }
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = 'Approve'; }
@@ -660,6 +746,7 @@ async function rejectTweetPopup(id) {
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Reject', cls: 'popup-btn-danger', fn: async () => {
       closePopup();
+      showLoading(null, 'Rejecting...');
       const reason = document.getElementById('rr-' + id).value;
       try {
         const form = new URLSearchParams();
@@ -669,6 +756,7 @@ async function rejectTweetPopup(id) {
           body: form.toString(),
         });
         const d = await r.json();
+        hideLoading();
         if (d.success) {
           const card = document.getElementById('qt-' + id);
           if (card) card.style.display = 'none';
@@ -677,6 +765,7 @@ async function rejectTweetPopup(id) {
           showPopup('⚠️', 'Reject Failed', d.detail || 'Could not reject.', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
         }
       } catch(e) {
+        hideLoading();
         showPopup('⚠️', 'Error', 'Connection error', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
       }
     } },
@@ -816,21 +905,21 @@ async function showUserTweets(userId) {
 
 async function doApproval(id, sn) {
   closePopup();
+  showLoading(null, 'Approving...');
   try {
     const r = await api('/panel/api/tweets/' + id + '/approve', { method: 'POST' });
     const d = await r.json();
-    if (d.success) {
+    if (d.success && d.task_id) {
       showUserTweets(userIdFromPopup);
       loadPending();
       loadStats();
       loadHistory();
-      if (d.warning) {
-        showPopup('⚠️', 'Partial Success', d.warning, [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]);
-      }
+      showLoading(d.task_id, 'Starting...');
     } else {
-      showPopup('⚠️', 'Approve Failed', d.error || 'Failed to approve tweet', null, true);
+      hideLoading();
+      showPopup('⚠️', 'Approve Failed', d.error || 'Failed to start approval', null, true);
     }
-  } catch(e) { showPopup('⚠️', 'Error', 'Connection error'); }
+  } catch(e) { hideLoading(); showPopup('⚠️', 'Error', 'Connection error'); }
 }
 
 async function doRejection(id, sn) {
@@ -842,11 +931,13 @@ async function doRejection(id, sn) {
     { text: 'Reject', cls: 'popup-btn-danger', fn: async () => {
       const reason = document.getElementById('rejectReason').value;
       closePopup();
+      showLoading(null, 'Rejecting...');
       try {
         const body = new URLSearchParams();
         if (reason) body.append('reason', reason);
         const r = await api('/panel/api/tweets/' + id + '/reject', { method: 'POST', body });
         const d = await r.json();
+        hideLoading();
         if (d.success) {
           showUserTweets(userIdFromPopup);
           loadPending();
@@ -854,7 +945,7 @@ async function doRejection(id, sn) {
         } else {
           showPopup('⚠️', 'Reject Failed', d.error || 'Failed to reject tweet', null, true);
         }
-      } catch(e) { showPopup('⚠️', 'Error', 'Connection error'); }
+      } catch(e) { hideLoading(); showPopup('⚠️', 'Error', 'Connection error'); }
     } },
   ], true);
 }
@@ -868,19 +959,25 @@ async function deleteTweetFromPopup(id) {
     { text: 'Delete', cls: 'popup-btn-danger', fn: async () => {
       const reason = document.getElementById('delReasonPopup').value;
       closePopup();
+      showLoading(null, 'Deleting...');
       try {
         let url = '/panel/api/tweets/' + id;
         if (reason) url += '?reason=' + encodeURIComponent(reason);
         const r = await api(url, { method: 'DELETE' });
         const d = await r.json();
+        hideLoading();
         if (d.success) {
-          showUserTweets(userIdFromPopup);
-          loadStats();
-          loadHistory();
+          if (d.task_id) {
+            showLoading(d.task_id, 'Deleting...');
+          } else {
+            showUserTweets(userIdFromPopup);
+            loadStats();
+            loadHistory();
+          }
         } else {
           showPopup('⚠️', 'Delete Failed', d.error || 'Failed to delete tweet', null, true);
         }
-      } catch(e) { showPopup('⚠️', 'Error', 'Connection error'); }
+      } catch(e) { hideLoading(); showPopup('⚠️', 'Error', 'Connection error'); }
     } },
   ], true);
 }
@@ -894,14 +991,22 @@ async function deleteTweet(id) {
   ]);
 }
 async function doDelete(id, reason) {
+  showLoading(null, 'Deleting...');
   try {
     let url = '/panel/api/tweets/' + id;
     if (reason) url += '?reason=' + encodeURIComponent(reason);
     const r = await api(url, { method: 'DELETE' });
     const d = await r.json();
-    if (d.success) { loadHistory(); loadStats(); }
-    else { showPopup('⚠️', 'Error', d.detail || 'Delete failed', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
-  } catch(e) { showPopup('⚠️', 'Error', 'Connection error', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
+    hideLoading();
+    if (d.success) {
+      if (d.task_id) {
+        showLoading(d.task_id, 'Deleting...');
+      } else {
+        loadHistory();
+        loadStats();
+      }
+    } else { showPopup('⚠️', 'Error', d.detail || 'Delete failed', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
+  } catch(e) { hideLoading(); showPopup('⚠️', 'Error', 'Connection error', [{ text: 'OK', cls: 'popup-btn-ghost', fn: closePopup }]); }
 }
 
 // ─── Settings Tab (merged) ──────────────────────────────
@@ -1419,7 +1524,13 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelector('.tab[data-tab="' + name + '"]').classList.add('active');
-  document.getElementById('tab' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+  const tabEl = document.getElementById('tab' + name.charAt(0).toUpperCase() + name.slice(1));
+  tabEl.classList.add('active');
+
+  // Show loading placeholder immediately
+  if (name !== 'settings') {
+    tabEl.innerHTML = '<div class="empty-state" style="color:#71767b">Loading...</div>';
+  }
 
   if (name === 'queue') loadQueue();
   if (name === 'history') loadHistory();
@@ -1533,6 +1644,18 @@ function connectSSE() {
       if (stabGeneral && !stabGeneral.classList.contains('hidden')) {
         loadAdminsSection();
       }
+    }
+  });
+
+  es.addEventListener('task_progress', (e) => {
+    const d = JSON.parse(e.data);
+    if (d.task_id !== _currentTaskId) return;
+    if (d.status === 'done') {
+      _handleTaskDone(d);
+    } else {
+      const pct = d.total > 0 ? Math.round((d.progress || 0) / d.total * 100) : 0;
+      document.getElementById('progressBar').style.width = Math.min(pct, 95) + '%';
+      document.getElementById('loadingText').textContent = d.message || 'Working...';
     }
   });
 

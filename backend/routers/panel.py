@@ -1,5 +1,6 @@
 import os
 import json
+import uuid
 import asyncio
 import logging
 
@@ -180,7 +181,11 @@ async def panel_serve_image(filename: str, _: dict = Depends(get_current_admin))
 
 
 @panel_router.post("/panel/api/tweets/{tweet_id}/approve")
-async def panel_approve_tweet(tweet_id: int, admin: dict = Depends(get_current_admin)):
+async def panel_approve_tweet(
+    tweet_id: int,
+    background_tasks: BackgroundTasks,
+    admin: dict = Depends(get_current_admin),
+):
     tweet = await get_tweet(tweet_id)
     if not tweet:
         raise HTTPException(status_code=404, detail="Tweet not found")
@@ -193,26 +198,71 @@ async def panel_approve_tweet(tweet_id: int, admin: dict = Depends(get_current_a
 
     image_paths = json.loads(tweet["image_paths"]) if tweet.get("image_paths") else []
 
-    try:
-        result = await client.post_tweet(tweet["original_text"], image_paths)
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+    task_id = str(uuid.uuid4())
+    _tasks[task_id] = {
+        "type": "approve", "status": "running",
+        "progress": 0, "total": 1, "message": "Starting...",
+    }
 
-    if result.get("success"):
-        updated = await approve_tweet(tweet_id, admin["id"], result["urls"])
-        publish("tweet_updated", {
-            "event": "tweet_updated",
-            "id": tweet_id,
-            "status": "approved",
-            "submitted_by": tweet["submitted_by"],
-            "tweet_urls": result["urls"],
-        })
-        resp = {"success": True, "urls": result["urls"]}
-        if result.get("partial"):
-            resp["warning"] = result.get("warning", "Only some tweets were posted.")
-        return resp
-    else:
-        return result
+    async def _background_approve():
+        try:
+            def progress_callback(current, total, message):
+                _tasks[task_id].update(progress=current, total=total, message=message)
+                publish("task_progress", {
+                    "event": "task_progress", "task_id": task_id,
+                    "type": "approve",
+                    "progress": current, "total": total, "message": message,
+                })
+
+            result = await client.post_tweet(
+                tweet["original_text"], image_paths,
+                progress_callback=progress_callback,
+            )
+
+            if result.get("success"):
+                updated = await approve_tweet(tweet_id, admin["id"], result["urls"])
+                publish("tweet_updated", {
+                    "event": "tweet_updated",
+                    "id": tweet_id,
+                    "status": "approved",
+                    "submitted_by": tweet["submitted_by"],
+                    "tweet_urls": result["urls"],
+                })
+                resp = {"result": "success", "urls": result["urls"]}
+                if result.get("partial"):
+                    resp["warning"] = result.get("warning", "Only some tweets were posted.")
+                _tasks[task_id].update(status="done", **resp)
+                publish("task_progress", {
+                    "event": "task_progress", "task_id": task_id,
+                    "type": "approve", "status": "done", "result": "success",
+                    "warning": resp.get("warning"),
+                })
+            else:
+                err = result.get("error", "Unknown error")
+                _tasks[task_id].update(status="done", result="error", error=err)
+                publish("task_progress", {
+                    "event": "task_progress", "task_id": task_id,
+                    "type": "approve", "status": "done", "result": "error", "error": err,
+                })
+        except Exception as e:
+            logging.exception(f"Background approve failed: {e}")
+            msg = str(e)
+            _tasks[task_id].update(status="done", result="error", error=msg)
+            publish("task_progress", {
+                "event": "task_progress", "task_id": task_id,
+                "type": "approve", "status": "done", "result": "error", "error": msg,
+            })
+
+    background_tasks.add_task(_background_approve)
+    return {"success": True, "task_id": task_id}
+
+
+@panel_router.get("/panel/api/tasks/{task_id}/progress")
+async def panel_task_progress(task_id: str, _: dict = Depends(get_current_admin)):
+    task = _tasks.get(task_id)
+    if not task:
+        return {"status": "done", "result": "unknown", "error": "Task no longer available"}
+    return task
 
 
 @panel_router.post("/panel/api/tweets/{tweet_id}/reject")
@@ -244,6 +294,7 @@ async def panel_reject_tweet(
 async def panel_delete_tweet(
     tweet_id: int,
     reason: str = Query(None),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     admin: dict = Depends(require_superadmin),
 ):
     tweet = await get_tweet(tweet_id)
@@ -253,24 +304,74 @@ async def panel_delete_tweet(
         raise HTTPException(status_code=400, detail="Only approved tweets can be deleted")
 
     tweet_urls = json.loads(tweet["tweet_urls"]) if tweet.get("tweet_urls") else []
+    reason_stripped = reason.strip() if reason else None
 
-    if tweet_urls:
-        result = await client.delete_tweet_chain(tweet_urls)
-        if result.get("failed", 0) > 0:
-            logging.warning(
-                f"Deleted {result['deleted']} of {len(tweet_urls)} tweets "
-                f"({result['failed']} failed): {result['errors']}"
+    if not tweet_urls:
+        updated = await delete_tweet(tweet_id, admin["id"], reason_stripped)
+        publish("tweet_updated", {
+            "event": "tweet_updated",
+            "id": tweet_id,
+            "status": "deleted",
+            "submitted_by": tweet["submitted_by"],
+            "reject_reason": reason_stripped,
+        })
+        return {"success": True}
+
+    task_id = str(uuid.uuid4())
+    _tasks[task_id] = {
+        "type": "delete", "status": "running",
+        "progress": 0, "total": len(tweet_urls), "message": "Starting delete...",
+    }
+
+    async def _background_delete():
+        try:
+            def progress_callback(current, total, message):
+                _tasks[task_id].update(progress=current, total=total, message=message)
+                publish("task_progress", {
+                    "event": "task_progress", "task_id": task_id,
+                    "type": "delete",
+                    "progress": current, "total": total, "message": message,
+                })
+
+            result = await client.delete_tweet_chain(tweet_urls, progress_callback=progress_callback)
+
+            await delete_tweet(tweet_id, admin["id"], reason_stripped)
+            publish("tweet_updated", {
+                "event": "tweet_updated",
+                "id": tweet_id,
+                "status": "deleted",
+                "submitted_by": tweet["submitted_by"],
+                "reject_reason": reason_stripped,
+            })
+
+            deleted_count = result.get("deleted", 0)
+            failed_count = result.get("failed", 0)
+            _tasks[task_id].update(
+                status="done", result="success",
+                deleted=deleted_count, failed=failed_count,
             )
+            publish("task_progress", {
+                "event": "task_progress", "task_id": task_id,
+                "type": "delete", "status": "done", "result": "success",
+                "deleted": deleted_count, "failed": failed_count,
+            })
 
-    updated = await delete_tweet(tweet_id, admin["id"], reason.strip() if reason else None)
-    publish("tweet_updated", {
-        "event": "tweet_updated",
-        "id": tweet_id,
-        "status": "deleted",
-        "submitted_by": tweet["submitted_by"],
-        "reject_reason": reason.strip() if reason else None,
-    })
-    return {"success": True}
+            if failed_count > 0:
+                logging.warning(
+                    f"Deleted {deleted_count} of {len(tweet_urls)} tweets "
+                    f"({failed_count} failed): {result.get('errors', [])}"
+                )
+        except Exception as e:
+            logging.exception(f"Background delete failed: {e}")
+            msg = str(e)
+            _tasks[task_id].update(status="done", result="error", error=msg)
+            publish("task_progress", {
+                "event": "task_progress", "task_id": task_id,
+                "type": "delete", "status": "done", "result": "error", "error": msg,
+            })
+
+    background_tasks.add_task(_background_delete)
+    return {"success": True, "task_id": task_id}
 
 
 @panel_router.get("/panel/api/keywords")
@@ -382,6 +483,7 @@ async def panel_unfollow_user(
 
 
 _sync_tasks: dict[int, dict] = {}
+_tasks: dict[str, dict] = {}  # approve/delete background tasks
 
 
 @panel_router.post("/panel/api/x-users/sync-all")

@@ -287,7 +287,7 @@ class TwitterClient:
                 logging.warning(f"delete_tweet({tweet_id_str}) failed: {e}")
                 return {"success": False, "error": str(e)}
 
-    async def delete_tweet_chain(self, tweet_urls: list[str]) -> dict:
+    async def delete_tweet_chain(self, tweet_urls: list[str], progress_callback=None) -> dict:
         async with self._lock:
             cookies = self._set_client_cookies()
             if cookies is None:
@@ -296,17 +296,27 @@ class TwitterClient:
             deleted = 0
             failed = 0
             errors = []
+            total = len(tweet_urls)
 
-            for url in reversed(tweet_urls):
+            for i, url in enumerate(reversed(tweet_urls)):
                 tweet_id_str = url.rstrip("/").split("/")[-1]
+                if progress_callback:
+                    progress_callback(
+                        i + 1, total,
+                        f"Deleting tweet {i + 1} of {total}...",
+                    )
                 try:
                     await self._client.delete_tweet(tweet_id_str)
                     deleted += 1
-                    await asyncio.sleep(2)
+                    if i < total - 1:
+                        await asyncio.sleep(2)
                 except Exception as e:
                     logging.warning(f"delete_tweet_chain: {tweet_id_str} failed: {e}")
                     failed += 1
                     errors.append(str(e))
+
+            if progress_callback:
+                progress_callback(total, total, "Done")
 
             return {
                 "success": deleted > 0,
