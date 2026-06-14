@@ -11,7 +11,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from authlib.integrations.starlette_client import OAuth
 from starlette.config import Config
 
-from database import upsert_x_user, update_follow_status, get_pool, get_tweet, get_setting
+from database import upsert_x_user, update_follow_status, update_x_user_profile, get_pool, get_tweet, get_setting
 from twitter_client import client
 from auth import create_user_token, decode_token
 from event_bus import publish
@@ -101,7 +101,7 @@ async def x_callback(request: Request):
                 x_access_token, x_refresh_token,
             )
 
-            mutual_result = await client.check_mutual(screen_name)
+            mutual_result = await client.check_mutual(target_user_id=x_user_id)
             we_follow = mutual_result.get("we_follow", False)
             follows_us = mutual_result.get("follows_us", False)
             is_mutual = we_follow and follows_us
@@ -280,11 +280,15 @@ async def x_refresh_mutual(request: Request):
     if not screen_name:
         return {"success": False, "error": "Missing screen_name"}
 
-    mutual_result = await client.check_mutual(screen_name)
+    mutual_result = await client.check_mutual(target_user_id=x_user_id)
     we_follow = mutual_result.get("we_follow", False)
     follows_us = mutual_result.get("follows_us", False)
     is_mutual = we_follow and follows_us
     await update_follow_status(x_user_id, we_follow, follows_us)
+    new_screen_name = mutual_result.get("screen_name", screen_name)
+    name = mutual_result.get("name", "")
+    avatar_url = mutual_result.get("avatar_url", "")
+    await update_x_user_profile(x_user_id, new_screen_name, name, avatar_url)
     publish("user_status_changed", {
         "event": "user_status_changed",
         "x_user_id": x_user_id,
@@ -294,7 +298,7 @@ async def x_refresh_mutual(request: Request):
     })
 
     x_user = await get_x_user_by_id(x_user_id)
-    new_token = create_user_token(x_user_id, screen_name, is_mutual)
+    new_token = create_user_token(x_user_id, new_screen_name, is_mutual)
     bypass_mutual = await get_setting("bypass_mutual")
     return {
         "success": True,

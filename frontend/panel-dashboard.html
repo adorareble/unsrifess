@@ -1515,7 +1515,9 @@ async function loadUsers() {
       const fbClass = u.follows_us ? 'status-approved' : 'status-rejected';
       const fbText = u.follows_us ? 'Yes' : 'No';
       const blockedClass = u.blocked ? 'status-rejected' : 'status-approved';
-      const blockedText = u.blocked ? 'Blocked' : 'Active';
+      const blockedText = u.blocked ? 'Blocked' : 'Not blocked';
+      const statusClass = u.status === 'inactive' ? 'status-rejected' : 'status-approved';
+      const statusText = u.status === 'inactive' ? 'Inactive' : 'Active';
       cards += '<div class="item-card">'
         + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
         + '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
@@ -1523,7 +1525,6 @@ async function loadUsers() {
         + '</div>'
         + '<div style="flex:1">'
         + '<div><a href="javascript:void(0)" onclick="showUserTweets(' + u.id + ')" style="color:#1d9bf0;text-decoration:none;font-weight:500">@' + escHtml(u.screen_name) + '</a>'
-        + (u.status === 'inactive' ? ' <span class="status-badge status-rejected" style="font-size:0.6rem;padding:1px 6px">Inactive</span>' : '')
         + '</div>'
         + '<div style="font-size:0.8rem;color:#71767b">' + escHtml(u.name || '-') + '</div>'
         + '</div>'
@@ -1532,6 +1533,7 @@ async function loadUsers() {
         + '<span class="status-badge ' + followsClass + '">Follows us: ' + followsText + '</span>'
         + '<span class="status-badge ' + fbClass + '">Followed back: ' + fbText + '</span>'
         + '<span class="status-badge ' + blockedClass + '">' + blockedText + '</span>'
+        + '<span class="status-badge ' + statusClass + '">' + statusText + '</span>'
         + '</div>'
         + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b">'
         + '<span>Last login: ' + fmtTime(u.last_login_at) + '</span>'

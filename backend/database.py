@@ -536,6 +536,15 @@ async def update_x_user_status(x_user_id: str, status: str):
         )
 
 
+async def update_x_user_profile(x_user_id: str, screen_name: str, name: str, avatar_url: str):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE x_users SET screen_name = $1, name = $2, avatar_url = $3 WHERE x_user_id = $4",
+            screen_name, name, avatar_url, x_user_id,
+        )
+
+
 async def get_x_user_by_id(x_user_id: str):
     pool = await get_pool()
     async with pool.acquire() as conn:

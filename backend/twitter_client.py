@@ -212,7 +212,7 @@ class TwitterClient:
                 return {"success": False, "error": err_msg}
 
 
-    async def check_mutual(self, target_screen_name: str) -> dict:
+    async def check_mutual(self, target_screen_name: str = None, target_user_id: str = None) -> dict:
         cookies = self._load_cookies()
         if cookies is None:
             return {"error": "Not logged in. Run setup_login.py first."}
@@ -222,12 +222,19 @@ class TwitterClient:
             unsrifess = await self._client.get_user_by_screen_name("unsrifess")
             unsrifess_id = unsrifess.id
 
-            raw_resp, _ = await self._client.gql.user_by_screen_name(target_screen_name)
+            if target_user_id:
+                raw_resp, _ = await self._client.gql.user_by_rest_id(target_user_id)
+                lookup_key = target_user_id
+            else:
+                raw_resp, _ = await self._client.gql.user_by_screen_name(target_screen_name or "")
+                lookup_key = target_screen_name or ""
+
             if raw_resp.get("errors"):
                 return {
                     "is_mutual": False, "follows_us": False, "we_follow": False,
                     "target_id": "", "unsrifess_id": str(unsrifess_id),
-                    "screen_name": target_screen_name, "user_status": "inactive",
+                    "screen_name": lookup_key, "user_status": "inactive",
+                    "name": "", "avatar_url": "",
                 }
 
             target_raw = raw_resp.get("data", {}).get("user", {}).get("result")
@@ -241,9 +248,12 @@ class TwitterClient:
 
             we_follow = legacy.get("followed_by", False)
             follows_us = legacy.get("following", False)
+            screen_name = legacy.get("screen_name", target_screen_name or "")
+            name = legacy.get("name", "")
+            avatar_url = legacy.get("profile_image_url_https", "")
 
             logging.info(
-                f"check_mutual({target_screen_name}): "
+                f"check_mutual({screen_name}): "
                 f"target_id={target_id}, "
                 f"we_follow={we_follow}, follows_us={follows_us}, "
                 f"user_status={user_status}"
@@ -255,8 +265,10 @@ class TwitterClient:
                 "we_follow": we_follow,
                 "target_id": str(target_id) if target_id else "",
                 "unsrifess_id": str(unsrifess_id),
-                "screen_name": target_screen_name,
+                "screen_name": screen_name,
                 "user_status": user_status,
+                "name": name,
+                "avatar_url": avatar_url,
             }
         except Exception as e:
             logging.exception(f"check_mutual failed: {e}")
