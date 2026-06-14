@@ -66,12 +66,7 @@
   .stat-card .num.active-submitters { color: #1d9bf0; }
   .stat-card .num.unique-today { color: #1d9bf0; }
   .stat-card .num.total-unique { color: #6b5b95; }
-  .section-label {
-    flex-shrink: 0; font-size: 0.55rem; font-weight: 600; color: #71767b;
-    text-transform: uppercase; letter-spacing: 0.3px;
-    writing-mode: vertical-lr; text-orientation: mixed;
-    padding: 4px 3px; display: flex; align-items: center; justify-content: center;
-  }
+  .section-label { width: 100%; font-size: 0.65rem; font-weight: 600; color: #71767b; text-transform: uppercase; letter-spacing: 0.4px; margin: 6px 0 1px 0; }
   .badge-on, .badge-off { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 600; }
   .badge-on { background: rgba(0,186,124,0.12); color: #00ba7c; }
   .badge-off { background: rgba(244,33,46,0.12); color: #f4212e; }
@@ -531,7 +526,8 @@ async function loadStats() {
     const r = await api('/panel/api/stats');
     const d = await r.json();
     document.getElementById('statsRow').innerHTML = `
-      <div class="stat-row"><span class="section-label">All</span>
+      <div class="section-label">All Time</div>
+      <div class="stat-row">
       <div class="stat-card"><div class="num total-subs">${d.total_submissions}</div><div class="label">Confessions</div></div>
       <div class="stat-card"><div class="num pending">${d.pending_count}</div><div class="label">Pending</div></div>
       <div class="stat-card"><div class="num partial">${d.partial_count}</div><div class="label">Partial</div></div>
@@ -539,19 +535,22 @@ async function loadStats() {
       <div class="stat-card"><div class="num rejected">${d.rejected_count}</div><div class="label">Declined</div></div>
       <div class="stat-card"><div class="num deleted">${d.deleted_count}</div><div class="label">Removed</div></div></div>
 
-      <div class="stat-row"><span class="section-label">Day</span>
+      <div class="section-label">Today</div>
+      <div class="stat-row">
       <div class="stat-card"><div class="num subs-today">${d.submissions_today}</div><div class="label">Confessions</div></div>
       <div class="stat-card"><div class="num approved-today">${d.approved_today}</div><div class="label">Posted</div></div>
       <div class="stat-card"><div class="num rejected-today">${d.rejected_today}</div><div class="label">Declined</div></div>
       <div class="stat-card"><div class="num deleted-today">${d.deleted_today}</div><div class="label">Removed</div></div></div>
 
-      <div class="stat-row"><span class="section-label">User</span>
+      <div class="section-label">Users</div>
+      <div class="stat-row">
       <div class="stat-card"><div class="num total-users">${d.total_users}</div><div class="label">Users</div></div>
       <div class="stat-card"><div class="num active-users">${d.active_users}</div><div class="label">Active</div></div>
       <div class="stat-card"><div class="num inactive-users">${d.inactive_users}</div><div class="label">Inactive</div></div>
       <div class="stat-card"><div class="num active-submitters">${d.active_submitters_30d}</div><div class="label">Posters</div></div></div>
 
-      <div class="stat-row"><span class="section-label">Vis</span>
+      <div class="section-label">Visitors</div>
+      <div class="stat-row">
       <div class="stat-card"><div class="num unique-today">${d.unique_today}</div><div class="label">Today</div></div>
       <div class="stat-card"><div class="num total-unique">${d.total_unique}</div><div class="label">Total</div></div></div>
     `;
