@@ -21,7 +21,9 @@ CREATE TABLE IF NOT EXISTS tweets (
     reject_reason   TEXT,
     tweet_urls      TEXT,
     chunk_count     INTEGER DEFAULT 0,
-    matched_keyword VARCHAR(255)
+    matched_keyword VARCHAR(255),
+    send_as_image   BOOLEAN DEFAULT FALSE,
+    card_text       TEXT
 );
 
 CREATE TABLE IF NOT EXISTS keyword_filters (

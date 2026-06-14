@@ -607,6 +607,8 @@ async function loadQueue() {
 
     let html = '';
     for (const t of tweets) {
+      const isCard = t.send_as_image;
+      const displayText = isCard ? (t.card_text || '(empty card)') : t.original_text;
       const images = imagesFromTweet(t);
       const fns = images.map(filenameFromPath);
       let thumbsHtml = '';
@@ -620,6 +622,7 @@ async function loadQueue() {
 
       let metaParts = ['#' + t.id, fmtTime(t.submitted_at)];
       if (t.chunk_count > 1) metaParts.push(t.chunk_count + ' tweets');
+      if (isCard) metaParts.push('\u{1F5BC}\uFE0F Image Card');
 
       const userInfo = t.user_screen_name
         ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
@@ -633,10 +636,14 @@ async function loadQueue() {
           + '</div>'
         : '<div class="meta" style="margin-bottom:10px">' + metaParts.join(' · ') + '</div>';
 
+      const displayFull = isCard
+        ? 'Tweet: ' + t.original_text + '\n\u2014\u2014\u2014 Card Content \u2014\u2014\u2014\n' + (t.card_text || '')
+        : t.original_text;
+
       html += '<div class="item-card" id="qt-' + t.id + '">'
         + userInfo
         + thumbsHtml
-        + '<div class="text">' + escHtml(t.original_text) + '</div>'
+        + '<div class="text" data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + '</div>'
         + '<div class="actions" id="qa-' + t.id + '">'
         + '<button class="btn-action btn-approve" onclick="approveTweet(' + t.id + ')">Approve</button>'
         + '<button class="btn-action btn-reject" onclick="rejectTweetPopup(' + t.id + ')">Reject</button>'
@@ -808,11 +815,16 @@ async function loadHistory() {
 
     let cards = '';
     for (const t of tweets) {
+      const isCard = t.send_as_image;
       const urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : [];
       const images = imagesFromTweet(t);
       const fns = images.map(filenameFromPath);
-      const imgBadge = images.length ? '<span class="img-badge" title="Has images">\u{1F5BC}\uFE0F</span>' : '';
+      const imgBadge = (images.length || isCard) ? '<span class="img-badge" title="Has images">\u{1F5BC}\uFE0F</span>' : '';
       const dataImgs = fns.length ? ' data-images=\'' + JSON.stringify(fns).replace(/'/g, '&#39;') + '\'' : '';
+      const displayText = isCard ? (t.card_text || '(empty card)') : t.original_text;
+      const displayFull = isCard
+        ? 'Tweet: ' + t.original_text + '\n\u2014\u2014\u2014 Card Content \u2014\u2014\u2014\n' + (t.card_text || '')
+        : t.original_text;
       const deleteBtn = ADMIN.role === 'superadmin' && t.status === 'approved'
         ? '<button class="btn-action btn-reject" onclick="deleteTweet(' + t.id + ')">Delete</button>' : '';
       cards += '<div class="item-card">'
@@ -820,8 +832,9 @@ async function loadHistory() {
         + '<strong>#' + t.id + '</strong>'
         + '<span class="status-badge status-' + t.status + '">' + t.status + '</span>'
         + '<span>' + fmtTime(t.submitted_at) + '</span>'
+        + (isCard ? '<span style="font-size:0.72rem;color:#71767b">\u{1F5BC}\uFE0F Card</span>' : '')
         + '</div>'
-        + '<div class="text-preview' + (dataImgs ? '"' + dataImgs : '') + ' data-full="' + escHtml(t.original_text).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(t.original_text) + imgBadge + '</div>'
+        + '<div class="text-preview' + (dataImgs ? '"' + dataImgs : '') + ' data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + imgBadge + '</div>'
         + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b">'
         + '<span>Reviewer: ' + (t.reviewer_name || '-') + '</span>'
         + '<span>User: ' + (t.user_screen_name ? '<a href="javascript:void(0)" onclick="showUserTweets(' + t.x_user_db_id + ')" style="color:#1d9bf0;text-decoration:none">@' + escHtml(t.user_screen_name) + '</a>' : '-') + '</span>'
@@ -1554,8 +1567,14 @@ function connectSSE() {
       const card = document.createElement('div');
       card.className = 'item-card';
       card.id = 'qt-' + d.id;
+      const isCard = d.send_as_image;
+      const displayText = isCard ? (d.card_text || '(empty card)') : d.original_text;
+      const displayFull = isCard
+        ? 'Tweet: ' + d.original_text + '\n\u2014\u2014\u2014 Card Content \u2014\u2014\u2014\n' + (d.card_text || '')
+        : d.original_text;
       const metaParts = ['#' + d.id, fmtTime(d.submitted_at)];
       if (d.chunk_count > 1) metaParts.push(d.chunk_count + ' tweets');
+      if (isCard) metaParts.push('\u{1F5BC}\uFE0F Image Card');
       const metaStr = metaParts.join(' · ');
       const userHtml = d.user_screen_name && d.x_user_db_id
         ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
@@ -1579,7 +1598,7 @@ function connectSSE() {
         : '';
       const meta = '#' + d.id + ' ' + fmtTime(d.submitted_at) + (d.chunk_count > 1 ? ' ' + d.chunk_count + ' tweets' : '');
       card.innerHTML = userHtml + thumbsHtml
-        + '<div class="text">' + escHtml(d.original_text) + '</div>'
+        + '<div class="text" data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + '</div>'
         + '<div class="actions" id="qa-' + d.id + '">'
         + '<button class="btn-action btn-approve" onclick="approveTweet(' + d.id + ')">Approve</button>'
         + '<button class="btn-action btn-reject" onclick="rejectTweetPopup(' + d.id + ')">Reject</button>'

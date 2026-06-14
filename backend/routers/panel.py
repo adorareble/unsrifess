@@ -17,13 +17,14 @@ from database import (
     get_setting, set_setting, get_peak_hours,
     get_x_users, get_x_user_by_id, update_follow_status,
     block_x_user, unblock_x_user,
+    update_tweet_image_paths,
 )
 from auth import (
     hash_password, verify_password, create_token,
     get_current_admin, require_superadmin,
 )
 from twitter_client import client
-from image import TEMP_DIR
+from image import TEMP_DIR, generate_card_image
 from event_bus import publish
 
 panel_router = APIRouter()
@@ -197,6 +198,8 @@ async def panel_approve_tweet(
         return {"success": False, "error": "Feature is currently offline."}
 
     image_paths = json.loads(tweet["image_paths"]) if tweet.get("image_paths") else []
+    send_as_image = tweet.get("send_as_image", False)
+    card_text = tweet.get("card_text") or ""
 
     task_id = str(uuid.uuid4())
     _tasks[task_id] = {
@@ -213,6 +216,17 @@ async def panel_approve_tweet(
                     "type": "approve",
                     "progress": current, "total": total, "message": message,
                 })
+
+            if send_as_image and card_text.strip():
+                _tasks[task_id].update(progress=0, total=1, message="Generating card image...")
+                publish("task_progress", {
+                    "event": "task_progress", "task_id": task_id,
+                    "type": "approve", "progress": 0, "total": 1,
+                    "message": "Generating card image...",
+                })
+                card_path = generate_card_image(card_text.strip())
+                image_paths.append(card_path)
+                await update_tweet_image_paths(tweet_id, image_paths)
 
             result = await client.post_tweet(
                 tweet["original_text"], image_paths,
@@ -604,6 +618,7 @@ async def panel_user_tweets(
         tweets = await conn.fetch(
             "SELECT t.id, t.original_text, t.status, t.submitted_at, t.reviewed_at, "
             "t.tweet_urls, t.reject_reason, t.matched_keyword, "
+            "t.send_as_image, t.card_text, "
             "a.display_name AS reviewer_name "
             "FROM tweets t "
             "LEFT JOIN admins a ON t.reviewed_by = a.id "

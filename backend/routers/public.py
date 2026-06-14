@@ -8,10 +8,10 @@ from fastapi.responses import HTMLResponse, FileResponse
 from database import (
     create_tweet, check_keywords, get_setting,
     get_x_user_by_id,
-    reject_tweet, approve_tweet,
+    reject_tweet, approve_tweet, update_tweet_image_paths,
 )
 from twitter_client import client, split_into_chunks, MAX_TEXT_LENGTH
-from image import TEMP_DIR, process_image_async
+from image import TEMP_DIR, process_image_async, generate_card_image
 from auth import get_current_user
 from event_bus import publish
 
@@ -64,12 +64,15 @@ async def public_serve_image(filename: str):
 async def tweet_sync(
     text: str = Form(...),
     images: list[UploadFile] = File(default=None),
+    send_as_image: bool = Form(False),
+    card_text: str = Form(""),
     user: dict = Depends(get_current_user),
 ):
     if not text or not text.strip():
         return {"success": False, "error": "Text is empty"}
 
     text = text.replace('\r\n', '\n')
+    card_text = card_text.replace('\r\n', '\n') if card_text else ""
 
     x_user = await get_x_user_by_id(user["x_user_id"])
     if not x_user:
@@ -91,6 +94,12 @@ async def tweet_sync(
         return {"success": False, "error": "Submission is currently closed."}
 
     saved_paths = []
+
+    if send_as_image:
+        if not card_text.strip():
+            return {"success": False, "error": "Card content is empty."}
+        images = None
+
     try:
         if images:
             validated = []
@@ -111,21 +120,26 @@ async def tweet_sync(
                 saved_paths.append(saved_path)
 
         stripped_text = text.strip()
-        if len(stripped_text) > MAX_TEXT_LENGTH:
-            for p in saved_paths:
-                try: os.remove(p)
-                except OSError: pass
-            return {
-                "success": False,
-                "error": f"Message too long ({len(stripped_text)} chars, max {MAX_TEXT_LENGTH})."
-            }
 
-        chunks = split_into_chunks(stripped_text)
-        chunk_count = len(chunks)
+        if not send_as_image:
+            if len(stripped_text) > MAX_TEXT_LENGTH:
+                for p in saved_paths:
+                    try: os.remove(p)
+                    except OSError: pass
+                return {
+                    "success": False,
+                    "error": f"Message too long ({len(stripped_text)} chars, max {MAX_TEXT_LENGTH})."
+                }
 
-        matched = await check_keywords(text)
+            chunks = split_into_chunks(stripped_text)
+            chunk_count = len(chunks)
+        else:
+            chunk_count = 1
+
+        text_for_keywords = card_text if send_as_image else text
+        matched = await check_keywords(text_for_keywords)
         if matched:
-            tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count)
+            tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count, send_as_image, card_text.strip() if card_text else None)
             await reject_tweet(tweet["id"], None, f"Auto-rejected: matched keyword '{matched}'", matched, record_activity=False)
             publish("tweet_updated", {
                 "event": "tweet_updated",
@@ -145,7 +159,7 @@ async def tweet_sync(
                 "reason": "Your message was automatically rejected (matched filter).",
             }
 
-        tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count)
+        tweet = await create_tweet(text.strip(), saved_paths, user["x_user_id"], chunk_count, send_as_image, card_text.strip() if card_text else None)
 
         publish("new_tweet", {
             "event": "new_tweet",
@@ -157,10 +171,16 @@ async def tweet_sync(
             "user_screen_name": x_user["screen_name"],
             "user_avatar_url": x_user.get("avatar_url", ""),
             "x_user_db_id": x_user["id"],
+            "send_as_image": send_as_image,
+            "card_text": card_text.strip() if card_text else "",
         })
 
         bypass = await get_setting("bypass")
         if bypass == "true":
+            if send_as_image and card_text.strip():
+                card_path = generate_card_image(card_text.strip())
+                saved_paths.append(card_path)
+                await update_tweet_image_paths(tweet["id"], saved_paths)
             result = await client.post_tweet(text.strip(), saved_paths)
             if result and result.get("success"):
                 await approve_tweet(tweet["id"], None, result["urls"], record_activity=False)

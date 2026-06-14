@@ -46,6 +46,8 @@ async def init_db():
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_admin_id ON activity_log(admin_id)")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_activity_created_at ON activity_log(created_at DESC)")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_keyword_is_active ON keyword_filters(keyword) WHERE is_active = TRUE")
+        await conn.execute("ALTER TABLE tweets ADD COLUMN IF NOT EXISTS send_as_image BOOLEAN DEFAULT FALSE")
+        await conn.execute("ALTER TABLE tweets ADD COLUMN IF NOT EXISTS card_text TEXT")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_x_users_screen_name ON x_users(screen_name)")
 
 
@@ -100,16 +102,18 @@ async def activate_admin(admin_id: int):
         await conn.execute("UPDATE admins SET is_active = TRUE WHERE id = $1", admin_id)
 
 
-async def create_tweet(original_text, image_paths, submitted_by, chunk_count=0):
+async def create_tweet(original_text, image_paths, submitted_by, chunk_count=0, send_as_image=False, card_text=None):
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "INSERT INTO tweets (original_text, image_paths, submitted_by, chunk_count) "
-            "VALUES ($1, $2, $3, $4) RETURNING id, status, submitted_at",
+            "INSERT INTO tweets (original_text, image_paths, submitted_by, chunk_count, send_as_image, card_text) "
+            "VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, status, submitted_at",
             original_text,
             json.dumps(image_paths) if image_paths else None,
             submitted_by,
             chunk_count,
+            send_as_image,
+            card_text,
         )
         return dict(row)
 
@@ -153,6 +157,15 @@ async def approve_tweet(tweet_id: int, admin_id: int | None, tweet_urls, record_
                     admin_id, "approve", "tweet", str(tweet_id),
                 )
             return dict(row) if row else None
+
+
+async def update_tweet_image_paths(tweet_id: int, image_paths: list):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE tweets SET image_paths = $1 WHERE id = $2",
+            json.dumps(image_paths), tweet_id,
+        )
 
 
 async def delete_tweet(tweet_id: int, admin_id: int, reason: str = None):
@@ -480,7 +493,7 @@ async def get_user_tweets(x_user_id: str, page: int = 1, limit: int = 10):
         total = count_row["count"]
         rows = await conn.fetch(
             "SELECT id, original_text, status, submitted_at, reviewed_at, "
-            "tweet_urls, reject_reason, matched_keyword "
+            "tweet_urls, reject_reason, matched_keyword, send_as_image, card_text "
             "FROM tweets WHERE submitted_by = $1 "
             "ORDER BY submitted_at DESC LIMIT $2 OFFSET $3",
             x_user_id, limit, offset,
