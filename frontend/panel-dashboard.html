@@ -1460,7 +1460,9 @@ async function loadUsers() {
         + (u.avatar_url ? '<img src="' + u.avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
         + '</div>'
         + '<div style="flex:1">'
-        + '<div><a href="javascript:void(0)" onclick="showUserTweets(' + u.id + ')" style="color:#1d9bf0;text-decoration:none;font-weight:500">@' + escHtml(u.screen_name) + '</a></div>'
+        + '<div><a href="javascript:void(0)" onclick="showUserTweets(' + u.id + ')" style="color:#1d9bf0;text-decoration:none;font-weight:500">@' + escHtml(u.screen_name) + '</a>'
+        + (u.status === 'inactive' ? ' <span class="status-badge status-rejected" style="font-size:0.6rem;padding:1px 6px">Inactive</span>' : '')
+        + '</div>'
         + '<div style="font-size:0.8rem;color:#71767b">' + escHtml(u.name || '-') + '</div>'
         + '</div>'
         + '</div>'

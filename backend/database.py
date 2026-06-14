@@ -40,6 +40,7 @@ async def init_db():
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS we_follow BOOLEAN DEFAULT false")
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS follows_us BOOLEAN DEFAULT false")
         await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS blocked BOOLEAN DEFAULT false")
+        await conn.execute("ALTER TABLE x_users ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active'")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_tweets_status_submitted_at ON tweets(status, submitted_at DESC)")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_tweets_submitted_by ON tweets(submitted_by)")
         await conn.execute("CREATE INDEX IF NOT EXISTS idx_tweets_reviewed_at ON tweets(reviewed_at) WHERE status IN ('approved', 'rejected')")
@@ -461,6 +462,15 @@ async def update_follow_status(x_user_id: str, we_follow: bool, follows_us: bool
         await conn.execute(
             "UPDATE x_users SET we_follow = $1, follows_us = $2, is_mutual = ($1 AND $2) WHERE x_user_id = $3",
             we_follow, follows_us, x_user_id,
+        )
+
+
+async def update_x_user_status(x_user_id: str, status: str):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE x_users SET status = $1 WHERE x_user_id = $2",
+            status, x_user_id,
         )
 
 

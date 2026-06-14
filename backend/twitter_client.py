@@ -222,9 +222,21 @@ class TwitterClient:
             unsrifess_id = unsrifess.id
 
             raw_resp, _ = await self._client.gql.user_by_screen_name(target_screen_name)
-            target_raw = raw_resp["data"]["user"]["result"]
-            target_id = target_raw.get("rest_id")
-            legacy = target_raw.get("legacy", {})
+            if raw_resp.get("errors"):
+                return {
+                    "is_mutual": False, "follows_us": False, "we_follow": False,
+                    "target_id": "", "unsrifess_id": str(unsrifess_id),
+                    "screen_name": target_screen_name, "user_status": "inactive",
+                }
+
+            target_raw = raw_resp.get("data", {}).get("user", {}).get("result")
+            typename = target_raw.get("__typename") if target_raw else None
+            user_status = "active"
+            if target_raw is None or (typename and typename != "User"):
+                user_status = "inactive"
+
+            target_id = target_raw.get("rest_id") if target_raw else None
+            legacy = target_raw.get("legacy", {}) if target_raw else {}
 
             we_follow = legacy.get("followed_by", False)
             follows_us = legacy.get("following", False)
@@ -232,7 +244,8 @@ class TwitterClient:
             logging.info(
                 f"check_mutual({target_screen_name}): "
                 f"target_id={target_id}, "
-                f"we_follow={we_follow}, follows_us={follows_us}"
+                f"we_follow={we_follow}, follows_us={follows_us}, "
+                f"user_status={user_status}"
             )
 
             return {
@@ -242,10 +255,11 @@ class TwitterClient:
                 "target_id": str(target_id) if target_id else "",
                 "unsrifess_id": str(unsrifess_id),
                 "screen_name": target_screen_name,
+                "user_status": user_status,
             }
         except Exception as e:
             logging.exception(f"check_mutual failed: {e}")
-            return {"error": str(e)}
+            return {"error": str(e), "user_status": "active"}
 
     async def follow_user(self, target_id: str) -> dict:
         cookies = self._load_cookies()

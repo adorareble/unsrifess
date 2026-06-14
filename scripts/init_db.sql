@@ -61,7 +61,8 @@ CREATE TABLE IF NOT EXISTS x_users (
     we_follow   BOOLEAN DEFAULT false,
     follows_us  BOOLEAN DEFAULT false,
     created_at  TIMESTAMP DEFAULT NOW(),
-    last_login_at TIMESTAMP DEFAULT NOW()
+    last_login_at TIMESTAMP DEFAULT NOW(),
+    status VARCHAR(20) NOT NULL DEFAULT 'active'
 );
 
 INSERT INTO settings (key, value) VALUES ('online', 'true') ON CONFLICT (key) DO NOTHING;
