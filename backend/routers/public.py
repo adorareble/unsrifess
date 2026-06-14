@@ -8,10 +8,10 @@ from fastapi.responses import HTMLResponse, FileResponse
 from database import (
     create_tweet, check_keywords, get_setting,
     get_x_user_by_id,
-    reject_tweet, approve_tweet, update_tweet_image_paths,
+    reject_tweet, approve_tweet,
 )
 from twitter_client import client, split_into_chunks, MAX_TEXT_LENGTH
-from image import TEMP_DIR, process_image_async, generate_card_image
+from image import TEMP_DIR, process_image_async
 from auth import get_current_user
 from event_bus import publish
 
@@ -98,7 +98,6 @@ async def tweet_sync(
     if send_as_image:
         if not card_text.strip():
             return {"success": False, "error": "Card content is empty."}
-        images = None
 
     try:
         if images:
@@ -177,10 +176,6 @@ async def tweet_sync(
 
         bypass = await get_setting("bypass")
         if bypass == "true":
-            if send_as_image and card_text.strip():
-                card_path = generate_card_image(card_text.strip())
-                saved_paths.append(card_path)
-                await update_tweet_image_paths(tweet["id"], saved_paths)
             result = await client.post_tweet(text.strip(), saved_paths)
             if result and result.get("success"):
                 await approve_tweet(tweet["id"], None, result["urls"], record_activity=False)

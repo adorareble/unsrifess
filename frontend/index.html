@@ -216,15 +216,37 @@
   .lightbox-overlay {
     position: fixed; inset: 0; z-index: 99999;
     background: rgba(0,0,0,0.92); display: flex; align-items: center; justify-content: center;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   }
   .lightbox-overlay.hidden { display: none; }
-  .lightbox-overlay .close { position: absolute; top: 16px; right: 20px; background: none; border: none; color: #e7e9ea; font-size: 2rem; cursor: pointer; z-index: 10; line-height: 1; padding: 4px 8px; border-radius: 8px; }
-  .lightbox-overlay .close:hover { background: rgba(255,255,255,0.12); }
-  .lightbox-overlay .nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.08); border: none; color: #e7e9ea; font-size: 1.5rem; cursor: pointer; padding: 12px 14px; border-radius: 8px; z-index: 10; }
-  .lightbox-overlay .nav:hover { background: rgba(255,255,255,0.16); }
-  .lightbox-overlay .nav.prev { left: 16px; }
-  .lightbox-overlay .nav.next { right: 16px; }
-  .lightbox-overlay img { max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain; }
+  .lightbox-overlay .close-btn {
+    position: absolute; top: 20px; right: 20px; z-index: 10;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: none;
+    color: #e7e9ea; font-size: 1.4rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background .15s;
+  }
+  .lightbox-overlay .close-btn:hover { background: rgba(255,255,255,0.22); }
+  .lightbox-overlay .nav-btn {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); border: none;
+    color: #e7e9ea; font-size: 1.4rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background .15s;
+  }
+  .lightbox-overlay .nav-btn:hover { background: rgba(255,255,255,0.18); }
+  .lightbox-overlay .nav-btn.prev { left: 20px; }
+  .lightbox-overlay .nav-btn.next { right: 20px; }
+  .lightbox-overlay .lb-counter {
+    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10;
+    background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.7);
+    font-size: 0.8rem; padding: 4px 14px; border-radius: 9999px;
+  }
+  .lightbox-overlay img {
+    max-width: 94%; max-height: 92%;
+    border-radius: 12px; object-fit: contain;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
 
   .sub-page-btn {
     background: #16181c; border: 1px solid #2f3336; border-radius: 9999px;
@@ -524,10 +546,11 @@
 </div>
 
 <div class="lightbox-overlay hidden" id="lbOverlay">
-  <button class="close" onclick="lbClose()">&times;</button>
-  <button class="nav prev hidden" id="lbPrev" onclick="lbNav(-1)">&#8249;</button>
-  <button class="nav next hidden" id="lbNext" onclick="lbNav(1)">&#8250;</button>
+  <button class="close-btn" onclick="lbClose()" aria-label="Close">&times;</button>
+  <button class="nav-btn prev hidden" id="lbPrev" onclick="lbNav(-1)" aria-label="Previous">&#8249;</button>
+  <button class="nav-btn next hidden" id="lbNext" onclick="lbNav(1)" aria-label="Next">&#8250;</button>
   <img id="lbImg" src="" alt="preview">
+  <span class="lb-counter hidden" id="lbCounter"></span>
 </div>
 
 <div id="loadingOverlay" class="loading-overlay hidden">
@@ -738,8 +761,9 @@ async function loadSubmissions() {
       if (s.image_paths) {
         try { imgs = JSON.parse(s.image_paths).map(function(p) { var parts = p.replace(/\\/g, '/').split('/'); return parts[parts.length - 1]; }); } catch (e) { imgs = []; }
       }
+      const imgsJson = JSON.stringify(imgs).replace(/'/g, "&#39;");
       const imgBadge = imgs.length
-        ? '<span class="sub-img-badge" onclick="lbOpen(' + JSON.stringify(imgs) + ',0)">\u{1F5BC} ' + imgs.length + '</span>' : '';
+        ? '<span class="sub-img-badge" data-imgs=\'' + imgsJson + '\' onclick="lbOpenFrom(this)">\u{1F5BC} ' + imgs.length + '</span>' : '';
       const delBtn = s.status === 'approved' && canDelete(s.reviewed_at)
         ? '<button class="submission-del" onclick="deleteTweet(' + s.id + ')" title="Delete from X">🗑️</button>' : '';
       const delInfo = s.status === 'approved' && s.reviewed_at
@@ -761,22 +785,29 @@ async function loadSubmissions() {
 
 let lbImages = [];
 let lbIndex = 0;
-function lbOpen(images, idx) {
-  lbImages = images;
-  lbIndex = idx;
+function lbOpenFrom(el) {
+  var raw = el.getAttribute('data-imgs');
+  if (!raw) return;
+  try { lbImages = JSON.parse(raw.replace(/&#39;/g, "'")); } catch(e) { return; }
+  lbIndex = 0;
   document.getElementById('lbOverlay').classList.remove('hidden');
-  document.getElementById('lbPrev').classList.toggle('hidden', images.length <= 1);
-  document.getElementById('lbNext').classList.toggle('hidden', images.length <= 1);
+  document.getElementById('lbPrev').classList.toggle('hidden', lbImages.length <= 1);
+  document.getElementById('lbNext').classList.toggle('hidden', lbImages.length <= 1);
   lbShow();
 }
 function lbShow() {
   document.getElementById('lbImg').src = '/api/images/' + lbImages[lbIndex];
+  var ctr = document.getElementById('lbCounter');
+  if (lbImages.length > 1) { ctr.classList.remove('hidden'); ctr.textContent = (lbIndex + 1) + ' / ' + lbImages.length; }
+  else { ctr.classList.add('hidden'); }
 }
 function lbClose() {
   document.getElementById('lbOverlay').classList.add('hidden');
   document.getElementById('lbImg').src = '';
+  lbImages = [];
 }
 function lbNav(dir) {
+  if (!lbImages.length) return;
   lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
   lbShow();
 }
@@ -1225,6 +1256,51 @@ function resetForm() {
   loadUser();
 }
 
+function renderCardToCanvas(text) {
+  var W = 800, P = 72, FS = 32, LS = 1.5, BG = '#15202b', TC = '#e7e9ea', FC = 'rgba(255,255,255,0.55)', SC = 'rgba(255,255,255,0.1)';
+  var temp = document.createElement('canvas'), tc = temp.getContext('2d');
+  tc.font = '600 ' + FS + 'px -apple-system,system-ui,sans-serif';
+  var mw = W - 2 * P, sw = tc.measureText(' ').width, lh = Math.round(FS * LS);
+  var lines = [];
+  text.split('\n').forEach(function(p) {
+    var cur = [], cw = 0;
+    p.split(' ').forEach(function(w) {
+      if (!w) return;
+      var ww = tc.measureText(w).width, tw = cur.length ? cw + sw + ww : ww;
+      if (tw <= mw) { cur.push(w); cw = cur.length > 1 ? cw + sw + ww : ww; }
+      else { if (cur.length) lines.push({w: cur.slice(), ww: cw}); else lines.push({w: [w], ww: ww}); cur = [w]; cw = ww; }
+    });
+    if (cur.length) lines.push({w: cur.slice(), ww: cw});
+  });
+  var tbh = lines.length * lh;
+  tc.font = '18px -apple-system,system-ui,sans-serif';
+  var fp = 'x.unsrifess.my.id \u00b7 generated by @unsrifess on ', fpm = tc.measureText(fp), fbh = fpm.actualBoundingBoxAscent + fpm.actualBoundingBoxDescent || 22;
+  var cbh = 4 + tbh + 24 + 1 + 14 + fbh, mh = Math.round(W * 0.55), ch = Math.max(mh, cbh + 2 * P), co = Math.round((ch - cbh) / 2);
+  var cv = document.createElement('canvas'); cv.width = W; cv.height = ch;
+  var cx = cv.getContext('2d');
+  cx.fillStyle = BG; cx.fillRect(0, 0, W, ch);
+  cx.fillStyle = TC; cx.textBaseline = 'top';
+  var ty = co + 4;
+  for (var i = 0; i < lines.length; i++) {
+    var l = lines[i]; cx.font = '600 ' + FS + 'px -apple-system,system-ui,sans-serif';
+    if (i < lines.length - 1 && l.w.length > 1 && l.ww < mw) {
+      var epg = (mw - l.ww) / (l.w.length - 1), x = P;
+      l.w.forEach(function(wd) { cx.fillText(wd, x, ty); x += cx.measureText(wd).width + sw + epg; });
+    } else { cx.fillText(l.w.join(' '), P, ty); }
+    ty += lh;
+  }
+  var sy = co + 4 + tbh + 24;
+  cx.strokeStyle = SC; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(P, sy); cx.lineTo(W - P, sy); cx.stroke();
+  cx.font = '18px -apple-system,system-ui,sans-serif'; cx.fillStyle = FC; cx.textBaseline = 'top';
+  var fpw = cx.measureText(fp).width, lsz = 14, tfw = fpw + lsz + 4, fx = Math.round((W - tfw) / 2), fy = sy + 14;
+  cx.fillText(fp, fx, fy);
+  var lx = fx + fpw + 2, ly = fy + Math.round((fbh - lsz) / 2), t = Math.max(1, Math.round(lsz / 6)), m = lsz * 0.24;
+  cx.strokeStyle = FC; cx.lineWidth = t;
+  cx.beginPath(); cx.moveTo(lx + m, ly + m); cx.lineTo(lx + lsz - m, ly + lsz - m);
+  cx.moveTo(lx + lsz - m, ly + m); cx.lineTo(lx + m, ly + lsz - m); cx.stroke();
+  return cv;
+}
+
 document.getElementById('submitBtn').addEventListener('click', async () => {
   const text = tweetText.value.trim();
   if (!text || !/unsr!/i.test(text)) return;
@@ -1240,6 +1316,9 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   formData.append('send_as_image', imageMode ? 'true' : 'false');
   if (imageMode) {
     formData.append('card_text', cardText.value);
+    var cardCanvas = renderCardToCanvas(cardText.value);
+    var blob = await new Promise(function(res) { cardCanvas.toBlob(res, 'image/png'); });
+    formData.append('images', blob, 'card.png');
   }
   for (const file of selectedFiles) {
     formData.append('images', file);

@@ -140,29 +140,35 @@
   /* ── Lightbox ── */
   .lightbox {
     position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.85); display: flex;
-    align-items: center; justify-content: center; padding: 20px;
+    background: rgba(0,0,0,0.92); display: flex;
+    align-items: center; justify-content: center;
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   }
   .lightbox.hidden { display: none; }
-  .lightbox .close {
-    position: absolute; top: 16px; right: 16px;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: rgba(255,255,255,0.1); border: none;
-    color: #fff; font-size: 1.2rem; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .lightbox .close:hover { background: rgba(255,255,255,0.2); }
-  .lightbox .nav {
-    position: absolute; top: 50%; transform: translateY(-50%);
+  .lightbox .close-btn {
+    position: absolute; top: 20px; right: 20px; z-index: 10;
     width: 40px; height: 40px; border-radius: 50%;
     background: rgba(255,255,255,0.1); border: none;
-    color: #fff; font-size: 1.3rem; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+    color: #e7e9ea; font-size: 1.4rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background .15s;
   }
-  .lightbox .nav:hover { background: rgba(255,255,255,0.2); }
-  .lightbox .nav.prev { left: 16px; }
-  .lightbox .nav.next { right: 16px; }
-  .lightbox img { max-width: 90%; max-height: 90%; border-radius: 12px; object-fit: contain; }
+  .lightbox .close-btn:hover { background: rgba(255,255,255,0.22); }
+  .lightbox .nav-btn {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); border: none;
+    color: #e7e9ea; font-size: 1.4rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: background .15s;
+  }
+  .lightbox .nav-btn:hover { background: rgba(255,255,255,0.18); }
+  .lightbox .nav-btn.prev { left: 20px; }
+  .lightbox .nav-btn.next { right: 20px; }
+  .lightbox img { max-width: 94%; max-height: 92%; border-radius: 12px; object-fit: contain; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+  .lightbox .lb-counter {
+    position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10;
+    background: rgba(0,0,0,0.6); color: rgba(255,255,255,0.7);
+    font-size: 0.8rem; padding: 4px 14px; border-radius: 9999px;
+  }
 
   /* ── Popup (bottom sheet) ── */
   .popup-overlay {
@@ -336,10 +342,11 @@
 
 <!-- Lightbox -->
 <div class="lightbox hidden" id="lightbox">
-  <button class="close" onclick="closeLightbox()">&times;</button>
-  <button class="nav prev" id="lbPrev" onclick="lbNav(-1)">&#8249;</button>
-  <button class="nav next" id="lbNext" onclick="lbNav(1)">&#8250;</button>
+  <button class="close-btn" onclick="closeLightbox()" aria-label="Close">&times;</button>
+  <button class="nav-btn prev" id="lbPrev" onclick="lbNav(-1)" aria-label="Previous">&#8249;</button>
+  <button class="nav-btn next" id="lbNext" onclick="lbNav(1)" aria-label="Next">&#8250;</button>
   <img id="lbImg" src="" alt="preview">
+  <span class="lb-counter hidden" id="lbCounter"></span>
 </div>
 
 <!-- Popup -->
@@ -468,13 +475,19 @@ function openLightbox(images, idx) {
   document.getElementById('lightbox').classList.remove('hidden');
   document.getElementById('lbPrev').classList.toggle('hidden', images.length <= 1);
   document.getElementById('lbNext').classList.toggle('hidden', images.length <= 1);
+  var ctr = document.getElementById('lbCounter');
+  if (images.length > 1) { ctr.classList.remove('hidden'); ctr.textContent = (idx + 1) + ' / ' + images.length; }
+  else { ctr.classList.add('hidden'); }
 }
 function closeLightbox() {
   document.getElementById('lightbox').classList.add('hidden');
+  document.getElementById('lbImg').src = '';
 }
 function lbNav(dir) {
   lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
   showLbImage();
+  var ctr = document.getElementById('lbCounter');
+  if (ctr && lbImages.length > 1) ctr.textContent = (lbIndex + 1) + ' / ' + lbImages.length;
 }
 function showLbImage() {
   document.getElementById('lbImg').src = '/panel/api/images/' + lbImages[lbIndex] + '?token=' + TOKEN;
