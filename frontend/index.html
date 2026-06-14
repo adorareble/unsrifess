@@ -3,6 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta property="og:title" content="Unsr!fess">
+<meta property="og:description" content="Confess anonymously on X — Unsr!fess">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/static/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Unsr!fess">
+<meta name="twitter:description" content="Confess anonymously on X">
+<meta name="twitter:image" content="/static/og-image.png">
+<link rel="icon" type="image/png" href="/static/favicon-32x32.png">
+<link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <title>Unsr!fess</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1382,10 +1395,9 @@ function renderCardToCanvas(text) {
   cx.font = '18px -apple-system,system-ui,sans-serif'; cx.fillStyle = FC; cx.textBaseline = 'top';
   var fpw = cx.measureText(fp).width, lsz = 14, tfw = fpw + lsz + 4, fx = Math.round((W - tfw) / 2), fy = sy + 14;
   cx.fillText(fp, fx, fy);
-  var lx = fx + fpw + 2, ly = fy + Math.round((fbh - lsz) / 2), t = Math.max(1, Math.round(lsz / 6)), m = lsz * 0.24;
-  cx.strokeStyle = FC; cx.lineWidth = t;
-  cx.beginPath(); cx.moveTo(lx + m, ly + m); cx.lineTo(lx + lsz - m, ly + lsz - m);
-  cx.moveTo(lx + lsz - m, ly + m); cx.lineTo(lx + m, ly + lsz - m); cx.stroke();
+  var lx = fx + fpw + 2, ly = fy + Math.round((fbh - lsz) / 2);
+  var xPath = new Path2D('M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z');
+  cx.save(); cx.translate(lx, ly); cx.scale(lsz / 24, lsz / 24); cx.fillStyle = FC; cx.fill(xPath); cx.restore();
   return cv;
 }
 

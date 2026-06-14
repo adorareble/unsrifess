@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from database import init_db, close_pool
 from routers.public import public_router
@@ -16,6 +17,9 @@ from routers.auth_x import auth_x_router
 from routers.sse import sse_router
 
 app = FastAPI(title="Unsr!fess")
+
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "frontend")), name="static")
 
 app.include_router(public_router)
 app.include_router(panel_router)
@@ -30,6 +34,19 @@ async def not_found(request: Request, exc):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="Unsr!fess">
+<meta property="og:description" content="Confess anonymously on X — Unsr!fess">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/static/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Unsr!fess">
+<meta name="twitter:description" content="Confess anonymously on X">
+<meta name="twitter:image" content="/static/og-image.png">
+<link rel="icon" type="image/png" href="/static/favicon-32x32.png">
+<link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <title>404 — Unsr!fess</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
