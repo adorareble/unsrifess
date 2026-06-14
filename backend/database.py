@@ -373,13 +373,13 @@ async def get_stats():
         total_submissions = await conn.fetchval("SELECT COUNT(*) FROM tweets")
 
         approved_today = await conn.fetchval(
-            "SELECT COUNT(*) FROM tweets WHERE status = 'approved' AND reviewed_at::date = CURRENT_DATE"
+            "SELECT COUNT(*) FROM tweets WHERE status = 'approved' AND submitted_at::date = CURRENT_DATE"
         )
         rejected_today = await conn.fetchval(
-            "SELECT COUNT(*) FROM tweets WHERE status = 'rejected' AND reviewed_at::date = CURRENT_DATE"
+            "SELECT COUNT(*) FROM tweets WHERE status = 'rejected' AND submitted_at::date = CURRENT_DATE"
         )
         deleted_today = await conn.fetchval(
-            "SELECT COUNT(*) FROM tweets WHERE status = 'deleted' AND reviewed_at::date = CURRENT_DATE"
+            "SELECT COUNT(*) FROM tweets WHERE status = 'deleted' AND submitted_at::date = CURRENT_DATE"
         )
         submissions_today = await conn.fetchval(
             "SELECT COUNT(*) FROM tweets WHERE submitted_at::date = CURRENT_DATE"
@@ -388,9 +388,7 @@ async def get_stats():
         total_users = await conn.fetchval("SELECT COUNT(*) FROM x_users")
         active_users = await conn.fetchval("SELECT COUNT(*) FROM x_users WHERE status = 'active'")
         inactive_users = await conn.fetchval("SELECT COUNT(*) FROM x_users WHERE status = 'inactive'")
-        active_submitters_30d = await conn.fetchval(
-            "SELECT COUNT(DISTINCT submitted_by) FROM tweets WHERE submitted_at >= NOW() - INTERVAL '30 days'"
-        )
+        active_submitters_30d = await conn.fetchval("SELECT COUNT(DISTINCT t.submitted_by) FROM tweets t JOIN x_users u ON t.submitted_by = u.x_user_id WHERE t.submitted_at >= NOW() - INTERVAL '30 days'")
 
         unique_today = await conn.fetchval(
             "SELECT COUNT(*) FROM page_views WHERE date = CURRENT_DATE"
