@@ -847,7 +847,7 @@ async function loadHistory() {
         + '<span>' + fmtTime(t.submitted_at) + '</span>'
         + (isCard ? '<span style="font-size:0.72rem;color:#71767b">\u{1F5BC}\uFE0F Card</span>' : '')
         + '</div>'
-        + '<div class="text-preview' + (dataImgs ? '"' + dataImgs : '') + ' data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + imgBadge + '</div>'
+        + '<div class="text-preview"' + (dataImgs ? ' ' + dataImgs : '') + ' data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + imgBadge + '</div>'
         + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b">'
         + '<span>Reviewer: ' + (t.reviewer_name || '-') + '</span>'
         + '<span>User: ' + (t.user_screen_name ? '<a href="javascript:void(0)" onclick="showUserTweets(' + t.x_user_db_id + ')" style="color:#1d9bf0;text-decoration:none">@' + escHtml(t.user_screen_name) + '</a>' : '-') + '</span>'
