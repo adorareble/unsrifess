@@ -96,8 +96,11 @@ async def tweet_sync(
     saved_paths = []
 
     if send_as_image:
-        if not card_text.strip():
+        stripped_card = card_text.strip()
+        if not stripped_card:
             return {"success": False, "error": "Card content is empty."}
+        if len(stripped_card) > 2000:
+            return {"success": False, "error": f"Card content too long ({len(stripped_card)} chars, max 2000)."}
 
     try:
         if images:

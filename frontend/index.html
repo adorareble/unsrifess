@@ -447,6 +447,7 @@
       <div id="cardInputArea" class="hidden">
         <div class="card-label">📝 Card content — will be rendered as an image</div>
         <textarea id="cardText" placeholder="Write the confession text for the card..." style="min-height:100px"></textarea>
+        <div class="tweet-count info" id="cardCount"></div>
         <div class="card-preview hidden" id="cardPreview">
           <div class="card-preview-inner">
             <div class="card-preview-text empty" id="cardPreviewText">Your confession will appear here...</div>
@@ -609,6 +610,7 @@ function toggleImageMode() {
     tweetText.maxLength = MAX_TWEET;
     previewBtn.style.display = 'none';
     updateCardPreview();
+    updateCardCount();
   } else {
     cardArea.classList.add('hidden');
     uploadArea.classList.remove('hidden');
@@ -915,10 +917,27 @@ function updateTweetCount() {
   }
 }
 
+function updateCardCount() {
+  var el = document.getElementById('cardCount');
+  var len = cardText.value.length;
+  var max = 2000;
+  if (len === 0) {
+    el.className = 'tweet-count info';
+    el.textContent = '';
+  } else if (len > max) {
+    el.className = 'tweet-count over';
+    el.textContent = len + '/' + max + ' chars (too long)';
+  } else {
+    el.className = 'tweet-count ok';
+    el.textContent = len + '/' + max + ' chars';
+  }
+}
+
 function checkSubmitReady() {
   const text = tweetText.value.trim();
   const valid = /unsr!/i.test(text);
-  const cardOk = !imageMode || cardText.value.trim().length > 0;
+  const cardLen = cardText.value.trim().length;
+  const cardOk = !imageMode || (cardLen > 0 && cardLen <= 2000);
   submitBtn.disabled = !valid || !cardOk || rateLimited;
   document.getElementById('previewBtn').disabled = text.length === 0;
 }
@@ -1212,6 +1231,7 @@ tweetText.addEventListener('input', () => {
 });
 
 cardText.addEventListener('input', () => {
+  updateCardCount();
   updateCardPreview();
   updateValidation();
   checkSubmitReady();
@@ -1241,6 +1261,7 @@ function resetForm() {
   selectedFiles = [];
   updateFilePreview();
   updateTweetCount();
+  updateCardCount();
   validateMsg.className = 'validate-msg';
   validateMsg.textContent = '';
   tweetText.classList.remove('error');
