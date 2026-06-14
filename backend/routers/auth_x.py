@@ -289,6 +289,7 @@ async def x_refresh_mutual(request: Request):
     name = mutual_result.get("name", "")
     avatar_url = mutual_result.get("avatar_url", "")
     await update_x_user_profile(x_user_id, new_screen_name, name, avatar_url)
+    await update_x_user_status(x_user_id, mutual_result.get("user_status", "active"))
     publish("user_status_changed", {
         "event": "user_status_changed",
         "x_user_id": x_user_id,

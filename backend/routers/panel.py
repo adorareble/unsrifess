@@ -526,22 +526,21 @@ async def panel_sync_all_users(
             async with sem:
                 try:
                     result = await client.check_mutual(target_user_id=row["x_user_id"])
-                    if "error" in result:
-                        await update_follow_status(row["x_user_id"], False, False)
-                        await update_x_user_status(row["x_user_id"], result.get("user_status", "active"))
+                    user_status = result.get("user_status", "active")
+                    if "error" in result or user_status != "active":
+                        await update_x_user_status(row["x_user_id"], user_status)
                         return False
                     we_follow = result.get("we_follow", False)
                     follows_us = result.get("follows_us", False)
                     await update_follow_status(row["x_user_id"], we_follow, follows_us)
-                    await update_x_user_status(row["x_user_id"], result.get("user_status", "active"))
                     screen_name = result.get("screen_name", row["screen_name"])
                     name = result.get("name", "")
                     avatar_url = result.get("avatar_url", "")
                     await update_x_user_profile(row["x_user_id"], screen_name, name, avatar_url)
+                    await update_x_user_status(row["x_user_id"], "active")
                     return True
                 except Exception as e:
                     logging.warning(f"sync_one({row['x_user_id']}) failed: {e}")
-                    await update_follow_status(row["x_user_id"], False, False)
                     return False
 
         results = await asyncio.gather(*[sync_one(r) for r in rows])
