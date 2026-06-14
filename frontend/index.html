@@ -722,8 +722,7 @@ async function deleteTweet(id) {
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Delete', cls: 'popup-btn-danger', fn: async () => {
       closePopup();
-      showLoading();
-      document.querySelector('.loading-text').textContent = 'Deleting...';
+      showLoading('Deleting...');
       try {
         const r = await fetch('/api/auth/tweets/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
         const d = await r.json();
@@ -1020,8 +1019,9 @@ function updateFilePreview() {
   });
 }
 
-function showLoading() {
+function showLoading(text) {
   loadingOverlay.classList.remove('hidden');
+  document.querySelector('.loading-text').textContent = text || 'Posting...';
   progressBar.style.width = '0%';
   let p = 0;
   const interval = setInterval(() => {
