@@ -3,7 +3,7 @@ import os
 import json
 import asyncio
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "backend"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "backend"))
 
 from twitter_client import STATE_FILE
 
