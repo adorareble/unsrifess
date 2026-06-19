@@ -9,12 +9,14 @@ sys.path.insert(0, os.path.dirname(__file__))
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.exceptions import HTTPException
 
 from database import init_db, close_pool
 from routers.public import public_router
 from routers.panel import panel_router
 from routers.auth_x import auth_x_router
 from routers.sse import sse_router
+from routers.admin import admin_router
 
 app = FastAPI(title="Unsr!fess")
 
@@ -25,6 +27,51 @@ app.include_router(public_router)
 app.include_router(panel_router)
 app.include_router(auth_x_router)
 app.include_router(sse_router)
+app.include_router(admin_router)
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return HTMLResponse(f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{exc.status_code} — Unsr!fess</title>
+<style>
+  *{{margin:0;padding:0;box-sizing:border-box}}
+  body{{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:#000;color:#e7e9ea;min-height:100vh;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }}
+  .card{{
+    background:#16181c;border:1px solid #2f3336;border-radius:20px;
+    padding:40px;text-align:center;max-width:460px;width:100%;
+  }}
+  .code{{
+    font-size:6rem;font-weight:800;line-height:1;
+    background:linear-gradient(135deg,#1d9bf0,#8b5cf6);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;margin-bottom:.25rem;
+  }}
+  .msg{{font-size:1.2rem;color:#71767b;margin-bottom:2rem}}
+  .btn{{
+    display:inline-block;padding:13px 32px;border:none;border-radius:9999px;
+    background:#1d9bf0;color:#fff;font-size:1rem;font-weight:700;
+    text-decoration:none;transition:background .2s;
+  }}
+  .btn:hover{{background:#1a8cd8}}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="code">{exc.status_code}</div>
+    <div class="msg">{exc.detail}</div>
+    <a class="btn" href="/">Back to Home</a>
+  </div>
+</body>
+</html>""", status_code=exc.status_code)
 
 
 @app.exception_handler(404)
@@ -34,19 +81,6 @@ async def not_found(request: Request, exc):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta property="og:title" content="Unsr!fess">
-<meta property="og:description" content="Confess anonymously on X — Unsr!fess">
-<meta property="og:type" content="website">
-<meta property="og:image" content="/static/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Unsr!fess">
-<meta name="twitter:description" content="Confess anonymously on X">
-<meta name="twitter:image" content="/static/og-image.png">
-<link rel="icon" type="image/png" href="/static/favicon-32x32.png">
-<link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
-<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <title>404 — Unsr!fess</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
@@ -82,11 +116,6 @@ async def not_found(request: Request, exc):
   </div>
 </body>
 </html>""", status_code=404)
-
-
-@app.get("/panel")
-async def panel_root():
-    return RedirectResponse(url="/panel/dashboard")
 
 
 @app.on_event("startup")

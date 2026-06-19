@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="Unsr!fess — Anonymous Confessions">
+<meta property="og:description" content="Multi-tenant anonymous confession platform. Create your own service or submit confessions anonymously.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/static/og-image.png">
+<meta name="theme-color" content="#0e0e12">
+<title>Unsr!fess — Anonymous Confessions</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0e0e12;color:#e7e9ea;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 16px}
+  .container{max-width:680px;width:100%}
+  .header{text-align:center;padding-bottom:16px;border-bottom:1px solid #2a2a38;margin-bottom:32px}
+  h1{font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:default;display:inline-block}
+
+  .hero{text-align:center;margin-bottom:40px}
+  .hero h2{font-size:1.8rem;font-weight:700;margin-bottom:10px;line-height:1.2}
+  .hero p{font-size:1rem;color:#888;max-width:500px;margin:0 auto;line-height:1.6}
+
+  .section-title{font-size:.75rem;font-weight:600;color:#52565c;text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px}
+  .explainer{background:#1a1a24;border:1px solid #2a2a38;border-radius:14px;padding:24px;margin-bottom:32px}
+  .explainer-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .explainer-grid .item{text-align:center;padding:16px 12px;background:#0e0e12;border-radius:10px}
+  .explainer-grid .item .icon{font-size:1.6rem;margin-bottom:6px}
+  .explainer-grid .item .label{font-size:.82rem;color:#e7e9ea;font-weight:500}
+  .explainer-grid .item .desc{font-size:.72rem;color:#71767b;margin-top:4px;line-height:1.4}
+
+  .tenant-list{display:flex;flex-direction:column;gap:8px;margin-bottom:32px}
+  .tenant-card{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;transition:border-color .2s;text-decoration:none;color:inherit}
+  .tenant-card:hover{border-color:#1d9bf0}
+  .tenant-card .info .name{font-weight:600;font-size:.95rem}
+  .tenant-card .info .handle{font-size:.8rem;color:#71767b;margin-top:2px}
+  .tenant-card .visit-btn{padding:6px 18px;border:none;border-radius:9999px;background:#1d9bf0;color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .2s;flex-shrink:0}
+  .tenant-card .visit-btn:hover{opacity:.85}
+  .empty-state{text-align:center;padding:48px 20px;color:#52565c;font-size:.9rem;line-height:1.6}
+  .empty-state .btn{margin-top:12px}
+
+  .cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:48px}
+  .cta-row a{padding:12px 28px;border-radius:9999px;text-decoration:none;font-size:.9rem;font-weight:600;transition:opacity .2s}
+  .cta-row a:hover{opacity:.8}
+  .cta-primary{background:#1d9bf0;color:#fff}
+  .cta-ghost{background:transparent;border:1px solid #2a2a38;color:#e7e9ea}
+  .cta-ghost:hover{border-color:#1d9bf0}
+
+  .footer{margin-top:auto;padding-top:24px;text-align:center;font-size:.78rem;color:#52565c;border-top:1px solid #2a2a38;width:100%;max-width:680px}
+  .footer a{color:#71767b;text-decoration:none}
+
+  .spinner{width:24px;height:24px;border:2px solid #2a2a38;border-top-color:#1d9bf0;border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  @media(max-width:500px){.explainer-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1 id="logo">Unsr!fess</h1>
+  </div>
+
+  <div class="hero">
+    <h2>Confess Anonymously</h2>
+    <p>Multi-tenant anonymous confession platform powered by X. Create your own service or submit to existing ones.</p>
+  </div>
+
+  <div class="section-title">How It Works</div>
+  <div class="explainer">
+    <div class="explainer-grid">
+      <div class="item">
+        <div class="icon">🔧</div>
+        <div class="label">Create Service</div>
+        <div class="desc">Register your own confession page with custom branding.</div>
+      </div>
+      <div class="item">
+        <div class="icon">📝</div>
+        <div class="label">Submit Confession</div>
+        <div class="desc">Users send anonymous messages via your service page.</div>
+      </div>
+      <div class="item">
+        <div class="icon">👀</div>
+        <div class="label">Review &amp; Moderate</div>
+        <div class="desc">Admin panel to review, approve, or reject submissions.</div>
+      </div>
+      <div class="item">
+        <div class="icon">🐦</div>
+        <div class="label">Post to X</div>
+        <div class="desc">Approved confessions are posted to your X account.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Active Services</div>
+  <div class="tenant-list" id="tenantList">
+    <div class="empty-state"><div class="spinner"></div>Loading services...</div>
+  </div>
+
+  <div class="cta-row">
+    <a href="/register" class="cta-primary">+ Create Your Service</a>
+    <a href="/admin-login" class="cta-ghost">Login</a>
+  </div>
+</div>
+<script>
+async function loadTenants() {
+  try {
+    const r = await fetch('/api/tenants');
+    const d = await r.json();
+    const el = document.getElementById('tenantList');
+    if (!d || !d.length) {
+      el.innerHTML = '<div class="empty-state">No services yet. <a href="/register" style="color:#1d9bf0;text-decoration:none">Be the first!</a></div>';
+      return;
+    }
+    el.innerHTML = d.map(function(t) {
+      return '<a class="tenant-card" href="/' + esc(t.slug) + '">'
+        + '<div class="info"><div class="name">' + esc(t.name) + '</div>'
+        + '<div class="handle">@' + esc(t.x_screen_name || '-') + '</div></div>'
+        + '<span class="visit-btn">Visit</span></a>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('tenantList').innerHTML = '<div class="empty-state">Failed to load services. Try again later.</div>';
+  }
+}
+function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+let clickCount = 0;
+document.getElementById('logo').addEventListener('click', function() {
+  clickCount++;
+  if (clickCount >= 5) {
+    window.location.href = '/panel/admin';
+  }
+});
+
+loadTenants();
+</script>
+</body>
+</html>

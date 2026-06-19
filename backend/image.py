@@ -4,8 +4,7 @@ import asyncio
 from PIL import Image, ImageDraw, ImageFont
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-TEMP_DIR = os.path.join(BASE_DIR, "temp_images")
-os.makedirs(TEMP_DIR, exist_ok=True)
+TEMP_DIR = os.path.join(BASE_DIR, "temp_images", "{tenant_id}")
 
 WATERMARK_TEXT = "@unsrifess"
 MAX_IMAGE_DIMENSION = 1920

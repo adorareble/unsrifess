@@ -1192,7 +1192,63 @@ async function loadSettings() {
  + '<span id="announcementMsg" style="font-size:0.75rem;color:#71767b"></span>'
       + '</div></div>';
   }
-  html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
+  html += '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">X Connection</h3>'
+    + '<div id="xConnectSection" style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
+    + '<span style="font-size:0.9rem;color:#e7e9ea">Status: <span id="xConnectStatus" class="badge-off">Checking...</span></span>'
+    + '<span style="font-size:0.85rem;color:#71767b" id="xConnectHandle"></span>'
+    + '</div>'
+    + '<div id="xConnectForm" style="display:none">'
+    + '<div style="font-size:0.8rem;color:#52565c;margin-bottom:8px">Cookies (JSON):</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<textarea id="xcCookies" placeholder="Paste JSON cookies here..." rows="4" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.82rem;outline:none;resize:vertical;font-family:monospace"></textarea>'
+    + '<button class="btn-action btn-approve" style="align-self:flex-start" onclick="xConnectCookies()">Connect</button>'
+    + '</div>'
+    + '<div id="xConnectMsg" style="font-size:0.85rem;margin-top:8px"></div>'
+    + '<div style="margin-top:10px;font-size:0.82rem;color:#71767b">'
+    + '<span onclick="var d=document.getElementById(\'cookieTutorial\');d.style.display=d.style.display==\'none\'?\'block\':\'none\'" style="cursor:pointer;text-decoration:underline;color:#1d9bf0">How to get cookies?</span>'
+    + '<div id="cookieTutorial" style="display:none;margin-top:8px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;padding:12px;line-height:1.6;font-size:0.82rem;color:#aaa">'
+    + 'Chrome — install <a href="https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm" target="_blank" style="color:#1d9bf0">Cookie-Editor</a> extension, then:<br>'
+    + '<ol style="margin:6px 0 0 16px;padding:0">'
+    + '<li>Open <a href="https://x.com" target="_blank" style="color:#1d9bf0">x.com</a>, log in.</li>'
+    + '<li>Click the <b>Cookie-Editor</b> icon (puzzle piece top-right).</li>'
+    + '<li>Click <b>Export</b> (bottom of popup) → make sure format is <b>JSON</b>.</li>'
+    + '<li>Click <b>Copy to clipboard</b> (or select all & copy).</li>'
+    + '<li>Come back here, paste (Ctrl+V) into the textarea above.</li>'
+    + '</ol>'
+    + '<div style="margin-top:8px;font-size:0.78rem;color:#52565c">Need help? DM <a href="https://x.com/adorareble" target="_blank" style="color:#1d9bf0">@adorareble</a></div>'
+    + '</div></div>'
+    + '</div>'
+    + '</div>'
+    + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">Branding</h3>'
+    + '<div style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
+    + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">OG Title</div>'
+    + '<input id="brandTitle" placeholder="OG Title" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none;margin-bottom:8px">'
+    + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">OG Description</div>'
+    + '<textarea id="brandDesc" placeholder="OG Description" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none;resize:vertical;margin-bottom:8px"></textarea>'
+    + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">Theme Color</div>'
+    + '<div style="display:flex;gap:8px;margin-bottom:12px">'
+    + '<input id="brandColor" type="color" value="#0e0e12" oninput="document.getElementById(\'brandColorHex\').value=this.value" style="width:44px;height:44px;background:none;border:1px solid #2f3336;border-radius:8px;cursor:pointer;padding:2px">'
+    + '<input id="brandColorHex" placeholder="#0e0e12" oninput="var c=this.value;if(/^#[0-9a-f]{6}$/i.test(c))document.getElementById(\'brandColor\').value=c" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none;font-family:monospace">'
+    + '</div>'
+    + '<button class="btn-action btn-approve" onclick="saveBrandingMeta()">Save Meta</button>'
+    + '<span id="brandMetaMsg" style="font-size:0.8rem;margin-left:8px;color:#71767b"></span>'
+    + '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #2f3336">'
+    + '<div style="display:flex;gap:12px;flex-wrap:wrap">'
+    + '<div><div style="font-size:0.8rem;color:#71767b;margin-bottom:4px">Favicon</div><input type="file" id="faviconInput" accept=".ico,.png" style="display:none" onchange="uploadFavicon(this)"><button class="btn-small primary" onclick="document.getElementById(\'faviconInput\').click()">Upload</button></div>'
+    + '<div><div style="font-size:0.8rem;color:#71767b;margin-bottom:4px">OG Image (1200x630)</div><input type="file" id="ogImageInput" accept=".png,.jpg,.jpeg" style="display:none" onchange="uploadOgImage(this)"><button class="btn-small primary" onclick="document.getElementById(\'ogImageInput\').click()">Upload</button></div>'
+    + '</div>'
+    + '<div id="brandUploadMsg" style="font-size:0.85rem;margin-top:8px"></div>'
+    + '</div></div>'
+    + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">Slug</h3>'
+    + '<div style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
+    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Changing slug will break existing links. Use with caution.</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<input id="slugInput" placeholder="current-slug" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none;font-family:monospace">'
+    + '<button class="btn-action btn-approve" onclick="updateSlug()">Save</button>'
+    + '</div><div id="slugMsg" style="font-size:0.85rem;margin-top:6px"></div>'
+    + '</div>'
+    + '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
     + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
     + '<div class="add-keyword-form" style="margin-bottom:10px">'
     + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
@@ -1231,7 +1287,7 @@ async function loadSettings() {
   el.innerHTML = html;
 
   loadKeywordsSection();
-  if (isSuper) loadAdminsSection();
+  if (isSuper) { loadAdminsSection(); xConnectStatus(); }
   loadSettingsActivity();
 
   if (isSuper) {
@@ -1248,6 +1304,20 @@ async function loadSettings() {
         if (dw) dw.value = d.delete_window || 5;
         const ann = document.getElementById('announcementInput');
         if (ann) ann.value = d.announcement || '';
+      }).catch(() => {});
+    fetch('/panel/api/tenant', { headers: { 'Authorization': 'Bearer ' + TOKEN } })
+      .then(r => r.json())
+      .then(t => {
+        const si = document.getElementById('slugInput');
+        if (si) si.value = t.slug || '';
+        const bt = document.getElementById('brandTitle');
+        if (bt) bt.value = t.og_title || '';
+        const bd = document.getElementById('brandDesc');
+        if (bd) bd.value = t.og_description || '';
+        const bc = document.getElementById('brandColor');
+        if (bc) bc.value = t.og_color || '#0e0e12';
+        const bch = document.getElementById('brandColorHex');
+        if (bch) bch.value = t.og_color || '#0e0e12';
       }).catch(() => {});
   }
 }
@@ -1389,6 +1459,134 @@ async function changePassword() {
       document.getElementById('pwOld').value = ''; document.getElementById('pwNew').value = '';
     } else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
   } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Connection error'; }
+}
+
+// ── Connect X ──
+async function xConnectStatus() {
+  try {
+    const r = await api('/panel/api/connect-x/status');
+    const d = await r.json();
+    const status = document.getElementById('xConnectStatus');
+    const handle = document.getElementById('xConnectHandle');
+    const form = document.getElementById('xConnectForm');
+    if (d.connected) {
+      status.textContent = 'Connected';
+      status.className = 'badge-on';
+      handle.textContent = '@' + (d.x_screen_name || '');
+      form.style.display = 'none';
+    } else {
+      status.textContent = 'Disconnected';
+      status.className = 'badge-off';
+      handle.textContent = '';
+      form.style.display = 'block';
+    }
+  } catch(e) {
+    const status = document.getElementById('xConnectStatus');
+    if (status) { status.textContent = 'Error'; status.className = 'badge-off'; }
+  }
+}
+
+async function xConnectCookies() {
+  const json = document.getElementById('xcCookies').value.trim();
+  const msg = document.getElementById('xConnectMsg');
+  if (!json) { msg.style.color = '#f4212e'; msg.textContent = 'Paste cookie JSON first'; return; }
+  msg.textContent = 'Validating...';
+  msg.style.color = '#71767b';
+  try {
+    const form = new URLSearchParams();
+    form.append('cookies_json', json);
+    const r = await api('/panel/api/connect-x/cookies', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
+    const d = await r.json();
+    if (d.success) {
+      msg.style.color = '#00ba7c';
+      msg.textContent = 'Connected! Session saved.';
+      xConnectStatus();
+    } else {
+      msg.style.color = '#f4212e';
+      msg.textContent = d.error || 'Invalid cookies';
+    }
+  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Error validating cookies'; }
+}
+
+// ── Branding ──
+async function saveBrandingMeta() {
+  const title = document.getElementById('brandTitle').value.trim();
+  const desc = document.getElementById('brandDesc').value.trim();
+  const color = document.getElementById('brandColorHex').value.trim();
+  const msg = document.getElementById('brandMetaMsg');
+  msg.textContent = 'Saving...';
+  msg.style.color = '#71767b';
+  try {
+    const form = new URLSearchParams();
+    if (title) form.append('og_title', title);
+    if (desc) form.append('og_description', desc);
+    if (color) form.append('og_color', color);
+    const r = await api('/panel/api/branding/meta', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
+    const d = await r.json();
+    if (d.success) {
+      msg.style.color = '#00ba7c';
+      msg.textContent = 'Saved!';
+    } else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Error'; }
+}
+
+async function uploadFavicon(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const msg = document.getElementById('brandUploadMsg');
+  msg.textContent = 'Uploading...';
+  msg.style.color = '#71767b';
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    const r = await api('/panel/api/branding/favicon', { method: 'POST', body: form });
+    const d = await r.json();
+    if (d.success) { msg.style.color = '#00ba7c'; msg.textContent = 'Favicon updated!'; }
+    else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Upload error'; }
+}
+
+async function uploadOgImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const msg = document.getElementById('brandUploadMsg');
+  msg.textContent = 'Uploading...';
+  msg.style.color = '#71767b';
+  try {
+    const form = new FormData();
+    form.append('file', file);
+    const r = await api('/panel/api/branding/og-image', { method: 'POST', body: form });
+    const d = await r.json();
+    if (d.success) { msg.style.color = '#00ba7c'; msg.textContent = 'OG image updated!'; }
+    else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Upload error'; }
+}
+
+// ── Slug ──
+async function updateSlug() {
+  const slug = document.getElementById('slugInput').value.trim();
+  const msg = document.getElementById('slugMsg');
+  if (!slug) { msg.style.color = '#f4212e'; msg.textContent = 'Slug cannot be empty'; return; }
+  msg.textContent = 'Saving...';
+  msg.style.color = '#71767b';
+  try {
+    const form = new URLSearchParams();
+    form.append('new_slug', slug);
+    const r = await api('/panel/api/settings/slug', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
+    const d = await r.json();
+    if (d.success) {
+      msg.style.color = '#00ba7c';
+      msg.textContent = 'Slug changed! Reloading...';
+      setTimeout(function() {
+        const newSlug = d.slug || slug;
+        localStorage.setItem('admin_token', TOKEN);
+        window.location.href = '/' + newSlug + '/panel/dashboard';
+      }, 1000);
+    } else {
+      msg.style.color = '#f4212e';
+      msg.textContent = d.detail || 'Failed';
+    }
+  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Error'; }
 }
 
 async function setDeleteWindow() {

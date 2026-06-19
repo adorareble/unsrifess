@@ -1,15 +1,16 @@
 import asyncio
 import json
 
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, Depends
 from fastapi.responses import StreamingResponse
 
 from event_bus import subscribe, unsubscribe
+from routers.public import get_active_tenant
 
 sse_router = APIRouter()
 
 
-async def _event_generator(topics: list[str]):
+async def _event_generator(topics: list[str], tenant_id: int | None = None):
     queues = {t: subscribe(t) for t in topics}
     get_tasks = {}
     try:
@@ -25,6 +26,11 @@ async def _event_generator(topics: list[str]):
             for task in done:
                 topic = get_tasks[task]
                 data = task.result()
+                if tenant_id is not None and data.get("tenant_id") is not None and data["tenant_id"] != tenant_id:
+                    del get_tasks[task]
+                    new_task = asyncio.ensure_future(queues[topic].get())
+                    get_tasks[new_task] = topic
+                    continue
                 yield f"event: {data['event']}\ndata: {json.dumps(data)}\n\n"
                 del get_tasks[task]
                 new_task = asyncio.ensure_future(queues[topic].get())
@@ -37,19 +43,25 @@ async def _event_generator(topics: list[str]):
             unsubscribe(topic, q)
 
 
-@sse_router.get("/api/events")
-async def public_events(request: Request, token: str = Query("")):
+@sse_router.get("/{slug}/api/events")
+async def public_events(
+    request: Request,
+    slug: str,
+    tenant: dict = Depends(get_active_tenant),
+    token: str = Query(""),
+):
     from auth import decode_token
 
+    tenant_id = tenant["id"]
     topics = ["status_changed", "announcement_changed"]
 
     if token:
         payload = decode_token(token)
-        if payload and payload.get("type") == "user":
+        if payload and payload.get("type") == "user" and payload.get("tenant_id") == tenant_id:
             topics.extend(["tweet_updated", "user_status_changed"])
 
     return StreamingResponse(
-        _event_generator(topics),
+        _event_generator(topics, tenant_id=tenant_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -59,13 +71,23 @@ async def public_events(request: Request, token: str = Query("")):
     )
 
 
-@sse_router.get("/panel/api/events")
-async def admin_events(request: Request, token: str = Query("")):
+@sse_router.get("/{slug}/panel/api/events")
+async def admin_events(
+    request: Request,
+    slug: str,
+    tenant: dict = Depends(get_active_tenant),
+    token: str = Query(""),
+):
     from auth import decode_token
 
+    tenant_id = tenant["id"]
     payload = decode_token(token) if token else None
     if payload is None or payload.get("type") != "admin":
         return StreamingResponse(iter([]), status_code=401)
+
+    admin_tenant_id = payload.get("tenant_id")
+    if admin_tenant_id is not None and admin_tenant_id != tenant_id:
+        return StreamingResponse(iter([]), status_code=403)
 
     topics = [
         "new_tweet",
@@ -79,7 +101,7 @@ async def admin_events(request: Request, token: str = Query("")):
         "admin_updated",
     ]
     return StreamingResponse(
-        _event_generator(topics),
+        _event_generator(topics, tenant_id=tenant_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

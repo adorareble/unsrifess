@@ -4,10 +4,7 @@ import asyncio
 import logging
 from twikit import Client
 
-STATE_FILE = os.path.join(
-    os.environ.get("STATE_DIR", os.path.dirname(os.path.dirname(__file__))),
-    "twitter_state.json"
-)
+STATE_DIR = os.environ.get("STATE_DIR", os.path.dirname(os.path.dirname(__file__)))
 MAX_CHARS = 280
 MAX_TEXT_LENGTH = 1000
 
@@ -50,7 +47,7 @@ def split_into_chunks(text, max_length=MAX_CHARS):
 
 
 class TwitterClient:
-    def __init__(self, state_file=STATE_FILE):
+    def __init__(self, state_file):
         self.state_file = state_file
         self._client = Client(
             "en-US",
@@ -118,10 +115,7 @@ class TwitterClient:
         async with self._lock:
             cookies = self._load_cookies()
             if cookies is None:
-                return {
-                    "success": False,
-                    "error": "Not logged in. Run setup_login.py first.",
-                }
+                return {"success": False, "error": "Not logged in. Run setup_login.py first."}
             self._client.set_cookies(cookies, clear_cookies=True)
 
             if image_paths is None:
@@ -211,16 +205,15 @@ class TwitterClient:
                     progress_callback(0, 0, f"Error: {err_msg}")
                 return {"success": False, "error": err_msg}
 
-
-    async def check_mutual(self, target_screen_name: str = None, target_user_id: str = None) -> dict:
+    async def check_mutual(self, base_screen_name: str, target_screen_name: str = None, target_user_id: str = None) -> dict:
         cookies = self._load_cookies()
         if cookies is None:
             return {"error": "Not logged in. Run setup_login.py first."}
         self._client.set_cookies(cookies, clear_cookies=True)
 
         try:
-            unsrifess = await self._client.get_user_by_screen_name("unsrifess")
-            unsrifess_id = unsrifess.id
+            base_user = await self._client.get_user_by_screen_name(base_screen_name)
+            base_id = base_user.id
 
             if target_user_id:
                 raw_resp, _ = await self._client.gql.user_by_rest_id(target_user_id)
@@ -232,7 +225,7 @@ class TwitterClient:
             if raw_resp.get("errors"):
                 return {
                     "is_mutual": False, "follows_us": False, "we_follow": False,
-                    "target_id": "", "unsrifess_id": str(unsrifess_id),
+                    "target_id": "", "base_id": str(base_id),
                     "screen_name": lookup_key, "user_status": "inactive",
                     "name": "", "avatar_url": "",
                 }
@@ -253,7 +246,7 @@ class TwitterClient:
             avatar_url = legacy.get("profile_image_url_https", "")
 
             logging.info(
-                f"check_mutual({screen_name}): "
+                f"check_mutual({base_screen_name}, {screen_name}): "
                 f"target_id={target_id}, "
                 f"we_follow={we_follow}, follows_us={follows_us}, "
                 f"user_status={user_status}"
@@ -264,7 +257,7 @@ class TwitterClient:
                 "follows_us": follows_us,
                 "we_follow": we_follow,
                 "target_id": str(target_id) if target_id else "",
-                "unsrifess_id": str(unsrifess_id),
+                "base_id": str(base_id),
                 "screen_name": screen_name,
                 "user_status": user_status,
                 "name": name,
@@ -281,7 +274,7 @@ class TwitterClient:
         self._client.set_cookies(cookies, clear_cookies=True)
 
         try:
-            result = await self._client.follow_user(target_id)
+            await self._client.follow_user(target_id)
             return {"success": True}
         except Exception as e:
             logging.exception(f"follow_user failed: {e}")
@@ -294,7 +287,7 @@ class TwitterClient:
         self._client.set_cookies(cookies, clear_cookies=True)
 
         try:
-            result = await self._client.unfollow_user(target_id)
+            await self._client.unfollow_user(target_id)
             return {"success": True}
         except Exception as e:
             logging.exception(f"unfollow_user failed: {e}")
@@ -353,4 +346,20 @@ class TwitterClient:
             }
 
 
-client = TwitterClient()
+class TwitterClientPool:
+    _clients: dict[int, TwitterClient] = {}
+
+    @classmethod
+    def state_path_for(cls, tenant_id: int) -> str:
+        return os.path.join(STATE_DIR, "twitter_states", f"{tenant_id}.json")
+
+    @classmethod
+    def get_for_tenant(cls, tenant_id: int) -> TwitterClient:
+        if tenant_id not in cls._clients:
+            state_file = cls.state_path_for(tenant_id)
+            cls._clients[tenant_id] = TwitterClient(state_file)
+        return cls._clients[tenant_id]
+
+    @classmethod
+    def reset_for_tenant(cls, tenant_id: int):
+        cls._clients.pop(tenant_id, None)

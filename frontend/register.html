@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta property="og:title" content="Register — Unsr!fess">
+<meta property="og:description" content="Create your own anonymous confession service">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/static/og-image.png">
+<meta name="theme-color" content="#0e0e12">
+<title>Register — Unsr!fess</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0e0e12;color:#e7e9ea;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{background:#1a1a24;border:1px solid #2a2a38;border-radius:16px;padding:32px;max-width:480px;width:100%}
+  h1{font-size:1.4rem;margin-bottom:4px}
+  .sub{font-size:.85rem;color:#71767b;margin-bottom:24px}
+  label{display:block;font-size:.85rem;margin-bottom:4px;color:#aaa}
+  input{width:100%;padding:12px 14px;margin-bottom:16px;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;font-size:.95rem;transition:border-color .2s}
+  input:focus{outline:none;border-color:#1d9bf0}
+  .hint{font-size:.78rem;color:#52565c;margin-top:-12px;margin-bottom:16px}
+  .error{color:#f4212e;font-size:.85rem;margin-bottom:12px;display:none}
+  .success{color:#00ba7c;font-size:.85rem;margin-bottom:12px;display:none}
+  button{width:100%;padding:13px;background:#1d9bf0;color:#fff;border:none;border-radius:9999px;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s}
+  button:hover{opacity:.85}
+  button:disabled{opacity:.3;cursor:not-allowed}
+  .footer{text-align:center;margin-top:20px;font-size:.8rem;color:#52565c}
+  .footer a{color:#71767b;text-decoration:none}
+  .footer a:hover{color:#1d9bf0}
+  .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>Create Your Unsr!fess</h1>
+<div class="sub">Set up your own anonymous confession service in seconds.</div>
+<div class="error" id="errorMsg"></div>
+<div class="success" id="successMsg"></div>
+<form id="registerForm" onsubmit="handleRegister(event)">
+  <label for="name">Service Name</label>
+  <input type="text" id="name" placeholder="e.g. My Confessions" required autocomplete="off">
+  <div class="hint">Your service name will appear in the header.</div>
+
+  <label for="slug">URL Slug</label>
+  <input type="text" id="slug" placeholder="e.g. my-confessions" required autocomplete="off" pattern="[a-z0-9-]+">
+  <div class="hint">Your page will be at <span id="slugPreview">/slug</span></div>
+
+  <label for="xScreen">X Handle (optional)</label>
+  <input type="text" id="xScreen" placeholder="e.g. myxhandle" autocomplete="off">
+  <div class="hint">Your X account to follow-back confessors.</div>
+
+  <label for="adminUser">Admin Username</label>
+  <input type="text" id="adminUser" placeholder="e.g. admin" required autocomplete="off">
+
+  <label for="adminPass">Admin Password</label>
+  <input type="password" id="adminPass" placeholder="Min 6 characters" required minlength="6">
+
+  <label for="adminDisplay">Admin Display Name</label>
+  <input type="text" id="adminDisplay" placeholder="e.g. Admin" required autocomplete="off">
+
+  <button type="submit" id="submitBtn">Create Service</button>
+</form>
+<div class="footer"></div>
+</div>
+<script>
+document.getElementById('slug').addEventListener('input', function() {
+  this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  document.getElementById('slugPreview').textContent = '/' + this.value;
+});
+document.getElementById('name').addEventListener('input', function() {
+  const slug = document.getElementById('slug');
+  if (!slug.value) {
+    slug.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    document.getElementById('slugPreview').textContent = '/' + slug.value;
+  }
+});
+
+async function handleRegister(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const err = document.getElementById('errorMsg');
+  const success = document.getElementById('successMsg');
+  err.style.display = 'none';
+  success.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Creating...';
+
+  const form = document.getElementById('registerForm');
+  const data = new URLSearchParams();
+  data.append('name', document.getElementById('name').value.trim());
+  data.append('slug', document.getElementById('slug').value.trim());
+  data.append('x_screen_name', document.getElementById('xScreen').value.trim());
+  data.append('admin_username', document.getElementById('adminUser').value.trim());
+  data.append('admin_password', document.getElementById('adminPass').value);
+  data.append('admin_display_name', document.getElementById('adminDisplay').value.trim());
+
+  try {
+    const resp = await fetch('/api/register', { method: 'POST', body: data });
+    const result = await resp.json();
+    if (!resp.ok) {
+      err.textContent = result.detail || 'Registration failed';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Create Service';
+      return;
+    }
+    success.innerHTML = 'Service created! <a href="/' + result.slug + '/panel/login" style="color:#1d9bf0">Go to panel →</a>';
+    success.style.display = 'block';
+    form.style.display = 'none';
+  } catch(e) {
+    err.textContent = 'Network error. Please try again.';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Create Service';
+  }
+}
+</script>
+</body>
+</html>

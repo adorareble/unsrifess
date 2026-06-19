@@ -21,11 +21,13 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
 
-def create_token(admin_id: int, role: str) -> str:
+def create_token(admin_id: int, role: str, tenant_id: int | None = None, is_root: bool = False) -> str:
     payload = {
         "sub": str(admin_id),
         "role": role,
         "type": "admin",
+        "tenant_id": tenant_id,
+        "is_root": is_root,
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRE_HOURS),
     }
@@ -39,28 +41,41 @@ def decode_token(token: str) -> dict | None:
         return None
 
 
-async def get_current_admin(request: Request):
+def _extract_token(request: Request) -> str:
     auth = request.headers.get("Authorization", "")
-    token = ""
     if auth.startswith("Bearer "):
-        token = auth[7:]
-    else:
-        token = request.query_params.get("token", "")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing or invalid token")
+        return auth[7:]
+    token = request.query_params.get("token", "")
+    if token:
+        return token
+    raise HTTPException(status_code=401, detail="Missing or invalid token")
+
+
+async def get_current_admin(request: Request):
+    token = _extract_token(request)
     payload = decode_token(token)
-    if payload is None:
+    if payload is None or payload.get("type") != "admin":
         raise HTTPException(status_code=401, detail="Token expired or invalid")
+
     admin_id = int(payload["sub"])
     from database import get_pool
     pool = await get_pool()
     async with pool.acquire() as conn:
-        row = await conn.fetchrow("SELECT role, is_active FROM admins WHERE id = $1", admin_id)
+        row = await conn.fetchrow(
+            "SELECT role, is_active, tenant_id, is_root FROM admins WHERE id = $1",
+            admin_id,
+        )
         if not row:
             raise HTTPException(status_code=401, detail="Admin not found")
         if not row["is_active"]:
             raise HTTPException(status_code=401, detail="Account deactivated, contact superadmin")
-        return {"id": admin_id, "role": row["role"]}
+
+        return {
+            "id": admin_id,
+            "role": row["role"],
+            "tenant_id": row["tenant_id"],
+            "is_root": row["is_root"],
+        }
 
 
 async def require_superadmin(admin: dict = Depends(get_current_admin)):
@@ -69,12 +84,19 @@ async def require_superadmin(admin: dict = Depends(get_current_admin)):
     return admin
 
 
-def create_user_token(x_user_id: str, screen_name: str, is_mutual: bool) -> str:
+async def require_root_admin(admin: dict = Depends(get_current_admin)):
+    if not admin.get("is_root"):
+        raise HTTPException(status_code=403, detail="Root admin access required")
+    return admin
+
+
+def create_user_token(tenant_id: int, x_user_id: str, screen_name: str, is_mutual: bool) -> str:
     payload = {
         "sub": f"x_user:{x_user_id}",
         "screen_name": screen_name,
         "is_mutual": is_mutual,
         "type": "user",
+        "tenant_id": tenant_id,
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRE_HOURS),
     }
@@ -82,14 +104,7 @@ def create_user_token(x_user_id: str, screen_name: str, is_mutual: bool) -> str:
 
 
 async def get_current_user(request: Request):
-    auth = request.headers.get("Authorization", "")
-    token = ""
-    if auth.startswith("Bearer "):
-        token = auth[7:]
-    else:
-        token = request.query_params.get("token", "")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing or invalid token")
+    token = _extract_token(request)
     payload = decode_token(token)
     if payload is None or payload.get("type") != "user":
         raise HTTPException(status_code=401, detail="Token expired or invalid")
@@ -97,4 +112,5 @@ async def get_current_user(request: Request):
         "x_user_id": payload["sub"].replace("x_user:", ""),
         "screen_name": payload.get("screen_name"),
         "is_mutual": payload.get("is_mutual", False),
+        "tenant_id": payload.get("tenant_id"),
     }
