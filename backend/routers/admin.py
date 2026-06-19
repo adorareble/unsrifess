@@ -21,59 +21,7 @@ TEMPLATE_DIR = os.path.join(BASE_DIR, "frontend")
 
 @admin_router.get("/panel/admin")
 async def admin_page():
-    path = os.path.join(TEMPLATE_DIR, "admin-dashboard.html")
-    if os.path.exists(path):
-        with open(path, encoding="utf-8") as f:
-            return HTMLResponse(f.read())
-    return HTMLResponse("""<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Unsr!fess Admin</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0e0e12;color:#e7e9ea;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.card{background:#1a1a24;border:1px solid #2a2a38;border-radius:16px;padding:30px;max-width:400px;width:100%}
-h1{font-size:1.5rem;margin-bottom:20px;text-align:center}
-input{width:100%;padding:12px;margin-bottom:12px;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;font-size:.95rem}
-input:focus{outline:none;border-color:#1d9bf0}
-button{width:100%;padding:12px;background:#1d9bf0;color:#fff;border:none;border-radius:9999px;font-size:1rem;font-weight:700;cursor:pointer}
-button:hover{background:#1a8cd8}
-.error{color:#f4212e;font-size:.85rem;margin-bottom:12px;display:none}
-</style>
-</head>
-<body>
-<div class="card">
-<h1>Root Admin Login</h1>
-<div class="error" id="error"></div>
-<form id="loginForm">
-<input type="text" id="username" placeholder="Username" required autocomplete="off">
-<input type="password" id="password" placeholder="Password" required>
-<button type="submit">Sign In</button>
-</form>
-</div>
-<script>
-document.getElementById('loginForm').addEventListener('submit', async function(e){
-e.preventDefault();
-const username = document.getElementById('username').value;
-const password = document.getElementById('password').value;
-const err = document.getElementById('error');
-err.style.display = 'none';
-try {
-const resp = await fetch('/panel/api/admin/login', {
-method:'POST',
-headers:{'Content-Type':'application/x-www-form-urlencoded'},
-body: 'username='+encodeURIComponent(username)+'&password='+encodeURIComponent(password)
-});
-const data = await resp.json();
-if(!resp.ok) { err.textContent = data.detail || 'Login failed'; err.style.display='block'; return; }
-localStorage.setItem('admin_token', data.token);
-localStorage.setItem('admin_role', data.role);
-window.location.href = '/panel/admin/dashboard';
-} catch(e) { err.textContent = 'Network error'; err.style.display='block'; }
-});
-</script>
-</body>
-</html>""")
+    return HTMLResponse(status_code=302, headers={"Location": "/admin-login"})
 
 
 @admin_router.get("/panel/admin/dashboard")
@@ -122,9 +70,9 @@ h2{font-size:1.2rem;margin-bottom:12px}
 </div>
 <script>
 function getToken(){return localStorage.getItem('admin_token')}
-function logout(){localStorage.removeItem('admin_token');localStorage.removeItem('admin_role');window.location.href='/panel/admin'}
+function logout(){localStorage.removeItem('admin_token');localStorage.removeItem('admin_role');window.location.href='/admin-login'}
 async function api(url,opts={}){
-const t=getToken();if(!t){window.location.href='/panel/admin';return}
+const t=getToken();if(!t){window.location.href='/admin-login';return}
 opts.headers=opts.headers||{};opts.headers['Authorization']='Bearer '+t
 const resp=await fetch(url,opts);if(resp.status===401){logout();return}
 return resp.json()

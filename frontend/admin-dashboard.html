@@ -36,32 +36,13 @@ h2{font-size:1.2rem;margin-bottom:12px}
 .btn-create{background:#1d9bf0;color:#fff;padding:10px 24px;border:none;border-radius:9999px;font-size:.9rem;font-weight:600;cursor:pointer;margin-bottom:16px;transition:opacity .2s}
 .btn-create:hover{opacity:.8}
 
-#loginArea{max-width:400px;margin:80px auto}
-#loginArea .card{background:#1a1a24;border:1px solid #2a2a38;border-radius:16px;padding:30px}
-#loginArea h1{font-size:1.3rem;margin-bottom:20px;text-align:center}
-#loginArea input{width:100%;padding:12px;margin-bottom:12px;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;font-size:.95rem}
-#loginArea input:focus{outline:none;border-color:#1d9bf0}
-#loginArea button{width:100%;padding:12px;background:#1d9bf0;color:#fff;border:none;border-radius:9999px;font-size:1rem;font-weight:700;cursor:pointer}
-#loginArea button:hover{opacity:.85}
-#loginArea .error{color:#f4212e;font-size:.85rem;margin-bottom:12px;display:none}
-
 .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .hidden{display:none!important}
 </style>
 </head>
 <body>
-<div id="loginArea">
-  <div class="card">
-    <h1>Root Admin Login</h1>
-    <div class="error" id="loginError"></div>
-    <input type="text" id="loginUser" placeholder="Username" autocomplete="off">
-    <input type="password" id="loginPass" placeholder="Password">
-    <button onclick="handleLogin()">Sign In</button>
-  </div>
-</div>
-
-<div id="dashboardArea" class="hidden">
+<div id="dashboardArea">
   <div class="container">
     <div class="header">
       <h1>Root Dashboard</h1>
@@ -83,48 +64,17 @@ function getToken(){return localStorage.getItem('admin_token')}
 
 async function api(url,opts={}){
   const t=getToken()
-  if(!t){showLogin();return}
+  if(!t){window.location.href='/admin-login';return}
   opts.headers=opts.headers||{}
   opts.headers['Authorization']='Bearer '+t
   try{
     const resp=await fetch(url,opts)
-    if(resp.status===401){localStorage.removeItem('admin_token');showLogin();return null}
+    if(resp.status===401){localStorage.removeItem('admin_token');window.location.href='/admin-login';return null}
     return await resp.json()
   }catch(e){return null}
 }
 
-function showLogin(){
-  document.getElementById('loginArea').classList.remove('hidden')
-  document.getElementById('dashboardArea').classList.add('hidden')
-}
-function showDashboard(){
-  document.getElementById('loginArea').classList.add('hidden')
-  document.getElementById('dashboardArea').classList.remove('hidden')
-}
-function logout(){
-  localStorage.removeItem('admin_token')
-  showLogin()
-}
-
-async function handleLogin(){
-  const user=document.getElementById('loginUser').value
-  const pass=document.getElementById('loginPass').value
-  const err=document.getElementById('loginError')
-  err.style.display='none'
-  if(!user||!pass){err.textContent='Fill in both fields';err.style.display='block';return}
-  try{
-    const resp=await fetch('/panel/api/admin/login',{
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:'username='+encodeURIComponent(user)+'&password='+encodeURIComponent(pass)
-    })
-    const data=await resp.json()
-    if(!resp.ok){err.textContent=data.detail||'Login failed';err.style.display='block';return}
-    localStorage.setItem('admin_token',data.token)
-    localStorage.setItem('admin_role',data.role)
-    init()
-  }catch(e){err.textContent='Network error';err.style.display='block'}
-}
+function logout(){localStorage.removeItem('admin_token');localStorage.removeItem('admin_role');window.location.href='/admin-login'}
 
 async function loadStats(){
   const stats=await api('/panel/api/admin/stats')
@@ -200,10 +150,10 @@ function esc(s){if(!s)return '';var d=document.createElement('div');d.textConten
 
 async function init(){
   const t=getToken()
-  if(!t){showLogin();return}
+  if(!t){window.location.href='/admin-login';return}
   const me=await api('/panel/api/admin/me')
-  if(!me){showLogin();return}
-  showDashboard()
+  if(!me){window.location.href='/admin-login';return}
+  document.getElementById('dashboardArea').classList.remove('hidden')
   await loadStats()
   await loadTenants()
 }

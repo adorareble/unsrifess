@@ -1,0 +1,12 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bubble body -->
+  <rect x="4" y="4" width="56" height="44" rx="14" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="1.5"/>
+  <!-- Bubble tail - bottom left, clean -->
+  <path d="M14,48 L8,60 L26,48 Z" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Cover seam -->
+  <line x1="15" y1="47.2" x2="25" y2="47.2" stroke="#F1EFE8" stroke-width="2.5"/>
+  <!-- 3 dots centered in bubble body -->
+  <circle cx="22" cy="26" r="6" fill="#E24B4A"/>
+  <circle cx="32" cy="26" r="6" fill="#EF9F27"/>
+  <circle cx="42" cy="26" r="6" fill="#1D9E75"/>
+</svg>

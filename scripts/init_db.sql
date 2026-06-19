@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS tenants (
     og_image_path     TEXT,
     og_title          VARCHAR(200),
     og_description    TEXT,
-    og_color          VARCHAR(7) DEFAULT '#0e0e12'
+    og_color          VARCHAR(7) DEFAULT '#0e0e12',
+    x_name            VARCHAR(200),
+    x_avatar_url      TEXT
 );
 
 CREATE TABLE IF NOT EXISTS admins (

@@ -9,7 +9,7 @@ from database import (
     create_tweet, check_keywords, get_setting,
     get_x_user_by_id, get_tenant_by_slug, get_tenant_by_id,
     reject_tweet, approve_tweet, log_page_view,
-    create_tenant, slug_exists, get_active_tenants,
+    create_tenant, slug_exists, get_all_tenants,
     get_admin_by_username_any, update_admin_login, log_activity,
 )
 from twitter_client import TwitterClientPool, split_into_chunks, MAX_TEXT_LENGTH
@@ -174,12 +174,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:default;display:inline-block}
 h2{font-size:1.1rem;margin-bottom:12px;margin-top:28px}
 p{font-size:.9rem;color:#aaa;line-height:1.6;margin-bottom:8px}
-.card{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;transition:border-color .2s}
+.card{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:border-color .2s;text-decoration:none;color:inherit}
 .card:hover{border-color:#1d9bf0}
-.card .name{font-weight:600;font-size:.95rem}
+.card .avatar{width:40px;height:40px;border-radius:50%;background:#2a2a38;flex-shrink:0;overflow:hidden}
+.card .avatar img{width:100%;height:100%;object-fit:cover}
+.card .info{flex:1;min-width:0}
+.card .info .top{display:flex;align-items:center;gap:8px}
+.card .info .name{font-weight:600;font-size:.95rem}
 .card .handle{font-size:.82rem;color:#71767b;margin-top:2px}
-.card .visit-btn{padding:6px 18px;border:none;border-radius:9999px;background:#1d9bf0;color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none}
+.card .visit-btn{margin-left:auto;padding:6px 18px;border:none;border-radius:9999px;background:#1d9bf0;color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0}
 .card .visit-btn:hover{opacity:.85}
+.badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:.68rem;font-weight:600;line-height:1.4}
+.badge.active{background:rgba(0,186,124,0.12);color:#00ba7c;border:1px solid rgba(0,186,124,0.25)}
+.badge.inactive{background:rgba(244,33,46,0.12);color:#f4212e;border:1px solid rgba(244,33,46,0.25)}
 .empty{text-align:center;padding:40px;color:#52565c;font-size:.9rem}
 .links{margin-top:32px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
 .links a{padding:10px 24px;border-radius:9999px;text-decoration:none;font-size:.9rem;font-weight:600;transition:opacity .2s}
@@ -203,9 +210,13 @@ p{font-size:.9rem;color:#aaa;line-height:1.6;margin-bottom:8px}
 </div>
 <script>
 async function loadTenants(){try{const r=await fetch('/api/tenants');const d=await r.json();const el=document.getElementById('tenantList');if(!d.length){el.innerHTML='<div class="empty">No services yet. Be the first!</div>';return}
-el.innerHTML=d.map(t=>'<div class="card"><div><div class="name">'+esc(t.name)+'</div><div class="handle">@'+(t.x_screen_name||'-')+'</div></div><a class="visit-btn" href="/'+t.slug+'">Visit</a></div>').join('')}catch(e){document.getElementById('tenantList').innerHTML='<div class="empty">Failed to load services</div>'}}
+el.innerHTML=d.map(t=>{
+var badge=t.is_active?'<span class="badge active">Active</span>':'<span class="badge inactive">Inactive</span>';
+var avatarUrl=t.x_avatar_url||(t.x_screen_name?'https://unavatar.io/x/'+encodeURIComponent(t.x_screen_name):'');
+var avatar=avatarUrl?'<img src="'+avatarUrl+'" alt="" onerror="this.parentElement.style.display=\'none\'">':'';
+var displayName=t.x_name||t.name;
+return'<a class="card" href="/'+t.slug+'"><div class="avatar">'+avatar+'</div><div class="info"><div class="top"><span class="name">'+esc(displayName)+'</span>'+badge+'</div><div class="handle">@'+(t.x_screen_name||'-')+'</div></div><span class="visit-btn">Visit</span></a>'}).join('')}catch(e){document.getElementById('tenantList').innerHTML='<div class="empty">Failed to load services</div>'}}
 function esc(s){if(!s)return '';var d=document.createElement('div');d.textContent=s;return d.innerHTML}
-let _c=0;document.getElementById('logo').addEventListener('click',function(){_c++;if(_c>=5){window.location.href='/admin-login'}})
 loadTenants()
 </script>
 </body>
@@ -223,7 +234,7 @@ async def admin_login_page():
 
 @public_router.get("/api/tenants")
 async def list_tenants():
-    return await get_active_tenants()
+    return await get_all_tenants()
 
 
 @public_router.post("/api/admin-login")
@@ -236,14 +247,31 @@ async def admin_login_api(
         raise HTTPException(status_code=401, detail="Invalid username or password")
     if not admin["is_active"]:
         raise HTTPException(status_code=403, detail="Account deactivated")
+    from database import update_admin_login
+    await update_admin_login(admin["id"])
+
+    if admin.get("is_root"):
+        token = create_token(admin["id"], admin["role"], is_root=True)
+        return {
+            "token": token,
+            "is_root": True,
+            "admin": {
+                "id": admin["id"],
+                "username": admin["username"],
+                "display_name": admin["display_name"],
+                "role": admin["role"],
+            },
+        }
+
+    from database import get_tenant_by_id, log_activity
     tenant = await get_tenant_by_id(admin["tenant_id"])
     if not tenant:
         raise HTTPException(status_code=404, detail="Tenant not found")
-    await update_admin_login(admin["id"])
     token = create_token(admin["id"], admin["role"], tenant["id"])
-    await log_activity(admin["id"], "login", details=f"Admin {admin['display_name']} logged in via universal login", tenant_id=tenant["id"])
+    await log_activity(admin["id"], "login", details=f"Admin {admin['display_name']} logged in", tenant_id=tenant["id"])
     return {
         "token": token,
+        "is_root": False,
         "slug": tenant["slug"],
         "admin": {
             "id": admin["id"],

@@ -29,11 +29,18 @@
   .explainer-grid .item .desc{font-size:.72rem;color:#71767b;margin-top:4px;line-height:1.4}
 
   .tenant-list{display:flex;flex-direction:column;gap:8px;margin-bottom:32px}
-  .tenant-card{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;transition:border-color .2s;text-decoration:none;color:inherit}
+  .tenant-card{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;transition:border-color .2s;text-decoration:none;color:inherit}
   .tenant-card:hover{border-color:#1d9bf0}
+  .tenant-card .avatar{width:40px;height:40px;border-radius:50%;background:#2a2a38;flex-shrink:0;overflow:hidden}
+  .tenant-card .avatar img{width:100%;height:100%;object-fit:cover}
+  .tenant-card .info{flex:1;min-width:0}
+  .tenant-card .info .top{display:flex;align-items:center;gap:8px}
   .tenant-card .info .name{font-weight:600;font-size:.95rem}
   .tenant-card .info .handle{font-size:.8rem;color:#71767b;margin-top:2px}
-  .tenant-card .visit-btn{padding:6px 18px;border:none;border-radius:9999px;background:#1d9bf0;color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .2s;flex-shrink:0}
+  .badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:.68rem;font-weight:600;line-height:1.4}
+  .badge.active{background:rgba(0,186,124,0.12);color:#00ba7c;border:1px solid rgba(0,186,124,0.25)}
+  .badge.inactive{background:rgba(244,33,46,0.12);color:#f4212e;border:1px solid rgba(244,33,46,0.25)}
+  .tenant-card .visit-btn{margin-left:auto;padding:6px 18px;border:none;border-radius:9999px;background:#1d9bf0;color:#fff;font-size:.8rem;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .2s;flex-shrink:0}
   .tenant-card .visit-btn:hover{opacity:.85}
   .empty-state{text-align:center;padding:48px 20px;color:#52565c;font-size:.9rem;line-height:1.6}
   .empty-state .btn{margin-top:12px}
@@ -112,8 +119,17 @@ async function loadTenants() {
       return;
     }
     el.innerHTML = d.map(function(t) {
+      var badge = t.is_active
+        ? '<span class="badge active">Active</span>'
+        : '<span class="badge inactive">Inactive</span>';
+      var avatar_url = t.x_avatar_url || (t.x_screen_name ? 'https://unavatar.io/x/' + encodeURIComponent(t.x_screen_name) : '');
+      var avatar = avatar_url
+        ? '<img src="' + avatar_url + '" alt="" onerror="this.parentElement.style.display=\'none\'">'
+        : '';
+      var display_name = t.x_name || t.name;
       return '<a class="tenant-card" href="/' + esc(t.slug) + '">'
-        + '<div class="info"><div class="name">' + esc(t.name) + '</div>'
+        + '<div class="avatar">' + avatar + '</div>'
+        + '<div class="info"><div class="top"><span class="name">' + esc(display_name) + '</span>' + badge + '</div>'
         + '<div class="handle">@' + esc(t.x_screen_name || '-') + '</div></div>'
         + '<span class="visit-btn">Visit</span></a>';
     }).join('');
@@ -122,14 +138,6 @@ async function loadTenants() {
   }
 }
 function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-let clickCount = 0;
-document.getElementById('logo').addEventListener('click', function() {
-  clickCount++;
-  if (clickCount >= 5) {
-    window.location.href = '/panel/admin';
-  }
-});
 
 loadTenants();
 </script>

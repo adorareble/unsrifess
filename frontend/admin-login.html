@@ -53,7 +53,7 @@
 <body>
 <div class="container">
   <h1>Unsr!fess Panel</h1>
-  <div class="subtitle">Admin login — enter your credentials, we&rsquo;ll take you to your service</div>
+  <div class="subtitle">Login to manage your service</div>
   <div class="card">
     <div class="field">
       <label for="username">Username</label>
@@ -91,16 +91,28 @@ async function login() {
     form.append('username', username);
     form.append('password', password);
     const r = await fetch('/api/admin-login', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
+    if (!r.ok) {
+      let d;
+      try { d = await r.json(); } catch(e) { d = {}; }
+      msg.className = 'msg err';
+      msg.textContent = d.detail || 'Login failed (' + r.status + ')';
+      btn.disabled = false;
+      btn.textContent = 'Log in';
+      return;
+    }
     const d = await r.json();
-    if (d.token) {
-      localStorage.setItem('panel_token', d.token);
-      localStorage.setItem('panel_admin', JSON.stringify(d.admin));
+    localStorage.setItem('panel_token', d.token);
+    localStorage.setItem('panel_admin', JSON.stringify(d.admin));
+    if (d.is_root) {
+      localStorage.setItem('admin_token', d.token);
+      localStorage.setItem('admin_role', d.admin.role);
+      msg.className = 'msg ok';
+      msg.textContent = 'Login successful. Redirecting...';
+      window.location.href = '/panel/admin/dashboard';
+    } else {
       msg.className = 'msg ok';
       msg.textContent = 'Login successful. Redirecting...';
       window.location.href = '/' + d.slug + '/panel/dashboard';
-    } else {
-      msg.className = 'msg err';
-      msg.textContent = d.detail || 'Login failed';
     }
   } catch (e) {
     msg.className = 'msg err';

@@ -19,6 +19,7 @@ from database import (
     update_x_user_status, update_x_user_profile,
     block_x_user, unblock_x_user,
     get_tenant_by_slug, update_tenant, get_all_settings,
+    update_tenant_x_info, update_tenant_name,
 )
 from auth import (
     hash_password, verify_password, create_token,
@@ -76,10 +77,9 @@ async def get_active_tenant(slug: str) -> dict:
 
 # ── Pages ──
 
-@panel_router.get("/{slug}/panel/login", response_class=HTMLResponse)
-async def panel_login(slug: str, tenant: dict = Depends(get_tenant_context)):
-    html_path = os.path.join(_TEMPLATE_DIR, "panel-login.html")
-    return render_panel_html(html_path, tenant)
+@panel_router.get("/{slug}/panel/login")
+async def panel_login(slug: str):
+    return HTMLResponse(status_code=302, headers={"Location": "/admin-login"})
 
 
 @panel_router.get("/{slug}/panel/dashboard", response_class=HTMLResponse)
@@ -597,9 +597,10 @@ async def panel_sync_all_users(
         async def sync_one(row):
             async with sem:
                 try:
-                    result = await client.check_mutual(target_user_id=row["x_user_id"])
+                    result = await client.check_mutual(tenant["x_screen_name"], target_user_id=row["x_user_id"])
                     user_status = result.get("user_status", "active")
                     if "error" in result or user_status != "active":
+                        logging.warning(f"sync_one({row['x_user_id']}) non-active: {result}")
                         await update_x_user_status(tid, row["x_user_id"], user_status)
                         return False
                     we_follow = result.get("we_follow", False)
@@ -846,6 +847,8 @@ async def panel_connect_x_status(
     return {
         "connected": client.is_logged_in(),
         "x_screen_name": tenant["x_screen_name"],
+        "x_name": tenant.get("x_name") or "",
+        "x_avatar_url": tenant.get("x_avatar_url") or "",
         "connected_at": None,
     }
 
@@ -873,6 +876,19 @@ async def panel_connect_x_cookies(
         if not isinstance(saved, dict) or not saved.get("auth_token"):
             return {"success": False, "error": "Invalid cookies. Make sure they include auth_token."}
         client._set_client_cookies()
+        try:
+            me = await client._client.user()
+            avatar = getattr(me, "profile_image_url", None)
+            if avatar:
+                avatar = avatar.replace("_normal.", "_400x400.")
+            await update_tenant_x_info(
+                tenant["id"],
+                x_name=getattr(me, "name", None),
+                x_screen_name=getattr(me, "screen_name", None),
+                x_avatar_url=avatar,
+            )
+        except Exception as e:
+            logging.warning(f"Failed to fetch X profile for tenant {tenant['id']}: {e}")
         await log_activity(admin["id"], "connect_x", details="X account connected via cookie paste", tenant_id=tenant["id"])
         return {"success": True, "message": "X account connected successfully."}
     except _json.JSONDecodeError:
@@ -1038,7 +1054,23 @@ async def panel_get_tenant_info(
         "name": tenant["name"],
         "slug": tenant["slug"],
         "x_screen_name": tenant["x_screen_name"],
+        "x_name": tenant.get("x_name") or "",
+        "x_avatar_url": tenant.get("x_avatar_url") or "",
         "og_title": tenant.get("og_title") or "",
         "og_description": tenant.get("og_description") or "",
         "og_color": tenant.get("og_color") or "",
     }
+
+
+@panel_router.post("/{slug}/panel/api/tenant/name")
+async def panel_update_tenant_name(
+    slug: str,
+    name: str = Form(...),
+    admin: dict = Depends(require_superadmin),
+    tenant: dict = Depends(get_active_tenant),
+):
+    if not name or not name.strip():
+        raise HTTPException(status_code=400, detail="Name is required")
+    await update_tenant_name(tenant["id"], name.strip())
+    await log_activity(admin["id"], "update_tenant_name", details=f"Service name changed to {name.strip()}", tenant_id=tenant["id"])
+    return {"success": True}

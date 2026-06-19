@@ -405,7 +405,7 @@ const ADMIN = JSON.parse(localStorage.getItem('panel_admin') || '{}');
 let userIdFromPopup = 0;
 let userTweetsPages = {};
 
-if (!TOKEN) { window.location.href = '/panel/login'; }
+if (!TOKEN) { window.location.href = '/admin-login'; }
 
 try {
   const b64 = TOKEN.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
@@ -430,7 +430,7 @@ if (ADMIN.role === 'superadmin') badge.classList.add('super');
 function logout() {
   localStorage.removeItem('panel_token');
   localStorage.removeItem('panel_admin');
-  window.location.href = '/panel/login';
+  window.location.href = '/admin-login';
 }
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1198,6 +1198,7 @@ async function loadSettings() {
     + '<span style="font-size:0.9rem;color:#e7e9ea">Status: <span id="xConnectStatus" class="badge-off">Checking...</span></span>'
     + '<span style="font-size:0.85rem;color:#71767b" id="xConnectHandle"></span>'
     + '</div>'
+    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:12px" id="xConnectName"></div>'
     + '<div id="xConnectForm" style="display:none">'
     + '<div style="font-size:0.8rem;color:#52565c;margin-bottom:8px">Cookies (JSON):</div>'
     + '<div style="display:flex;gap:8px">'
@@ -1240,6 +1241,14 @@ async function loadSettings() {
     + '</div>'
     + '<div id="brandUploadMsg" style="font-size:0.85rem;margin-top:8px"></div>'
     + '</div></div>'
+    + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">Service Name</h3>'
+    + '<div style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
+    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Name shown on landing page (falls back to X display name if available).</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<input id="nameInput" placeholder="service name" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
+    + '<button class="btn-action btn-approve" onclick="updateServiceName()">Save</button>'
+    + '</div><div id="nameMsg" style="font-size:0.85rem;margin-top:6px"></div>'
+    + '</div>'
     + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">Slug</h3>'
     + '<div style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
     + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Changing slug will break existing links. Use with caution.</div>'
@@ -1310,6 +1319,8 @@ async function loadSettings() {
       .then(t => {
         const si = document.getElementById('slugInput');
         if (si) si.value = t.slug || '';
+        const ni = document.getElementById('nameInput');
+        if (ni) ni.value = t.name || '';
         const bt = document.getElementById('brandTitle');
         if (bt) bt.value = t.og_title || '';
         const bd = document.getElementById('brandDesc');
@@ -1473,11 +1484,15 @@ async function xConnectStatus() {
       status.textContent = 'Connected';
       status.className = 'badge-on';
       handle.textContent = '@' + (d.x_screen_name || '');
+      var nameEl = document.getElementById('xConnectName');
+      if (nameEl) nameEl.textContent = d.x_name ? d.x_name : '';
       form.style.display = 'none';
     } else {
       status.textContent = 'Disconnected';
       status.className = 'badge-off';
       handle.textContent = '';
+      var nameEl = document.getElementById('xConnectName');
+      if (nameEl) nameEl.textContent = '';
       form.style.display = 'block';
     }
   } catch(e) {
@@ -1560,6 +1575,23 @@ async function uploadOgImage(input) {
     if (d.success) { msg.style.color = '#00ba7c'; msg.textContent = 'OG image updated!'; }
     else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
   } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Upload error'; }
+}
+
+// ── Service Name ──
+async function updateServiceName() {
+  const name = document.getElementById('nameInput').value.trim();
+  const msg = document.getElementById('nameMsg');
+  if (!name) { msg.style.color = '#f4212e'; msg.textContent = 'Name cannot be empty'; return; }
+  msg.textContent = 'Saving...';
+  msg.style.color = '#71767b';
+  try {
+    const form = new URLSearchParams();
+    form.append('name', name);
+    const r = await api('/panel/api/tenant/name', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
+    const d = await r.json();
+    if (d.success) { msg.style.color = '#00ba7c'; msg.textContent = 'Saved!'; }
+    else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Error'; }
 }
 
 // ── Slug ──

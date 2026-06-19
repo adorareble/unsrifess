@@ -76,6 +76,9 @@ async def init_db():
         await conn.execute("UPDATE admins SET tenant_id = 0 WHERE tenant_id IS NULL AND is_root IS NOT TRUE")
         await conn.execute("UPDATE blocked_senders SET tenant_id = 0 WHERE tenant_id IS NULL")
 
+        await conn.execute("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS x_name VARCHAR(200)")
+        await conn.execute("ALTER TABLE tenants ADD COLUMN IF NOT EXISTS x_avatar_url TEXT")
+
 
 # ── Tenants ──
 
@@ -107,6 +110,42 @@ async def get_tenant_by_id(tenant_id: int):
     async with pool.acquire() as conn:
         row = await conn.fetchrow("SELECT * FROM tenants WHERE id = $1", tenant_id)
         return dict(row) if row else None
+
+
+async def update_tenant_x_info(tenant_id: int, x_name: str = None, x_screen_name: str = None, x_avatar_url: str = None):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        parts = []
+        vals = []
+        if x_name is not None:
+            parts.append("x_name = $1")
+            vals.append(x_name)
+            next_i = 2
+        if x_screen_name is not None:
+            parts.append(f"x_screen_name = ${next_i}")
+            vals.append(x_screen_name)
+            next_i = len(vals) + 1
+        if x_avatar_url is not None:
+            parts.append(f"x_avatar_url = ${next_i}")
+            vals.append(x_avatar_url)
+            next_i = len(vals) + 1
+        if not parts:
+            return
+        parts.append(f"updated_at = NOW()")
+        vals.append(tenant_id)
+        await conn.execute(
+            f"UPDATE tenants SET {', '.join(parts)} WHERE id = ${next_i}",
+            *vals
+        )
+
+
+async def update_tenant_name(tenant_id: int, name: str):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "UPDATE tenants SET name = $1, updated_at = NOW() WHERE id = $2",
+            name, tenant_id
+        )
 
 
 async def get_tenant_by_slug(slug: str):
@@ -214,7 +253,7 @@ async def get_admin_by_username_any(username: str):
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT * FROM admins WHERE username = $1 AND is_root = FALSE AND tenant_id IS NOT NULL",
+            "SELECT * FROM admins WHERE username = $1",
             username,
         )
         return dict(row) if row else None
