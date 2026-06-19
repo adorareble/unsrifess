@@ -1,25 +1,8 @@
-<svg width="680" height="360" viewBox="0 0 680 360" xmlns="http://www.w3.org/2000/svg">
-  <!-- Single clean speech bubble -->
-  <rect x="286" y="58" width="108" height="76" rx="20" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="1.5"/>
-  <polygon points="306,134 292,158 330,134" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="1.5"/>
-  <line x1="294" y1="135" x2="328" y2="135" stroke="#F1EFE8" stroke-width="3"/>
-
-  <!-- 3 colored dots -->
-  <circle cx="318" cy="96" r="9" fill="#E24B4A"/>
-  <circle cx="340" cy="96" r="9" fill="#EF9F27"/>
-  <circle cx="362" cy="96" r="9" fill="#1D9E75"/>
-
-  <!-- Wordmark -->
-  <text x="340" y="230"
-    font-family="Inter, SF Pro Display, system-ui, sans-serif"
-    font-size="52" font-weight="700"
-    text-anchor="middle" letter-spacing="-1.5"
-    fill="#2C2C2A">fessable</text>
-
-  <!-- Tagline -->
-  <text x="340" y="270"
-    font-family="Inter, system-ui, sans-serif"
-    font-size="13" font-weight="400"
-    text-anchor="middle" letter-spacing="3.5"
-    fill="#888780">auto menfess platform</text>
+<svg width="500" height="220" viewBox="0 0 500 220" xmlns="http://www.w3.org/2000/svg">
+  <path d="M190,12 Q190,4 200,4 L300,4 Q310,4 310,14 L310,78 Q310,88 300,88 L252,88 L240,108 L238,88 Q190,88 190,78 Z" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="1.5"/>
+  <circle cx="224" cy="46" r="12" fill="#E24B4A"/>
+  <circle cx="250" cy="46" r="12" fill="#EF9F27"/>
+  <circle cx="276" cy="46" r="12" fill="#1D9E75"/>
+  <text x="250" y="155" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="52" font-weight="800" text-anchor="middle" letter-spacing="-2" fill="#2C2C2A">fessable</text>
+  <text x="250" y="185" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="12" font-weight="400" text-anchor="middle" letter-spacing="4" fill="#888780">auto menfess platform</text>
 </svg>

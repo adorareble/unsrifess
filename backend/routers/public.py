@@ -61,9 +61,9 @@ def render_html(path: str, tenant: dict) -> str:
         html = f.read()
     slug = tenant["slug"]
     x_screen = tenant["x_screen_name"] or ""
-    og_title = tenant.get("og_title") or f"Unsr!fess — {tenant['name']}"
+    og_title = tenant.get("og_title") or f"fessable — {tenant['name']}"
     og_desc = tenant.get("og_description") or f"Confess anonymously on X — {tenant['name']}"
-    og_color = tenant.get("og_color") or "#0e0e12"
+    og_color = tenant.get("og_color") or "#FAFAF9"
 
     if tenant.get("og_image_path"):
         og_image = f"/api/brand/{tenant['id']}/og-image"
@@ -151,7 +151,7 @@ async def register_page():
             return f.read()
     return """<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Register — Unsr!fess</title></head>
+<head><meta charset="UTF-8"><title>Register — fessable</title></head>
 <body><h1>Register</h1><p>Page coming soon.</p></body>
 </html>"""
 
@@ -165,41 +165,41 @@ async def landing_page():
     return """<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Unsr!fess — Anonymous Confessions</title>
+<title>fessable — Anonymous Confessions</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0e0e12;color:#e7e9ea;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#FAFAF9;color:#2C2C2A;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px}
 .container{max-width:680px;width:100%}
-.header{text-align:center;padding-bottom:16px;border-bottom:1px solid #2a2a38;margin-bottom:32px}
-h1{font-size:1.4rem;font-weight:700;background:linear-gradient(135deg,#1d9bf0,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:default;display:inline-block}
+.header{text-align:center;padding-bottom:16px;border-bottom:1px solid #D3D1C7;margin-bottom:32px}
+h1{font-size:1.4rem;font-weight:700;color:#2C2C2A;cursor:default;display:inline-block}
 h2{font-size:1.1rem;margin-bottom:12px;margin-top:28px}
-p{font-size:.9rem;color:#aaa;line-height:1.6;margin-bottom:8px}
-.card{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:border-color .2s;text-decoration:none;color:inherit}
-.card:hover{border-color:#1d9bf0}
-.card .avatar{width:40px;height:40px;border-radius:50%;background:#2a2a38;flex-shrink:0;overflow:hidden}
+p{font-size:.9rem;color:#888780;line-height:1.6;margin-bottom:8px}
+.card{background:#F1EFE8;border:1px solid #D3D1C7;border-radius:12px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:center;gap:12px;transition:border-color .2s;text-decoration:none;color:inherit}
+.card:hover{border-color:#2C2C2A}
+.card .avatar{width:40px;height:40px;border-radius:50%;background:#D3D1C7;flex-shrink:0;overflow:hidden}
 .card .avatar img{width:100%;height:100%;object-fit:cover}
 .card .info{flex:1;min-width:0}
 .card .info .top{display:flex;align-items:center;gap:8px}
 .card .info .name{font-weight:600;font-size:.95rem}
-.card .handle{font-size:.82rem;color:#71767b;margin-top:2px}
-.card .visit-btn{margin-left:auto;padding:6px 18px;border:none;border-radius:9999px;background:#1d9bf0;color:#fff;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0}
+.card .handle{font-size:.82rem;color:#888780;margin-top:2px}
+.card .visit-btn{margin-left:auto;padding:6px 18px;border:none;border-radius:9999px;background:#2C2C2A;color:#FAFAF9;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;flex-shrink:0}
 .card .visit-btn:hover{opacity:.85}
 .badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:.68rem;font-weight:600;line-height:1.4}
-.badge.active{background:rgba(0,186,124,0.12);color:#00ba7c;border:1px solid rgba(0,186,124,0.25)}
-.badge.inactive{background:rgba(244,33,46,0.12);color:#f4212e;border:1px solid rgba(244,33,46,0.25)}
-.empty{text-align:center;padding:40px;color:#52565c;font-size:.9rem}
+.badge.active{background:#EAF3DE;color:#0F6E56;border:1px solid rgba(29,158,117,0.25)}
+.badge.inactive{background:#FAECE7;color:#A32D2D;border:1px solid rgba(226,75,74,0.25)}
+.empty{text-align:center;padding:40px;color:#B4B2A9;font-size:.9rem}
 .links{margin-top:32px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
 .links a{padding:10px 24px;border-radius:9999px;text-decoration:none;font-size:.9rem;font-weight:600;transition:opacity .2s}
 .links a:hover{opacity:.8}
-.links a.primary{background:#1d9bf0;color:#fff}
-.links a.ghost{background:transparent;border:1px solid #2a2a38;color:#e7e9ea}
-.footer{margin-top:48px;padding-top:16px;border-top:1px solid #2a2a38;text-align:center;font-size:.8rem;color:#52565c;width:100%}
+.links a.primary{background:#2C2C2A;color:#FAFAF9}
+.links a.ghost{background:transparent;border:1px solid #D3D1C7;color:#2C2C2A}
+.footer{margin-top:48px;padding-top:16px;border-top:1px solid #D3D1C7;text-align:center;font-size:.8rem;color:#B4B2A9;width:100%}
 </style>
 </head>
 <body>
 <div class="container">
-<div class="header"><h1 id="logo">Unsr!fess</h1></div>
-<h2>What is Unsf!ress?</h2>
+<div class="header"><h1 id="logo">fessable</h1></div>
+<h2>What is fessable?</h2>
 <p>Anonymous confession platform powered by X (Twitter). Create your own service, let users send confessions anonymously, review them in the panel, and post to X — all without the official Twitter API.</p>
 <h2>Active Services</h2>
 <div id="tenantList"><div class="empty">Loading...</div></div>

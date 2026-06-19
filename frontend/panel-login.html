@@ -3,69 +3,71 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta property="og:title" content="Unsr!fess">
-<meta property="og:description" content="Confess anonymously on X — Unsr!fess">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta property="og:title" content="fessable">
+<meta property="og:description" content="Confess anonymously on X — fessable">
 <meta property="og:type" content="website">
 <meta property="og:image" content="/static/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Unsr!fess">
+<meta name="twitter:title" content="fessable">
 <meta name="twitter:description" content="Confess anonymously on X">
 <meta name="twitter:image" content="/static/og-image.png">
 <link rel="icon" type="image/png" href="/static/favicon-32x32.png">
 <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-<title>Panel — Unsr!fess</title>
+<title>Panel — fessable</title>
 <style>
+  :root{--bg-page:#FAFAF9;--bg-surface:#F1EFE8;--bg-card:#FFFFFF;--text-primary:#2C2C2A;--text-secondary:#888780;--text-hint:#B4B2A9;--border:#D3D1C7;--red:#E24B4A;--red-tint:#FAECE7;--red-text:#A32D2D;--amber:#EF9F27;--amber-tint:#FAEEDA;--amber-text:#854F0B;--teal:#1D9E75;--teal-tint:#EAF3DE;--teal-text:#0F6E56}
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #000; color: #e7e9ea; min-height: 100vh; min-height: 100dvh;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #FAFAF9; color: #2C2C2A; min-height: 100vh; min-height: 100dvh;
     display: flex; justify-content: center;
   }
   .container { width: 100%; max-width: 480px; padding: 24px 16px; display: flex; flex-direction: column; justify-content: center; min-height: 100dvh; }
   h1 {
     font-size: 1.3rem; font-weight: 700; margin-bottom: 4px;
-    background: linear-gradient(135deg, #1d9bf0, #8b5cf6);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text; text-align: center;
+    color: #2C2C2A; text-align: center;
   }
-  .subtitle { font-size: 0.8rem; color: #71767b; margin-bottom: 24px; text-align: center; }
+  .subtitle { font-size: 0.8rem; color: #888780; margin-bottom: 24px; text-align: center; }
   .card {
-    background: #16181c; border: 1px solid #2f3336; border-radius: 20px; padding: 24px 20px;
+    background: #F1EFE8; border: 1px solid #D3D1C7; border-radius: 20px; padding: 24px 20px;
   }
   .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 0.8rem; color: #71767b; margin-bottom: 6px; }
+  .field label { display: block; font-size: 0.8rem; color: #888780; margin-bottom: 6px; }
   .field input {
-    width: 100%; background: #0e0e12; border: 1px solid #2f3336;
-    border-radius: 14px; color: #e7e9ea; font-size: 1rem;
+    width: 100%; background: #FFFFFF; border: 1px solid #D3D1C7;
+    border-radius: 14px; color: #2C2C2A; font-size: 1rem;
     padding: 14px; outline: none; font-family: inherit;
   }
-  .field input:focus { border-color: #1d9bf0; }
+  .field input:focus { border-color: #2C2C2A; }
   .btn {
     width: 100%; padding: 14px; border: none; border-radius: 9999px;
-    color: #fff; font-size: 1rem; font-weight: 600;
-    cursor: pointer; margin-top: 6px; background: #1d9bf0; transition: opacity .2s;
+    color: #FAFAF9; font-size: 1rem; font-weight: 600;
+    cursor: pointer; margin-top: 6px; background: #2C2C2A; transition: opacity .2s;
   }
   .btn:hover { opacity: .85; }
   .btn:disabled { opacity: 0.3; cursor: not-allowed; }
   .msg { font-size: 0.8rem; min-height: 1.2em; margin-top: 10px; text-align: center; }
-  .msg.err { color: #f4212e; }
-  .msg.ok { color: #00ba7c; }
+  .msg.err { color: #E24B4A; }
+  .msg.ok { color: #1D9E75; }
   .spinner {
     display: inline-block; width: 14px; height: 14px;
-    border: 2px solid #2f3336; border-top-color: #fff; border-radius: 50%;
+    border: 2px solid #D3D1C7; border-top-color: #2C2C2A; border-radius: 50%;
     animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  a.back { display: block; text-align: center; margin-top: 16px; color: #71767b; font-size: 0.8rem; text-decoration: none; }
-  a.back:hover { color: #1d9bf0; }
+  a.back { display: block; text-align: center; margin-top: 16px; color: #888780; font-size: 0.8rem; text-decoration: none; }
+  a.back:hover { color: #2C2C2A; }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>Unsr!fess Panel</h1>
+  <h1>fessable Panel</h1>
   <div class="subtitle">Admin login</div>
   <div class="card">
     <div class="field">

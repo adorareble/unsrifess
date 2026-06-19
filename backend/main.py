@@ -18,7 +18,7 @@ from routers.auth_x import auth_x_router
 from routers.sse import sse_router
 from routers.admin import admin_router
 
-app = FastAPI(title="Unsr!fess")
+app = FastAPI(title="fessable")
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "frontend")), name="static")
@@ -39,31 +39,29 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{exc.status_code} — Unsr!fess</title>
+<title>{exc.status_code} — fessable</title>
 <style>
   *{{margin:0;padding:0;box-sizing:border-box}}
   body{{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:#000;color:#e7e9ea;min-height:100vh;
+    background:#FAFAF9;color:#2C2C2A;min-height:100vh;
     display:flex;align-items:center;justify-content:center;padding:20px;
   }}
   .card{{
-    background:#16181c;border:1px solid #2f3336;border-radius:20px;
+    background:#F1EFE8;border:1px solid #D3D1C7;border-radius:20px;
     padding:40px;text-align:center;max-width:460px;width:100%;
   }}
   .code{{
     font-size:6rem;font-weight:800;line-height:1;
-    background:linear-gradient(135deg,#1d9bf0,#8b5cf6);
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    background-clip:text;margin-bottom:.25rem;
+    color:#B4B2A9;margin-bottom:.25rem;
   }}
-  .msg{{font-size:1.2rem;color:#71767b;margin-bottom:2rem}}
+  .msg{{font-size:1.2rem;color:#888780;margin-bottom:2rem}}
   .btn{{
     display:inline-block;padding:13px 32px;border:none;border-radius:9999px;
-    background:#1d9bf0;color:#fff;font-size:1rem;font-weight:700;
-    text-decoration:none;transition:background .2s;
+    background:#2C2C2A;color:#FAFAF9;font-size:1rem;font-weight:700;
+    text-decoration:none;transition:opacity .2s;
   }}
-  .btn:hover{{background:#1a8cd8}}
+  .btn:hover{{opacity:.85}}
 </style>
 </head>
 <body>
@@ -83,31 +81,29 @@ async def not_found(request: Request, exc):
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>404 — Unsr!fess</title>
+<title>404 — fessable</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:#000;color:#e7e9ea;min-height:100vh;
+    background:#FAFAF9;color:#2C2C2A;min-height:100vh;
     display:flex;align-items:center;justify-content:center;padding:20px;
   }
   .card{
-    background:#16181c;border:1px solid #2f3336;border-radius:20px;
+    background:#F1EFE8;border:1px solid #D3D1C7;border-radius:20px;
     padding:40px;text-align:center;max-width:460px;width:100%;
   }
   .code{
     font-size:6rem;font-weight:800;line-height:1;
-    background:linear-gradient(135deg,#1d9bf0,#8b5cf6);
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-    background-clip:text;margin-bottom:.25rem;
+    color:#B4B2A9;margin-bottom:.25rem;
   }
-  .msg{font-size:1.2rem;color:#71767b;margin-bottom:2rem}
+  .msg{font-size:1.2rem;color:#888780;margin-bottom:2rem}
   .btn{
     display:inline-block;padding:13px 32px;border:none;border-radius:9999px;
-    background:#1d9bf0;color:#fff;font-size:1rem;font-weight:700;
-    text-decoration:none;transition:background .2s;
+    background:#2C2C2A;color:#FAFAF9;font-size:1rem;font-weight:700;
+    text-decoration:none;transition:opacity .2s;
   }
-  .btn:hover{background:#1a8cd8}
+  .btn:hover{opacity:.85}
 </style>
 </head>
 <body>

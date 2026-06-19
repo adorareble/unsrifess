@@ -3,37 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta property="og:title" content="Register — Unsr!fess">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta property="og:title" content="Register — fessable">
 <meta property="og:description" content="Create your own anonymous confession service">
 <meta property="og:type" content="website">
 <meta property="og:image" content="/static/og-image.png">
-<meta name="theme-color" content="#0e0e12">
-<title>Register — Unsr!fess</title>
+<meta name="theme-color" content="#FAFAF9">
+<title>Register — fessable</title>
 <style>
+  :root{--bg-page:#FAFAF9;--bg-surface:#F1EFE8;--bg-card:#FFFFFF;--text-primary:#2C2C2A;--text-secondary:#888780;--text-hint:#B4B2A9;--border:#D3D1C7;--red:#E24B4A;--red-tint:#FAECE7;--red-text:#A32D2D;--amber:#EF9F27;--amber-tint:#FAEEDA;--amber-text:#854F0B;--teal:#1D9E75;--teal-tint:#EAF3DE;--teal-text:#0F6E56}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0e0e12;color:#e7e9ea;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-  .card{background:#1a1a24;border:1px solid #2a2a38;border-radius:16px;padding:32px;max-width:480px;width:100%}
+  body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg-page);color:var(--text-primary);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{background:var(--bg-surface);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:480px;width:100%}
   h1{font-size:1.4rem;margin-bottom:4px}
-  .sub{font-size:.85rem;color:#71767b;margin-bottom:24px}
-  label{display:block;font-size:.85rem;margin-bottom:4px;color:#aaa}
-  input{width:100%;padding:12px 14px;margin-bottom:16px;background:#0e0e12;border:1px solid #2a2a38;border-radius:8px;color:#e7e9ea;font-size:.95rem;transition:border-color .2s}
-  input:focus{outline:none;border-color:#1d9bf0}
-  .hint{font-size:.78rem;color:#52565c;margin-top:-12px;margin-bottom:16px}
-  .error{color:#f4212e;font-size:.85rem;margin-bottom:12px;display:none}
-  .success{color:#00ba7c;font-size:.85rem;margin-bottom:12px;display:none}
-  button{width:100%;padding:13px;background:#1d9bf0;color:#fff;border:none;border-radius:9999px;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s}
+  .sub{font-size:.85rem;color:var(--text-secondary);margin-bottom:24px}
+  label{display:block;font-size:.85rem;margin-bottom:4px;color:var(--text-secondary)}
+  input{width:100%;padding:12px 14px;margin-bottom:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-primary);font-size:.95rem;transition:border-color .2s}
+  input:focus{outline:none;border-color:var(--text-primary)}
+  .hint{font-size:.78rem;color:var(--text-hint);margin-top:-12px;margin-bottom:16px}
+  .error{color:var(--red);font-size:.85rem;margin-bottom:12px;display:none}
+  .success{color:var(--teal);font-size:.85rem;margin-bottom:12px;display:none}
+  button{width:100%;padding:13px;background:var(--text-primary);color:#FAFAF9;border:none;border-radius:9999px;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .2s}
   button:hover{opacity:.85}
   button:disabled{opacity:.3;cursor:not-allowed}
-  .footer{text-align:center;margin-top:20px;font-size:.8rem;color:#52565c}
-  .footer a{color:#71767b;text-decoration:none}
-  .footer a:hover{color:#1d9bf0}
-  .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
+  .footer{text-align:center;margin-top:20px;font-size:.8rem;color:var(--text-hint)}
+  .footer a{color:var(--text-secondary);text-decoration:none}
+  .footer a:hover{color:var(--text-primary)}
+  .spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--text-primary);border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
   @keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 <div class="card">
-<h1>Create Your Unsr!fess</h1>
+<h1>Create Your fessable</h1>
 <div class="sub">Set up your own anonymous confession service in seconds.</div>
 <div class="error" id="errorMsg"></div>
 <div class="success" id="successMsg"></div>
@@ -105,7 +109,7 @@ async function handleRegister(e) {
       btn.textContent = 'Create Service';
       return;
     }
-    success.innerHTML = 'Service created! <a href="/' + result.slug + '/panel/login" style="color:#1d9bf0">Go to panel →</a>';
+    success.innerHTML = 'Service created! <a href="/' + result.slug + '/panel/login" style="color:#2C2C2A">Go to panel →</a>';
     success.style.display = 'block';
     form.style.display = 'none';
   } catch(e) {

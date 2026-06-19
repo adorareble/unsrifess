@@ -33,33 +33,33 @@ async def admin_dashboard_page():
     return HTMLResponse("""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Root Dashboard — Unsr!fess</title>
+<title>Root Dashboard — fessable</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0e0e12;color:#e7e9ea;padding:20px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#FAFAF9;color:#2C2C2A;padding:20px}
 .container{max-width:1200px;margin:0 auto}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #2a2a38}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid #D3D1C7}
 h1{font-size:1.5rem}
 h2{font-size:1.2rem;margin-bottom:12px}
-.logout-btn{padding:8px 20px;background:transparent;border:1px solid #2a2a38;border-radius:9999px;color:#e7e9ea;cursor:pointer}
-.logout-btn:hover{border-color:#f4212e;color:#f4212e}
+.logout-btn{padding:8px 20px;background:transparent;border:1px solid #D3D1C7;border-radius:9999px;color:#2C2C2A;cursor:pointer}
+.logout-btn:hover{border-color:#E24B4A;color:#E24B4A}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
-.stat-card{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:16px;text-align:center}
-.stat-card .num{font-size:1.8rem;font-weight:700;color:#1d9bf0}
-.stat-card .label{font-size:.8rem;color:#71767b;margin-top:4px}
-.tenants-table{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;overflow:hidden}
+.stat-card{background:#FFFFFF;border:1px solid #D3D1C7;border-radius:12px;padding:16px;text-align:center}
+.stat-card .num{font-size:1.8rem;font-weight:700;color:#2C2C2A}
+.stat-card .label{font-size:.8rem;color:#888780;margin-top:4px}
+.tenants-table{background:#FFFFFF;border:1px solid #D3D1C7;border-radius:12px;overflow:hidden}
 .tenants-table table{width:100%;border-collapse:collapse}
-.tenants-table th,.tenants-table td{padding:12px 16px;text-align:left;border-bottom:1px solid #2a2a38}
-.tenants-table th{background:#0e0e12;font-size:.8rem;color:#71767b;text-transform:uppercase}
+.tenants-table th,.tenants-table td{padding:12px 16px;text-align:left;border-bottom:1px solid #D3D1C7}
+.tenants-table th{background:#F1EFE8;font-size:.8rem;color:#888780;text-transform:uppercase}
 .tenants-table td{font-size:.9rem}
 .badge{padding:2px 8px;border-radius:9999px;font-size:.75rem}
-.badge.active{background:#00ba7c22;color:#00ba7c;border:1px solid #00ba7c}
-.badge.inactive{background:#f4212e22;color:#f4212e;border:1px solid #f4212e}
+.badge.active{background:#EAF3DE;color:#0F6E56;border:1px solid rgba(29,158,117,0.25)}
+.badge.inactive{background:#FAECE7;color:#A32D2D;border:1px solid rgba(226,75,74,0.25)}
 .actions{display:flex;gap:6px}
 .actions button{padding:4px 12px;border-radius:6px;border:none;font-size:.8rem;cursor:pointer}
-.btn-activate{background:#00ba7c;color:#fff}
-.btn-deactivate{background:#f4212e;color:#fff}
-.btn-login-as{background:#1d9bf0;color:#fff}
+.btn-activate{background:#1D9E75;color:#FAFAF9}
+.btn-deactivate{background:#E24B4A;color:#FAFAF9}
+.btn-login-as{background:#2C2C2A;color:#FAFAF9}
 </style>
 </head>
 <body>

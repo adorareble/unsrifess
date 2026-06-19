@@ -3,25 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta property="og:title" content="Unsr!fess">
-<meta property="og:description" content="Confess anonymously on X — Unsr!fess">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta property="og:title" content="fessable">
+<meta property="og:description" content="Confess anonymously on X — fessable">
 <meta property="og:type" content="website">
 <meta property="og:image" content="/static/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Unsr!fess">
+<meta name="twitter:title" content="fessable">
 <meta name="twitter:description" content="Confess anonymously on X">
 <meta name="twitter:image" content="/static/og-image.png">
 <link rel="icon" type="image/png" href="/static/favicon-32x32.png">
 <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
-<title>Panel Dashboard — Unsr!fess</title>
+<title>Panel Dashboard — fessable</title>
 <style>
+  :root{--bg-page:#FAFAF9;--bg-surface:#F1EFE8;--bg-card:#FFFFFF;--text-primary:#2C2C2A;--text-secondary:#888780;--text-hint:#B4B2A9;--border:#D3D1C7;--red:#E24B4A;--red-tint:#FAECE7;--red-text:#A32D2D;--amber:#EF9F27;--amber-tint:#FAEEDA;--amber-text:#854F0B;--teal:#1D9E75;--teal-tint:#EAF3DE;--teal-text:#0F6E56}
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #000; color: #e7e9ea; min-height: 100vh; min-height: 100dvh;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #FAFAF9; color: #2C2C2A; min-height: 100vh; min-height: 100dvh;
     display: flex; flex-direction: column; align-items: center;
   }
   .container { width: 100%; max-width: 480px; padding: 12px 16px 24px; }
@@ -33,67 +37,65 @@
   }
   .topbar h1 {
     font-size: 1.15rem; font-weight: 700;
-    background: linear-gradient(135deg, #1d9bf0, #8b5cf6);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #2C2C2A;
   }
-  .topbar h1 span { -webkit-text-fill-color: #71767b; font-weight: 400; }
-  .topbar-right { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #71767b; }
-  .topbar-right .admin-name { color: #1d9bf0; font-weight: 500; }
+  .topbar h1 span { -webkit-text-fill-color: #888780; font-weight: 400; }
+  .topbar-right { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #888780; }
+  .topbar-right .admin-name { color: #2C2C2A; font-weight: 500; }
   .topbar-right .role-badge {
     font-size: 0.6rem; padding: 1px 6px; border-radius: 9999px;
-    background: rgba(29,155,240,0.12); color: #1d9bf0; text-transform: uppercase;
+    background: rgba(29,155,240,0.12); color: #2C2C2A; text-transform: uppercase;
   }
-  .topbar-right .role-badge.super { background: rgba(244,196,48,0.12); color: #f4c430; }
+  .topbar-right .role-badge.super { background: rgba(244,196,48,0.12); color: #EF9F27; }
   .logout-btn {
-    background: transparent; border: 1px solid #2f3336; color: #e7e9ea;
+    background: transparent; border: 1px solid #D3D1C7; color: #2C2C2A;
     padding: 4px 10px; border-radius: 9999px; cursor: pointer; font-size: 0.72rem;
     line-height: 1.4;
   }
-  .logout-btn:hover { border-color: #f4212e; color: #f4212e; }
+  .logout-btn:hover { border-color: #E24B4A; color: #E24B4A; }
 
   /* ── Stats ── */
   .stats { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
   .stat-row { display: flex; gap: 3px; overflow: hidden; }
   .stat-card {
     flex: 1; min-width: 0;
-    background: #16181c; border: 1px solid #2f3336; border-radius: 8px;
+    background: #F1EFE8; border: 1px solid #D3D1C7; border-radius: 8px;
     padding: 5px 2px; text-align: center;
     display: flex; flex-direction: column; justify-content: center;
   }
   .stat-card .num { font-size: 0.8rem; font-weight: 700; line-height: 1.2; }
-  .stat-card .label { font-size: 0.5rem; color: #71767b; line-height: 1.1; margin-top: 1px; }
-  .stat-card .num.approved { color: #00ba7c; }
-  .stat-card .num.rejected { color: #f4212e; }
-  .stat-card .num.deleted { color: #71767b; }
-  .stat-card .num.total-subs { color: #1d9bf0; }
-  .stat-card .num.subs-today { color: #1d9bf0; opacity: 0.7; }
-  .stat-card .num.approved-today { color: #00ba7c; opacity: 0.7; }
-  .stat-card .num.rejected-today { color: #f4212e; opacity: 0.7; }
-  .stat-card .num.deleted-today { color: #71767b; opacity: 0.7; }
-  .stat-card .num.total-users { color: #6b5b95; }
-  .stat-card .num.active-users { color: #00ba7c; }
-  .stat-card .num.inactive-users { color: #71767b; }
-  .stat-card .num.active-submitters { color: #1d9bf0; }
-  .stat-card .num.unique-today { color: #1d9bf0; }
-  .stat-card .num.total-unique { color: #6b5b95; }
-  .section-label { width: 100%; font-size: 0.65rem; font-weight: 600; color: #71767b; text-transform: uppercase; letter-spacing: 0.4px; margin: 6px 0 1px 0; }
+  .stat-card .label { font-size: 0.5rem; color: #888780; line-height: 1.1; margin-top: 1px; }
+  .stat-card .num.approved { color: #1D9E75; }
+  .stat-card .num.rejected { color: #E24B4A; }
+  .stat-card .num.deleted { color: #888780; }
+  .stat-card .num.total-subs { color: #2C2C2A; }
+  .stat-card .num.subs-today { color: #2C2C2A; opacity: 0.7; }
+  .stat-card .num.approved-today { color: #1D9E75; opacity: 0.7; }
+  .stat-card .num.rejected-today { color: #E24B4A; opacity: 0.7; }
+  .stat-card .num.deleted-today { color: #888780; opacity: 0.7; }
+  .stat-card .num.total-users { color: #2C2C2A; }
+  .stat-card .num.active-users { color: #1D9E75; }
+  .stat-card .num.inactive-users { color: #888780; }
+  .stat-card .num.active-submitters { color: #2C2C2A; }
+  .stat-card .num.unique-today { color: #2C2C2A; }
+  .stat-card .num.total-unique { color: #2C2C2A; }
+  .section-label { width: 100%; font-size: 0.65rem; font-weight: 600; color: #888780; text-transform: uppercase; letter-spacing: 0.4px; margin: 6px 0 1px 0; }
   .badge-on, .badge-off { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 600; }
-  .badge-on { background: rgba(0,186,124,0.12); color: #00ba7c; }
-  .badge-off { background: rgba(244,33,46,0.12); color: #f4212e; }
+  .badge-on { background: #EAF3DE; color: #0F6E56; }
+  .badge-off { background: #FAECE7; color: #A32D2D; }
 
   /* ── Tabs ── */
-  .tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 1px solid #2f3336; overflow-x: auto; }
+  .tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 1px solid #D3D1C7; overflow-x: auto; }
   .tab {
     padding: 10px 14px; cursor: pointer; font-size: 0.8rem; font-weight: 500;
-    color: #71767b; border-bottom: 2px solid transparent; white-space: nowrap;
+    color: #888780; border-bottom: 2px solid transparent; white-space: nowrap;
     transition: color .15s;
   }
-  .tab:hover { color: #e7e9ea; }
-  .tab.active { color: #1d9bf0; border-bottom-color: #1d9bf0; }
+  .tab:hover { color: #2C2C2A; }
+  .tab.active { color: #2C2C2A; border-bottom-color: #2C2C2A; }
   .tab .badge {
     display: inline-block; margin-left: 4px; font-size: 0.62rem;
-    padding: 0 6px; border-radius: 9999px; background: #1d9bf0; color: #fff;
+    padding: 0 6px; border-radius: 9999px; background: #2C2C2A; color: #FAFAF9;
   }
   .tab-content { display: none; }
   .tab-content.active { display: block; }
@@ -102,11 +104,11 @@
 
   /* ── Cards (generic) ── */
   .item-card {
-    background: #16181c; border: 1px solid #2f3336; border-radius: 14px;
+    background: #F1EFE8; border: 1px solid #D3D1C7; border-radius: 14px;
     padding: 14px; margin-bottom: 8px;
   }
   .item-card:last-child { margin-bottom: 0; }
-  .item-card .meta { font-size: 0.72rem; color: #71767b; }
+  .item-card .meta { font-size: 0.72rem; color: #888780; }
   .item-card .text {
     font-size: 0.88rem; line-height: 1.5; margin-bottom: 10px;
     white-space: pre-wrap; word-break: break-word;
@@ -118,57 +120,57 @@
     overflow: hidden;
   }
   .img-tag { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.68rem; font-weight: 600; }
-  .img-tag.card-tag { background: rgba(29,155,240,0.12); color: #1d9bf0; }
-  .img-tag.media-tag { background: rgba(0,186,124,0.12); color: #00ba7c; }
-  .partial-badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.68rem; font-weight: 600; background: rgba(255,173,31,0.15); color: #ffad1f; align-self:center; }
+  .img-tag.card-tag { background: #F1EFE8; color: #2C2C2A; }
+  .img-tag.media-tag { background: #EAF3DE; color: #0F6E56; }
+  .partial-badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.68rem; font-weight: 600; background: #FAEEDA; color: #854F0B; align-self:center; }
   .item-card .meta-row {
-    display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.72rem; color: #71767b;
+    display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 0.72rem; color: #888780;
     margin-top: 8px;
   }
-  .item-card .actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #2f3336; flex-wrap: wrap; }
+  .item-card .actions { display: flex; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #D3D1C7; flex-wrap: wrap; }
   .item-card .actions .btn-action {
     padding: 8px 18px; border: none; border-radius: 9999px;
-    font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #fff;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #FAFAF9;
     transition: opacity .2s;
   }
   .item-card .actions .btn-action:hover { opacity: .85; }
   .btn-action {
     padding: 8px 18px; border: none; border-radius: 9999px;
-    font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #fff;
+    font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #FAFAF9;
     transition: opacity .2s;
   }
   .btn-action:hover { opacity: .85; }
-  .btn-approve { background: #00ba7c; }
-  .btn-reject { background: #f4212e; }
-  .btn-delete { background: #f4212e; }
-  .btn-primary-sm { background: #1d9bf0; }
+  .btn-approve { background: #1D9E75; }
+  .btn-reject { background: #E24B4A; }
+  .btn-delete { background: #E24B4A; }
+  .btn-primary-sm { background: #2C2C2A; }
   .btn-primary-sm:disabled { opacity: 0.3; cursor: not-allowed; }
-  .btn-danger-sm { background: #f4212e; }
+  .btn-danger-sm { background: #E24B4A; }
   .btn-secondary-sm {
-    background: transparent; border: 1px solid #2f3336; color: #e7e9ea;
+    background: transparent; border: 1px solid #D3D1C7; color: #2C2C2A;
   }
-  .btn-secondary-sm:hover { background: rgba(239,243,244,0.04); }
+  .btn-secondary-sm:hover { background: #F1EFE8; }
   .btn-sm {
     padding: 6px 14px; border: none; border-radius: 9999px;
-    font-size: 0.75rem; font-weight: 600; cursor: pointer; color: #fff;
+    font-size: 0.75rem; font-weight: 600; cursor: pointer; color: #FAFAF9;
     transition: opacity .2s;
   }
   .btn-sm:hover { opacity: .85; }
-  .btn-small { padding: 6px 14px; border: none; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; cursor: pointer; color: #fff; transition: opacity .2s; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-small { padding: 6px 14px; border: none; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; cursor: pointer; color: #FAFAF9; transition: opacity .2s; display: inline-flex; align-items: center; justify-content: center; }
   .btn-small:hover { opacity: .85; }
-  .btn-small.primary { background: #1d9bf0; }
-  .btn-small.danger { background: #f4212e; }
+  .btn-small.primary { background: #2C2C2A; }
+  .btn-small.danger { background: #E24B4A; }
 
-  .empty-state { text-align: center; padding: 40px 16px; color: #71767b; font-size: 0.85rem; }
+  .empty-state { text-align: center; padding: 40px 16px; color: #888780; font-size: 0.85rem; }
 
   /* ── Thumbnails ── */
   .thumb-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
   .thumb {
     width: 72px; height: 72px; border-radius: 10px; overflow: hidden;
-    border: 1px solid #2f3336; cursor: pointer; flex-shrink: 0;
+    border: 1px solid #D3D1C7; cursor: pointer; flex-shrink: 0;
   }
   .thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .thumb:hover { border-color: #1d9bf0; }
+  .thumb:hover { border-color: #2C2C2A; }
 
   /* ── Lightbox ── */
   .lightbox {
@@ -182,7 +184,7 @@
     position: absolute; top: 20px; right: 20px; z-index: 10;
     width: 40px; height: 40px; border-radius: 50%;
     background: rgba(255,255,255,0.1); border: none;
-    color: #e7e9ea; font-size: 1.4rem; cursor: pointer;
+    color: #FAFAF9; font-size: 1.4rem; cursor: pointer;
     display: flex; align-items: center; justify-content: center; transition: background .15s;
   }
   .lightbox .close-btn:hover { background: rgba(255,255,255,0.22); }
@@ -190,7 +192,7 @@
     position: absolute; top: 50%; transform: translateY(-50%); z-index: 10;
     width: 44px; height: 44px; border-radius: 50%;
     background: rgba(255,255,255,0.08); border: none;
-    color: #e7e9ea; font-size: 1.4rem; cursor: pointer;
+    color: #FAFAF9; font-size: 1.4rem; cursor: pointer;
     display: flex; align-items: center; justify-content: center; transition: background .15s;
   }
   .lightbox .nav-btn:hover { background: rgba(255,255,255,0.18); }
@@ -211,7 +213,7 @@
   }
   .popup-overlay.hidden { display: none; }
   .popup-card {
-    width: 100%; max-width: 480px; background: #16181c;
+    width: 100%; max-width: 480px; background: #F1EFE8;
     border-radius: 24px 24px 0 0; padding: 28px 24px 32px;
     text-align: center; animation: sheetUp .3s ease; max-height: 85vh; overflow-y: auto;
   }
@@ -222,26 +224,26 @@
   }
   .popup-icon { font-size: 2rem; margin-bottom: 12px; }
   .popup-title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
-  .popup-msg { font-size: 0.88rem; color: #71767b; margin-bottom: 20px; line-height: 1.5; }
+  .popup-msg { font-size: 0.88rem; color: #888780; margin-bottom: 20px; line-height: 1.5; }
   .popup-actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   .popup-btn {
     padding: 12px 28px; border: none; border-radius: 9999px;
-    font-size: 0.9rem; font-weight: 600; cursor: pointer; color: #fff; transition: opacity .2s;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer; color: #FAFAF9; transition: opacity .2s;
   }
   .popup-btn:hover { opacity: .85; }
-  .popup-btn-primary { background: #1d9bf0; }
-  .popup-btn-danger { background: #f4212e; }
-  .popup-btn-ghost { background: #2f3336; color: #e7e9ea; }
+  .popup-btn-primary { background: #2C2C2A; }
+  .popup-btn-danger { background: #E24B4A; }
+  .popup-btn-ghost { background: #D3D1C7; color: #2C2C2A; }
 
   /* ── Filter bar ── */
   .filter-bar {
     display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center;
   }
   .filter-bar select, .filter-bar input {
-    background: #0e0e12; border: 1px solid #2f3336; border-radius: 9999px;
-    color: #e7e9ea; padding: 8px 14px; font-size: 0.8rem; outline: none; font-family: inherit;
+    background: #FFFFFF; border: 1px solid #D3D1C7; border-radius: 9999px;
+    color: #2C2C2A; padding: 8px 14px; font-size: 0.8rem; outline: none; font-family: inherit;
   }
-  .filter-bar select:focus, .filter-bar input:focus { border-color: #1d9bf0; }
+  .filter-bar select:focus, .filter-bar input:focus { border-color: #2C2C2A; }
   .filter-bar .btn-sm { padding: 8px 18px; }
 
   /* ── Status badges ── */
@@ -249,22 +251,22 @@
     display: inline-block; padding: 2px 10px; border-radius: 9999px;
     font-size: 0.68rem; font-weight: 600;
   }
-  .status-pending { background: rgba(244,196,48,0.12); color: #f4c430; }
-  .status-approved { background: rgba(0,186,124,0.12); color: #00ba7c; }
-  .status-rejected { background: rgba(244,33,46,0.12); color: #f4212e; }
-  .status-deleted { background: rgba(113,118,123,0.12); color: #71767b; }
+  .status-pending { background: #FAEEDA; color: #854F0B; }
+  .status-approved { background: #EAF3DE; color: #0F6E56; }
+  .status-rejected { background: #FAECE7; color: #A32D2D; }
+  .status-deleted { background: #F1EFE8; color: #888780; }
 
   /* ── Keyword tags ── */
   .keyword-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
   .keyword-tag {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 4px 12px; border-radius: 9999px; font-size: 0.8rem;
-    background: rgba(29,155,240,0.08); border: 1px solid rgba(29,155,240,0.2);
+    background: #F1EFE8; border: 1px solid #D3D1C7;
   }
   .keyword-tag .del {
-    cursor: pointer; color: #f4212e; font-weight: 700; font-size: 0.85rem; line-height: 1;
+    cursor: pointer; color: #E24B4A; font-weight: 700; font-size: 0.85rem; line-height: 1;
   }
-  .keyword-tag .del:hover { color: #c8102e; }
+  .keyword-tag .del:hover { color: #A32D2D; }
   .add-keyword-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .add-keyword-form input { flex: 1; min-width: 140px; }
 
@@ -273,17 +275,17 @@
     display: flex; gap: 6px; justify-content: center; margin-top: 12px; align-items: center;
   }
   .pagination button {
-    background: #16181c; border: 1px solid #2f3336; border-radius: 9999px;
-    color: #e7e9ea; padding: 6px 16px; cursor: pointer; font-size: 0.8rem;
+    background: #F1EFE8; border: 1px solid #D3D1C7; border-radius: 9999px;
+    color: #2C2C2A; padding: 6px 16px; cursor: pointer; font-size: 0.8rem;
     transition: border-color .2s;
   }
-  .pagination button:hover { border-color: #1d9bf0; }
+  .pagination button:hover { border-color: #2C2C2A; }
   .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
-  .pagination .page-info { color: #71767b; font-size: 0.8rem; }
+  .pagination .page-info { color: #888780; font-size: 0.8rem; }
 
   .msg { font-size: 0.8rem; min-height: 1.2em; margin-top: 6px; }
-  .msg.ok { color: #00ba7c; }
-  .msg.err { color: #f4212e; }
+  .msg.ok { color: #1D9E75; }
+  .msg.err { color: #E24B4A; }
 
   /* ── Peak Hours Heatmap ── */
   .heatmap-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -293,33 +295,33 @@
     gap: 2px; font-size: 0.65rem; min-width: 0;
   }
   .heatmap .cell { padding: 4px 2px; text-align: center; border-radius: 4px; }
-  .heatmap .label { color: #71767b; text-align: right; padding-right: 6px; font-size: 0.6rem; }
-  .heatmap .header { color: #71767b; font-weight: 500; font-size: 0.6rem; }
+  .heatmap .label { color: #888780; text-align: right; padding-right: 6px; font-size: 0.6rem; }
+  .heatmap .header { color: #888780; font-weight: 500; font-size: 0.6rem; }
   /* ── Settings cards ── */
   .settings-card {
-    background: #16181c; border: 1px solid #2f3336; border-radius: 14px; padding: 16px; margin-bottom: 12px;
+    background: #F1EFE8; border: 1px solid #D3D1C7; border-radius: 14px; padding: 16px; margin-bottom: 12px;
   }
   .settings-card:last-child { margin-bottom: 0; }
-  .settings-card .label { font-size: 0.85rem; color: #e7e9ea; margin-bottom: 8px; }
+  .settings-card .label { font-size: 0.85rem; color: #2C2C2A; margin-bottom: 8px; }
   .settings-card .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
   .settings-card input, .settings-card textarea {
-    background: #0e0e12; border: 1px solid #2f3336; border-radius: 14px;
-    color: #e7e9ea; font-size: 0.85rem; padding: 10px 12px; outline: none; font-family: inherit;
+    background: #FFFFFF; border: 1px solid #D3D1C7; border-radius: 14px;
+    color: #2C2C2A; font-size: 0.85rem; padding: 10px 12px; outline: none; font-family: inherit;
     width: 100%;
   }
-  .settings-card input:focus, .settings-card textarea:focus { border-color: #1d9bf0; }
+  .settings-card input:focus, .settings-card textarea:focus { border-color: #2C2C2A; }
   .settings-card textarea { resize: vertical; }
   .settings-card input[type="number"] { width: 60px; text-align: center; }
   .settings-item {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    padding: 10px 0; border-bottom: 1px solid #2f3336;
+    padding: 10px 0; border-bottom: 1px solid #D3D1C7;
   }
   .settings-item:last-child { border-bottom: none; }
-  .settings-item span:first-child { font-size: 0.85rem; color: #e7e9ea; }
+  .settings-item span:first-child { font-size: 0.85rem; color: #2C2C2A; }
 
   /* ── Section titles ── */
   .section-title {
-    font-size: 1rem; font-weight: 700; margin: 24px 0 16px; color: #e7e9ea;
+    font-size: 1rem; font-weight: 700; margin: 24px 0 16px; color: #2C2C2A;
   }
 
   .hidden { display: none !important; }
@@ -329,23 +331,23 @@
     position: fixed; inset: 0; z-index: 250;
     display: flex; flex-direction: column; align-items: center;
     justify-content: center; gap: 16px;
-    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+    background: rgba(255,255,255,0.9); backdrop-filter: blur(8px);
   }
   .loading-overlay.hidden { display: none; }
   .loading-overlay .spinner {
-    width: 40px; height: 40px; border: 3px solid #2f3336;
-    border-top-color: #1d9bf0; border-radius: 50%;
+    width: 40px; height: 40px; border: 3px solid #D3D1C7;
+    border-top-color: #2C2C2A; border-radius: 50%;
     animation: lspin .7s linear infinite;
   }
   @keyframes lspin { to { transform: rotate(360deg); } }
-  .loading-overlay .loading-text { color: #e7e9ea; font-size: 0.9rem; font-weight: 500; }
-  .loading-overlay .progress-track { width: 60%; height: 3px; background: #2f3336; border-radius: 3px; overflow: hidden; }
-  .loading-overlay .progress-bar { height: 100%; width: 0%; background: #1d9bf0; transition: width .3s; }
+  .loading-overlay .loading-text { color: #2C2C2A; font-size: 0.9rem; font-weight: 500; }
+  .loading-overlay .progress-track { width: 60%; height: 3px; background: #D3D1C7; border-radius: 3px; overflow: hidden; }
+  .loading-overlay .progress-bar { height: 100%; width: 0%; background: #2C2C2A; transition: width .3s; }
 </style>
 </head>
 <body>
 <div class="topbar">
-  <h1>Unsr!fess <span>Panel</span></h1>
+  <h1>fessable <span>Panel</span></h1>
   <div class="topbar-right">
     <span class="admin-name" id="adminName"></span>
     <span class="role-badge" id="roleBadge"></span>
@@ -593,7 +595,7 @@ async function loadStats() {
       const grid = {};
       for (const d of adata) { grid[d.day + '-' + d.hour] = d.count; }
       const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      let html = '<div style="margin-bottom:6px"><h3 style="font-size:0.85rem;font-weight:600">Peak Hours <span style="color:#71767b;font-weight:400;font-size:0.7rem">(last 30 days)</span></h3></div>';
+      let html = '<div style="margin-bottom:6px"><h3 style="font-size:0.85rem;font-weight:600">Peak Hours <span style="color:#888780;font-weight:400;font-size:0.7rem">(last 30 days)</span></h3></div>';
       html += '<div class="heatmap-wrap" style="cursor:grab" ontouchstart=""><div class="heatmap">';
       html += '<div class="cell header label"></div>';
       for (let h = 0; h < 24; h++) html += '<div class="cell header">' + h + '</div>';
@@ -708,11 +710,11 @@ async function loadQueue() {
 
       const userInfo = t.user_screen_name
         ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-          + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
+          + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#D3D1C7;flex-shrink:0">'
           + (t.user_avatar_url ? '<img src="' + t.user_avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
           + '</div>'
           + '<div style="flex:1;min-width:0">'
-          + '<div style="font-size:0.85rem;font-weight:500;color:#1d9bf0;cursor:pointer" onclick="showUserTweets(' + t.x_user_db_id + ')">@' + escHtml(t.user_screen_name) + '</div>'
+          + '<div style="font-size:0.85rem;font-weight:500;color:#2C2C2A;cursor:pointer" onclick="showUserTweets(' + t.x_user_db_id + ')">@' + escHtml(t.user_screen_name) + '</div>'
           + '<div class="meta">' + metaStr + '</div>'
           + '</div>'
           + '</div>'
@@ -741,7 +743,7 @@ async function loadQueue() {
 
     el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load queue</div>';
+    el.innerHTML = '<div class="empty-state" style="color:#E24B4A">Failed to load queue</div>';
   }
 }
 
@@ -830,7 +832,7 @@ async function approveTweet(id) {
 async function rejectTweetPopup(id) {
   showPopup('', '', ''
     + '<div style="margin-bottom:12px">Reject tweet #' + id + '?</div>'
-    + '<textarea id="rr-' + id + '" placeholder="Reason (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
+    + '<textarea id="rr-' + id + '" placeholder="Reason (optional)" rows="2" style="width:100%;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Reject', cls: 'popup-btn-danger', fn: async () => {
       closePopup();
@@ -922,10 +924,10 @@ async function loadHistory() {
         + '<span>' + fmtTime(t.submitted_at) + '</span>'
         + '</div>'
         + '<div class="text-preview"' + (dataImgs ? ' ' + dataImgs : '') + ' data-full="' + escHtml(displayFull).replace(/"/g, '&quot;') + '" onclick="showFullFromAttr(this)" style="cursor:pointer">' + escHtml(displayText) + '</div>'
-        + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b">'
+        + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#888780">'
         + '<span>Reviewer: ' + (t.reviewer_name || '-') + '</span>'
-        + '<span>User: ' + (t.user_screen_name ? '<a href="javascript:void(0)" onclick="showUserTweets(' + t.x_user_db_id + ')" style="color:#1d9bf0;text-decoration:none">@' + escHtml(t.user_screen_name) + '</a>' : '-') + '</span>'
-        + '<span>URL: ' + (urls.length ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0;font-size:0.75rem">link</a>' : '-') + '</span>'
+        + '<span>User: ' + (t.user_screen_name ? '<a href="javascript:void(0)" onclick="showUserTweets(' + t.x_user_db_id + ')" style="color:#2C2C2A;text-decoration:none">@' + escHtml(t.user_screen_name) + '</a>' : '-') + '</span>'
+        + '<span>URL: ' + (urls.length ? '<a href="' + urls[0] + '" target="_blank" style="color:#2C2C2A;font-size:0.75rem">link</a>' : '-') + '</span>'
         + '<span>Reason: ' + (t.reject_reason ? escHtml(t.reject_reason) : '-') + '</span>'
         + '</div>'
         + (deleteBtn ? '<div class="actions">' + deleteBtn + '</div>' : '')
@@ -942,7 +944,7 @@ async function loadHistory() {
 
     el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load history</div>';
+    el.innerHTML = '<div class="empty-state" style="color:#E24B4A">Failed to load history</div>';
   }
 }
 
@@ -957,7 +959,7 @@ async function showUserTweets(userId) {
     const total = d.total || 0;
     const totalPages = Math.ceil(total / 10) || 1;
     let html = '<div style="max-height:70vh;overflow-y:auto;text-align:left">';
-    html += '<div style="margin-bottom:10px;font-size:0.85rem">Tweets by <a href="https://x.com/' + encodeURIComponent(d.screen_name) + '" target="_blank" style="color:#1d9bf0">@' + escHtml(d.screen_name) + '</a></div>';
+    html += '<div style="margin-bottom:10px;font-size:0.85rem">Tweets by <a href="https://x.com/' + encodeURIComponent(d.screen_name) + '" target="_blank" style="color:#2C2C2A">@' + escHtml(d.screen_name) + '</a></div>';
     if (tweets.length === 0) {
       html += '<div class="empty-state">No tweets from this user</div>';
     } else {
@@ -965,7 +967,7 @@ async function showUserTweets(userId) {
       for (const t of tweets) {
         var urls = [];
         try { urls = t.tweet_urls ? JSON.parse(t.tweet_urls) : []; } catch(e) { urls = []; }
-        const linkHtml = urls.length ? '<a href="' + urls[0] + '" target="_blank" style="color:#1d9bf0">link</a>' : '';
+        const linkHtml = urls.length ? '<a href="' + urls[0] + '" target="_blank" style="color:#2C2C2A">link</a>' : '';
         let actHtml = '';
         if (t.status === 'pending') {
           actHtml = '<button class="btn-action btn-approve" onclick="doApproval(' + t.id + ',\'' + d.screen_name + '\')">Approve</button>'
@@ -989,10 +991,10 @@ async function showUserTweets(userId) {
           + '<strong>#' + t.id + '</strong>'
           + '<span class="status-badge status-' + t.status + '">' + t.status + '</span>'
           + (tTagHtml ? ' ' + tTagHtml : '')
-          + '<span style="font-size:0.75rem;color:#71767b">' + fmtTime(t.submitted_at) + '</span>'
+          + '<span style="font-size:0.75rem;color:#888780">' + fmtTime(t.submitted_at) + '</span>'
           + '</div>'
           + '<div class="text" style="font-size:0.85rem">' + escHtml(t.original_text) + '</div>'
-          + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b;margin-top:6px">'
+          + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#888780;margin-top:6px">'
           + '<span>Reviewer: ' + (t.reviewer_name || '-') + '</span>'
           + '<span>Reason: ' + (t.reject_reason ? escHtml(t.reject_reason) : '-') + '</span>'
           + '<span>URL: ' + linkHtml + '</span>'
@@ -1037,7 +1039,7 @@ async function doRejection(id, sn) {
   closePopup();
   showPopup('', 'Reject Tweet?', ''
     + '<div style="margin-bottom:12px">Reject this tweet from @' + sn + '?</div>'
-    + '<textarea id="rejectReason" placeholder="Reason (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
+    + '<textarea id="rejectReason" placeholder="Reason (optional)" rows="2" style="width:100%;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Reject', cls: 'popup-btn-danger', fn: async () => {
       const reason = document.getElementById('rejectReason').value;
@@ -1065,7 +1067,7 @@ async function deleteTweetFromPopup(id) {
   closePopup();
   showPopup('🗑️', 'Delete Tweet?', ''
     + '<div style="margin-bottom:12px">Tweet #' + id + ' will be deleted from X. This cannot be undone.</div>'
-    + '<textarea id="delReasonPopup" placeholder="Reason for deletion (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
+    + '<textarea id="delReasonPopup" placeholder="Reason for deletion (optional)" rows="2" style="width:100%;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Delete', cls: 'popup-btn-danger', fn: async () => {
       const reason = document.getElementById('delReasonPopup').value;
@@ -1096,7 +1098,7 @@ async function deleteTweetFromPopup(id) {
 async function deleteTweet(id) {
   showPopup('🗑️', 'Delete Tweet?', ''
     + '<div style="margin-bottom:12px">Tweet #' + id + ' will be deleted from X. This cannot be undone.</div>'
-    + '<textarea id="delReason" placeholder="Reason for deletion (optional)" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
+    + '<textarea id="delReason" placeholder="Reason for deletion (optional)" rows="2" style="width:100%;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;font-size:0.8rem;padding:8px 10px;outline:none;font-family:inherit;resize:vertical;box-sizing:border-box"></textarea>', [
     { text: 'Cancel', cls: 'popup-btn-ghost', fn: closePopup },
     { text: 'Delete', cls: 'popup-btn-danger', fn: async () => { closePopup(); await doDelete(id, document.getElementById('delReason').value); } },
   ]);
@@ -1140,7 +1142,7 @@ async function loadSettings() {
   const curTab = curActiveStab ? curActiveStab.id.replace('stab', '').toLowerCase() : 'general';
 
   let html = '<div style="max-width:800px;margin:0 auto;padding:24px 0">'
-    + '<div class="tabs" style="margin-bottom:16px;border-bottom:1px solid #2f3336">'
+    + '<div class="tabs" style="margin-bottom:16px;border-bottom:1px solid #D3D1C7">'
     + '<div class="tab' + (curTab === 'general' ? ' active' : '') + '" data-stab="general" onclick="switchSettingsTab(\'general\')">General</div>'
     + '<div class="tab' + (curTab === 'service' ? ' active' : '') + '" data-stab="service" onclick="switchSettingsTab(\'service\')">Service &amp; Moderation</div>'
     + '<div class="tab' + (curTab === 'activity' ? ' active' : '') + '" data-stab="activity" onclick="switchSettingsTab(\'activity\')">Activity Log</div>'
@@ -1148,27 +1150,27 @@ async function loadSettings() {
 
   // ── General tab ──
   html += '<div id="stabGeneral" class="stab-content' + (curTab !== 'general' ? ' hidden' : '') + '">'
-    + '<div style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
-    + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:10px">Display Name</div>'
+    + '<div style="background:#F1EFE8;border:1px solid #D3D1C7;border-radius:14px;padding:16px;margin-bottom:20px">'
+    + '<div style="font-size:0.85rem;color:#2C2C2A;margin-bottom:10px">Display Name</div>'
     + '<div style="display:flex;gap:8px">'
-    + '<input id="dnInput" value="' + escHtml(currentName) + '" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
+    + '<input id="dnInput" value="' + escHtml(currentName) + '" style="flex:1;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:10px 12px;font-size:0.85rem;outline:none">'
     + '<button class="btn-action btn-approve" onclick="changeDisplayName()">Save</button>'
     + '</div><div id="dnMsg" style="font-size:0.85rem;margin-top:8px"></div>'
-    + '<div style="font-size:0.85rem;color:#e7e9ea;margin:16px 0 10px">Change Password</div>'
+    + '<div style="font-size:0.85rem;color:#2C2C2A;margin:16px 0 10px">Change Password</div>'
     + '<div style="display:flex;flex-direction:column;gap:10px">'
-    + '<input id="pwOld" type="password" placeholder="Current password" style="background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
-    + '<input id="pwNew" type="password" placeholder="New password" style="background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none">'
+    + '<input id="pwOld" type="password" placeholder="Current password" style="background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:10px 12px;font-size:0.85rem;outline:none">'
+    + '<input id="pwNew" type="password" placeholder="New password" style="background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:10px 12px;font-size:0.85rem;outline:none">'
     + '<button class="btn-action btn-approve" onclick="changePassword()">Save</button>'
     + '<div id="pwMsg" style="font-size:0.85rem"></div></div></div>';
 
   if (isSuper) {
-    html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Admin Management</h3>'
-      + '<div style="margin-bottom:12px;padding:14px;background:#16181c;border:1px solid #2f3336;border-radius:14px">'
-      + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">Create New Admin</div>'
+    html += '<h3 style="margin:24px 0 16px;font-size:1rem;color:#2C2C2A">Admin Management</h3>'
+      + '<div style="margin-bottom:12px;padding:14px;background:#F1EFE8;border:1px solid #D3D1C7;border-radius:14px">'
+      + '<div style="font-size:0.85rem;color:#2C2C2A;margin-bottom:8px">Create New Admin</div>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      + '<input id="au" placeholder="Username" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
-      + '<input id="ap" type="password" placeholder="Password" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
-      + '<input id="an" placeholder="Display Name" style="flex:1;min-width:120px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
+      + '<input id="au" placeholder="Username" style="flex:1;min-width:120px;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:8px 12px;font-size:0.85rem;outline:none">'
+      + '<input id="ap" type="password" placeholder="Password" style="flex:1;min-width:120px;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:8px 12px;font-size:0.85rem;outline:none">'
+      + '<input id="an" placeholder="Display Name" style="flex:1;min-width:120px;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:8px 12px;font-size:0.85rem;outline:none">'
       + '<button class="btn-action btn-approve" onclick="createAdmin()">Create</button>'
       + '</div><div class="msg" id="adminMsg"></div></div>'
       + '<div id="adminsTableWrap"></div>';
@@ -1181,86 +1183,86 @@ async function loadSettings() {
       + '<div class="settings-item"><span>Online / Offline</span><span class="badge-off" id="settingsOnline">-</span><button class="btn-action btn-approve" onclick="toggleOnline()">Toggle</button></div>'
       + '<div class="settings-item"><span>Auto-approve</span><span class="badge-off" id="settingsBypass">-</span><button class="btn-action btn-approve" onclick="toggleBypass()">Toggle</button></div>'
       + '<div class="settings-item"><span>Bypass Mutual</span><span class="badge-off" id="settingsBypassMutual">-</span><button class="btn-action btn-approve" onclick="toggleBypassMutual()">Toggle</button></div>'
-      + '<div class="settings-item"><span>Delete Window</span><div style="display:flex;gap:4px;align-items:center"><input id="dwInput" type="number" min="1" value="5" style="width:50px;background:#0e0e12;border:1px solid #2f3336;border-radius:6px;color:#e7e9ea;padding:4px 6px;font-size:0.8rem;outline:none;text-align:center"><span style="font-size:0.75rem;color:#71767b">min</span></div><button class="btn-action btn-approve" onclick="setDeleteWindow()">Save</button><span id="dwMsg" style="margin-left:6px;font-size:0.75rem;color:#71767b"></span></div>'
+      + '<div class="settings-item"><span>Delete Window</span><div style="display:flex;gap:4px;align-items:center"><input id="dwInput" type="number" min="1" value="5" style="width:50px;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:6px;color:#2C2C2A;padding:4px 6px;font-size:0.8rem;outline:none;text-align:center"><span style="font-size:0.75rem;color:#888780">min</span></div><button class="btn-action btn-approve" onclick="setDeleteWindow()">Save</button><span id="dwMsg" style="margin-left:6px;font-size:0.75rem;color:#888780"></span></div>'
       + '</div>'
-      + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">Announcement</h3>'
+      + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#2C2C2A">Announcement</h3>'
       + '<div style="margin-bottom:24px">'
-      + '<textarea id="announcementInput" placeholder="Running text shown to users..." rows="3" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none;resize:vertical;font-family:inherit;margin-bottom:8px"></textarea>'
+      + '<textarea id="announcementInput" placeholder="Running text shown to users..." rows="3" style="width:100%;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:10px 12px;font-size:0.85rem;outline:none;resize:vertical;font-family:inherit;margin-bottom:8px"></textarea>'
       + '<div style="display:flex;gap:8px;align-items:center">'
  + '<button class="btn-action btn-approve" onclick="setAnnouncement()">Save</button>'
  + '<button class="btn-action btn-reject" onclick="clearAnnouncement()">Clear</button>'
- + '<span id="announcementMsg" style="font-size:0.75rem;color:#71767b"></span>'
+ + '<span id="announcementMsg" style="font-size:0.75rem;color:#888780"></span>'
       + '</div></div>';
   }
-  html += '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">X Connection</h3>'
-    + '<div id="xConnectSection" style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
+  html += '<h3 style="margin:24px 0 12px;font-size:1rem;color:#2C2C2A">X Connection</h3>'
+    + '<div id="xConnectSection" style="background:#F1EFE8;border:1px solid #D3D1C7;border-radius:14px;padding:16px;margin-bottom:20px">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
-    + '<span style="font-size:0.9rem;color:#e7e9ea">Status: <span id="xConnectStatus" class="badge-off">Checking...</span></span>'
-    + '<span style="font-size:0.85rem;color:#71767b" id="xConnectHandle"></span>'
+    + '<span style="font-size:0.9rem;color:#2C2C2A">Status: <span id="xConnectStatus" class="badge-off">Checking...</span></span>'
+    + '<span style="font-size:0.85rem;color:#888780" id="xConnectHandle"></span>'
     + '</div>'
-    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:12px" id="xConnectName"></div>'
+    + '<div style="font-size:0.82rem;color:#888780;margin-bottom:12px" id="xConnectName"></div>'
     + '<div id="xConnectForm" style="display:none">'
-    + '<div style="font-size:0.8rem;color:#52565c;margin-bottom:8px">Cookies (JSON):</div>'
+    + '<div style="font-size:0.8rem;color:#B4B2A9;margin-bottom:8px">Cookies (JSON):</div>'
     + '<div style="display:flex;gap:8px">'
-    + '<textarea id="xcCookies" placeholder="Paste JSON cookies here..." rows="4" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.82rem;outline:none;resize:vertical;font-family:monospace"></textarea>'
+    + '<textarea id="xcCookies" placeholder="Paste JSON cookies here..." rows="4" style="flex:1;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:8px 12px;font-size:0.82rem;outline:none;resize:vertical;font-family:monospace"></textarea>'
     + '<button class="btn-action btn-approve" style="align-self:flex-start" onclick="xConnectCookies()">Connect</button>'
     + '</div>'
     + '<div id="xConnectMsg" style="font-size:0.85rem;margin-top:8px"></div>'
-    + '<div style="margin-top:10px;font-size:0.82rem;color:#71767b">'
-    + '<span onclick="var d=document.getElementById(\'cookieTutorial\');d.style.display=d.style.display==\'none\'?\'block\':\'none\'" style="cursor:pointer;text-decoration:underline;color:#1d9bf0">How to get cookies?</span>'
-    + '<div id="cookieTutorial" style="display:none;margin-top:8px;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;padding:12px;line-height:1.6;font-size:0.82rem;color:#aaa">'
-    + 'Chrome — install <a href="https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm" target="_blank" style="color:#1d9bf0">Cookie-Editor</a> extension, then:<br>'
+    + '<div style="margin-top:10px;font-size:0.82rem;color:#888780">'
+    + '<span onclick="var d=document.getElementById(\'cookieTutorial\');d.style.display=d.style.display==\'none\'?\'block\':\'none\'" style="cursor:pointer;text-decoration:underline;color:#2C2C2A">How to get cookies?</span>'
+    + '<div id="cookieTutorial" style="display:none;margin-top:8px;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;padding:12px;line-height:1.6;font-size:0.82rem;color:#aaa">'
+    + 'Chrome — install <a href="https://chromewebstore.google.com/detail/cookie-editor/hlkenndednhfkekhgcdicdfddnkalmdm" target="_blank" style="color:#2C2C2A">Cookie-Editor</a> extension, then:<br>'
     + '<ol style="margin:6px 0 0 16px;padding:0">'
-    + '<li>Open <a href="https://x.com" target="_blank" style="color:#1d9bf0">x.com</a>, log in.</li>'
+    + '<li>Open <a href="https://x.com" target="_blank" style="color:#2C2C2A">x.com</a>, log in.</li>'
     + '<li>Click the <b>Cookie-Editor</b> icon (puzzle piece top-right).</li>'
     + '<li>Click <b>Export</b> (bottom of popup) → make sure format is <b>JSON</b>.</li>'
     + '<li>Click <b>Copy to clipboard</b> (or select all & copy).</li>'
     + '<li>Come back here, paste (Ctrl+V) into the textarea above.</li>'
     + '</ol>'
-    + '<div style="margin-top:8px;font-size:0.78rem;color:#52565c">Need help? DM <a href="https://x.com/adorareble" target="_blank" style="color:#1d9bf0">@adorareble</a></div>'
+    + '<div style="margin-top:8px;font-size:0.78rem;color:#B4B2A9">Need help? DM <a href="https://x.com/adorareble" target="_blank" style="color:#2C2C2A">@adorareble</a></div>'
     + '</div></div>'
     + '</div>'
     + '</div>'
-    + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">Branding</h3>'
-    + '<div style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
-    + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">OG Title</div>'
-    + '<input id="brandTitle" placeholder="OG Title" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none;margin-bottom:8px">'
-    + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">OG Description</div>'
-    + '<textarea id="brandDesc" placeholder="OG Description" rows="2" style="width:100%;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none;resize:vertical;margin-bottom:8px"></textarea>'
-    + '<div style="font-size:0.85rem;color:#e7e9ea;margin-bottom:8px">Theme Color</div>'
+    + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#2C2C2A">Branding</h3>'
+    + '<div style="background:#F1EFE8;border:1px solid #D3D1C7;border-radius:14px;padding:16px;margin-bottom:20px">'
+    + '<div style="font-size:0.85rem;color:#2C2C2A;margin-bottom:8px">OG Title</div>'
+    + '<input id="brandTitle" placeholder="OG Title" style="width:100%;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:8px 12px;font-size:0.85rem;outline:none;margin-bottom:8px">'
+    + '<div style="font-size:0.85rem;color:#2C2C2A;margin-bottom:8px">OG Description</div>'
+    + '<textarea id="brandDesc" placeholder="OG Description" rows="2" style="width:100%;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:8px 12px;font-size:0.85rem;outline:none;resize:vertical;margin-bottom:8px"></textarea>'
+    + '<div style="font-size:0.85rem;color:#2C2C2A;margin-bottom:8px">Theme Color</div>'
     + '<div style="display:flex;gap:8px;margin-bottom:12px">'
-    + '<input id="brandColor" type="color" value="#0e0e12" oninput="document.getElementById(\'brandColorHex\').value=this.value" style="width:44px;height:44px;background:none;border:1px solid #2f3336;border-radius:8px;cursor:pointer;padding:2px">'
-    + '<input id="brandColorHex" placeholder="#0e0e12" oninput="var c=this.value;if(/^#[0-9a-f]{6}$/i.test(c))document.getElementById(\'brandColor\').value=c" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none;font-family:monospace">'
+    + '<input id="brandColor" type="color" value="#FFFFFF" oninput="document.getElementById(\'brandColorHex\').value=this.value" style="width:44px;height:44px;background:none;border:1px solid #D3D1C7;border-radius:8px;cursor:pointer;padding:2px">'
+    + '<input id="brandColorHex" placeholder="#FFFFFF" oninput="var c=this.value;if(/^#[0-9a-f]{6}$/i.test(c))document.getElementById(\'brandColor\').value=c" style="flex:1;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:8px 12px;font-size:0.85rem;outline:none;font-family:monospace">'
     + '</div>'
     + '<button class="btn-action btn-approve" onclick="saveBrandingMeta()">Save Meta</button>'
-    + '<span id="brandMetaMsg" style="font-size:0.8rem;margin-left:8px;color:#71767b"></span>'
-    + '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #2f3336">'
+    + '<span id="brandMetaMsg" style="font-size:0.8rem;margin-left:8px;color:#888780"></span>'
+    + '<div style="margin-top:12px;padding-top:12px;border-top:1px solid #D3D1C7">'
     + '<div style="display:flex;gap:12px;flex-wrap:wrap">'
-    + '<div><div style="font-size:0.8rem;color:#71767b;margin-bottom:4px">Favicon</div><input type="file" id="faviconInput" accept=".ico,.png" style="display:none" onchange="uploadFavicon(this)"><button class="btn-small primary" onclick="document.getElementById(\'faviconInput\').click()">Upload</button></div>'
-    + '<div><div style="font-size:0.8rem;color:#71767b;margin-bottom:4px">OG Image (1200x630)</div><input type="file" id="ogImageInput" accept=".png,.jpg,.jpeg" style="display:none" onchange="uploadOgImage(this)"><button class="btn-small primary" onclick="document.getElementById(\'ogImageInput\').click()">Upload</button></div>'
+    + '<div><div style="font-size:0.8rem;color:#888780;margin-bottom:4px">Favicon</div><input type="file" id="faviconInput" accept=".ico,.png" style="display:none" onchange="uploadFavicon(this)"><button class="btn-small primary" onclick="document.getElementById(\'faviconInput\').click()">Upload</button></div>'
+    + '<div><div style="font-size:0.8rem;color:#888780;margin-bottom:4px">OG Image (1200x630)</div><input type="file" id="ogImageInput" accept=".png,.jpg,.jpeg" style="display:none" onchange="uploadOgImage(this)"><button class="btn-small primary" onclick="document.getElementById(\'ogImageInput\').click()">Upload</button></div>'
     + '</div>'
     + '<div id="brandUploadMsg" style="font-size:0.85rem;margin-top:8px"></div>'
     + '</div></div>'
-    + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">Service Name</h3>'
-    + '<div style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
-    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Name shown on landing page (falls back to X display name if available).</div>'
+    + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#2C2C2A">Service Name</h3>'
+    + '<div style="background:#F1EFE8;border:1px solid #D3D1C7;border-radius:14px;padding:16px;margin-bottom:20px">'
+    + '<div style="font-size:0.82rem;color:#888780;margin-bottom:8px">Name shown on landing page (falls back to X display name if available).</div>'
     + '<div style="display:flex;gap:8px">'
-    + '<input id="nameInput" placeholder="service name" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none">'
+    + '<input id="nameInput" placeholder="service name" style="flex:1;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:8px 12px;font-size:0.85rem;outline:none">'
     + '<button class="btn-action btn-approve" onclick="updateServiceName()">Save</button>'
     + '</div><div id="nameMsg" style="font-size:0.85rem;margin-top:6px"></div>'
     + '</div>'
-    + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#e7e9ea">Slug</h3>'
-    + '<div style="background:#16181c;border:1px solid #2f3336;border-radius:14px;padding:16px;margin-bottom:20px">'
-    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Changing slug will break existing links. Use with caution.</div>'
+    + '<h3 style="margin:24px 0 12px;font-size:1rem;color:#2C2C2A">Slug</h3>'
+    + '<div style="background:#F1EFE8;border:1px solid #D3D1C7;border-radius:14px;padding:16px;margin-bottom:20px">'
+    + '<div style="font-size:0.82rem;color:#888780;margin-bottom:8px">Changing slug will break existing links. Use with caution.</div>'
     + '<div style="display:flex;gap:8px">'
-    + '<input id="slugInput" placeholder="current-slug" style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:8px 12px;font-size:0.85rem;outline:none;font-family:monospace">'
+    + '<input id="slugInput" placeholder="current-slug" style="flex:1;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:8px 12px;font-size:0.85rem;outline:none;font-family:monospace">'
     + '<button class="btn-action btn-approve" onclick="updateSlug()">Save</button>'
     + '</div><div id="slugMsg" style="font-size:0.85rem;margin-top:6px"></div>'
     + '</div>'
-    + '<h3 style="margin:24px 0 16px;font-size:1rem;color:#e7e9ea">Keyword Filters</h3>'
-    + '<div style="font-size:0.82rem;color:#71767b;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
+    + '<h3 style="margin:24px 0 16px;font-size:1rem;color:#2C2C2A">Keyword Filters</h3>'
+    + '<div style="font-size:0.82rem;color:#888780;margin-bottom:8px">Tweets containing any of these keywords will be automatically rejected.</div>'
     + '<div class="add-keyword-form" style="margin-bottom:10px">'
-    + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
+    + '<input id="kwInput" placeholder="keyword1, keyword2, ..." style="flex:1;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:10px 12px;font-size:0.85rem;outline:none" onkeydown="if(event.key===\'Enter\')addKeyword()">'
     + '<button class="btn-small primary" onclick="addKeyword()">Add</button>'
     + '</div><div class="msg" id="kwMsg"></div>'
     + '<div class="keyword-list" id="kwList"><div class="empty-state">Loading...</div></div>'
@@ -1326,9 +1328,9 @@ async function loadSettings() {
         const bd = document.getElementById('brandDesc');
         if (bd) bd.value = t.og_description || '';
         const bc = document.getElementById('brandColor');
-        if (bc) bc.value = t.og_color || '#0e0e12';
+        if (bc) bc.value = t.og_color || '#FFFFFF';
         const bch = document.getElementById('brandColorHex');
-        if (bch) bch.value = t.og_color || '#0e0e12';
+        if (bch) bch.value = t.og_color || '#FFFFFF';
       }).catch(() => {});
   }
 }
@@ -1343,7 +1345,7 @@ async function loadKeywordsSection() {
       ? keywords.map(k => '<span class="keyword-tag">' + escHtml(k.keyword) + '<span class="del" onclick="removeKeyword(' + k.id + ')">&times;</span></span>').join('')
       : '<div class="empty-state">No keyword filters</div>';
   } catch(e) {
-    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load</div>';
+    el.innerHTML = '<div class="empty-state" style="color:#E24B4A">Failed to load</div>';
   }
 }
 async function addKeyword() {
@@ -1379,12 +1381,12 @@ async function loadAdminsSection() {
     let cards = '';
     for (const a of admins) {
       const lastLogin = a.last_login ? fmtTime(a.last_login) : '-';
-      const activeHtml = a.is_active ? '<span style="color:#00ba7c">Active</span>' : '<span style="color:#71767b">Inactive</span>';
+      const activeHtml = a.is_active ? '<span style="color:#1D9E75">Active</span>' : '<span style="color:#888780">Inactive</span>';
       const actionHtml = a.id !== ADMIN.id
         ? (a.is_active
             ? '<button class="btn-action btn-reject" onclick="deactivateAdmin(' + a.id + ')">Deactivate</button>'
             : '<button class="btn-action btn-approve" onclick="activateAdmin(' + a.id + ')">Reactivate</button>')
-        : '<span style="color:#71767b;font-size:0.8rem">You</span>';
+        : '<span style="color:#888780;font-size:0.8rem">You</span>';
       cards += '<div class="item-card">'
         + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">'
         + '<strong>#' + a.id + '</strong>'
@@ -1392,8 +1394,8 @@ async function loadAdminsSection() {
         + '<span>' + activeHtml + '</span>'
         + '</div>'
         + '<div style="font-weight:500">' + escHtml(a.display_name) + '</div>'
-        + '<div style="color:#71767b;font-size:0.85rem">@' + escHtml(a.username) + '</div>'
-        + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b;margin-top:6px">'
+        + '<div style="color:#888780;font-size:0.85rem">@' + escHtml(a.username) + '</div>'
+        + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#888780;margin-top:6px">'
         + '<span>Created: ' + fmtTime(a.created_at) + '</span>'
         + '<span>Last login: ' + lastLogin + '</span>'
         + '</div>'
@@ -1402,7 +1404,7 @@ async function loadAdminsSection() {
     }
     el.innerHTML = cards;
   } catch(e) {
-    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load admins</div>';
+    el.innerHTML = '<div class="empty-state" style="color:#E24B4A">Failed to load admins</div>';
   }
 }
 async function activateAdmin(id) {
@@ -1438,7 +1440,7 @@ async function createAdmin() {
 async function changeDisplayName() {
   const name = document.getElementById('dnInput').value.trim();
   const msg = document.getElementById('dnMsg');
-  if (!name) { msg.style.color = '#f4212e'; msg.textContent = 'Name cannot be empty'; return; }
+  if (!name) { msg.style.color = '#E24B4A'; msg.textContent = 'Name cannot be empty'; return; }
   try {
     const form = new URLSearchParams();
     form.append('display_name', name);
@@ -1448,17 +1450,17 @@ async function changeDisplayName() {
       ADMIN.display_name = d.display_name;
       localStorage.setItem('panel_admin', JSON.stringify(ADMIN));
       document.getElementById('adminName').textContent = d.display_name;
-      msg.style.color = '#00ba7c'; msg.textContent = 'Display name updated';
-    } else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
-  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Connection error'; }
+      msg.style.color = '#1D9E75'; msg.textContent = 'Display name updated';
+    } else { msg.style.color = '#E24B4A'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#E24B4A'; msg.textContent = 'Connection error'; }
 }
 
 async function changePassword() {
   const oldPw = document.getElementById('pwOld').value;
   const newPw = document.getElementById('pwNew').value;
   const msg = document.getElementById('pwMsg');
-  if (!oldPw || !newPw) { msg.style.color = '#f4212e'; msg.textContent = 'Fill both fields'; return; }
-  if (newPw.length < 6) { msg.style.color = '#f4212e'; msg.textContent = 'Min 6 characters'; return; }
+  if (!oldPw || !newPw) { msg.style.color = '#E24B4A'; msg.textContent = 'Fill both fields'; return; }
+  if (newPw.length < 6) { msg.style.color = '#E24B4A'; msg.textContent = 'Min 6 characters'; return; }
   try {
     const form = new URLSearchParams();
     form.append('old_password', oldPw);
@@ -1466,10 +1468,10 @@ async function changePassword() {
     const r = await api('/panel/api/change-password', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
     const d = await r.json();
     if (d.success) {
-      msg.style.color = '#00ba7c'; msg.textContent = 'Password changed';
+      msg.style.color = '#1D9E75'; msg.textContent = 'Password changed';
       document.getElementById('pwOld').value = ''; document.getElementById('pwNew').value = '';
-    } else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
-  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Connection error'; }
+    } else { msg.style.color = '#E24B4A'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#E24B4A'; msg.textContent = 'Connection error'; }
 }
 
 // ── Connect X ──
@@ -1504,23 +1506,23 @@ async function xConnectStatus() {
 async function xConnectCookies() {
   const json = document.getElementById('xcCookies').value.trim();
   const msg = document.getElementById('xConnectMsg');
-  if (!json) { msg.style.color = '#f4212e'; msg.textContent = 'Paste cookie JSON first'; return; }
+  if (!json) { msg.style.color = '#E24B4A'; msg.textContent = 'Paste cookie JSON first'; return; }
   msg.textContent = 'Validating...';
-  msg.style.color = '#71767b';
+  msg.style.color = '#888780';
   try {
     const form = new URLSearchParams();
     form.append('cookies_json', json);
     const r = await api('/panel/api/connect-x/cookies', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
     const d = await r.json();
     if (d.success) {
-      msg.style.color = '#00ba7c';
+      msg.style.color = '#1D9E75';
       msg.textContent = 'Connected! Session saved.';
       xConnectStatus();
     } else {
-      msg.style.color = '#f4212e';
+      msg.style.color = '#E24B4A';
       msg.textContent = d.error || 'Invalid cookies';
     }
-  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Error validating cookies'; }
+  } catch(e) { msg.style.color = '#E24B4A'; msg.textContent = 'Error validating cookies'; }
 }
 
 // ── Branding ──
@@ -1530,7 +1532,7 @@ async function saveBrandingMeta() {
   const color = document.getElementById('brandColorHex').value.trim();
   const msg = document.getElementById('brandMetaMsg');
   msg.textContent = 'Saving...';
-  msg.style.color = '#71767b';
+  msg.style.color = '#888780';
   try {
     const form = new URLSearchParams();
     if (title) form.append('og_title', title);
@@ -1539,10 +1541,10 @@ async function saveBrandingMeta() {
     const r = await api('/panel/api/branding/meta', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
     const d = await r.json();
     if (d.success) {
-      msg.style.color = '#00ba7c';
+      msg.style.color = '#1D9E75';
       msg.textContent = 'Saved!';
-    } else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
-  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Error'; }
+    } else { msg.style.color = '#E24B4A'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#E24B4A'; msg.textContent = 'Error'; }
 }
 
 async function uploadFavicon(input) {
@@ -1550,15 +1552,15 @@ async function uploadFavicon(input) {
   if (!file) return;
   const msg = document.getElementById('brandUploadMsg');
   msg.textContent = 'Uploading...';
-  msg.style.color = '#71767b';
+  msg.style.color = '#888780';
   try {
     const form = new FormData();
     form.append('file', file);
     const r = await api('/panel/api/branding/favicon', { method: 'POST', body: form });
     const d = await r.json();
-    if (d.success) { msg.style.color = '#00ba7c'; msg.textContent = 'Favicon updated!'; }
-    else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
-  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Upload error'; }
+    if (d.success) { msg.style.color = '#1D9E75'; msg.textContent = 'Favicon updated!'; }
+    else { msg.style.color = '#E24B4A'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#E24B4A'; msg.textContent = 'Upload error'; }
 }
 
 async function uploadOgImage(input) {
@@ -1566,48 +1568,48 @@ async function uploadOgImage(input) {
   if (!file) return;
   const msg = document.getElementById('brandUploadMsg');
   msg.textContent = 'Uploading...';
-  msg.style.color = '#71767b';
+  msg.style.color = '#888780';
   try {
     const form = new FormData();
     form.append('file', file);
     const r = await api('/panel/api/branding/og-image', { method: 'POST', body: form });
     const d = await r.json();
-    if (d.success) { msg.style.color = '#00ba7c'; msg.textContent = 'OG image updated!'; }
-    else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
-  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Upload error'; }
+    if (d.success) { msg.style.color = '#1D9E75'; msg.textContent = 'OG image updated!'; }
+    else { msg.style.color = '#E24B4A'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#E24B4A'; msg.textContent = 'Upload error'; }
 }
 
 // ── Service Name ──
 async function updateServiceName() {
   const name = document.getElementById('nameInput').value.trim();
   const msg = document.getElementById('nameMsg');
-  if (!name) { msg.style.color = '#f4212e'; msg.textContent = 'Name cannot be empty'; return; }
+  if (!name) { msg.style.color = '#E24B4A'; msg.textContent = 'Name cannot be empty'; return; }
   msg.textContent = 'Saving...';
-  msg.style.color = '#71767b';
+  msg.style.color = '#888780';
   try {
     const form = new URLSearchParams();
     form.append('name', name);
     const r = await api('/panel/api/tenant/name', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
     const d = await r.json();
-    if (d.success) { msg.style.color = '#00ba7c'; msg.textContent = 'Saved!'; }
-    else { msg.style.color = '#f4212e'; msg.textContent = d.detail || 'Failed'; }
-  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Error'; }
+    if (d.success) { msg.style.color = '#1D9E75'; msg.textContent = 'Saved!'; }
+    else { msg.style.color = '#E24B4A'; msg.textContent = d.detail || 'Failed'; }
+  } catch(e) { msg.style.color = '#E24B4A'; msg.textContent = 'Error'; }
 }
 
 // ── Slug ──
 async function updateSlug() {
   const slug = document.getElementById('slugInput').value.trim();
   const msg = document.getElementById('slugMsg');
-  if (!slug) { msg.style.color = '#f4212e'; msg.textContent = 'Slug cannot be empty'; return; }
+  if (!slug) { msg.style.color = '#E24B4A'; msg.textContent = 'Slug cannot be empty'; return; }
   msg.textContent = 'Saving...';
-  msg.style.color = '#71767b';
+  msg.style.color = '#888780';
   try {
     const form = new URLSearchParams();
     form.append('new_slug', slug);
     const r = await api('/panel/api/settings/slug', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
     const d = await r.json();
     if (d.success) {
-      msg.style.color = '#00ba7c';
+      msg.style.color = '#1D9E75';
       msg.textContent = 'Slug changed! Reloading...';
       setTimeout(function() {
         const newSlug = d.slug || slug;
@@ -1615,17 +1617,17 @@ async function updateSlug() {
         window.location.href = '/' + newSlug + '/panel/dashboard';
       }, 1000);
     } else {
-      msg.style.color = '#f4212e';
+      msg.style.color = '#E24B4A';
       msg.textContent = d.detail || 'Failed';
     }
-  } catch(e) { msg.style.color = '#f4212e'; msg.textContent = 'Error'; }
+  } catch(e) { msg.style.color = '#E24B4A'; msg.textContent = 'Error'; }
 }
 
 async function setDeleteWindow() {
   const input = document.getElementById('dwInput');
   const msg = document.getElementById('dwMsg');
   const val = parseInt(input.value);
-  if (!val || val < 1) { msg.textContent = 'Min 1 minute'; msg.style.color = '#f4212e'; return; }
+  if (!val || val < 1) { msg.textContent = 'Min 1 minute'; msg.style.color = '#E24B4A'; return; }
   try {
     const form = new URLSearchParams();
     form.append('value', val.toString());
@@ -1633,10 +1635,10 @@ async function setDeleteWindow() {
     const d = await r.json();
     if (d.success) {
       msg.textContent = 'Saved: ' + val + ' minutes';
-      msg.style.color = '#00ba7c';
+      msg.style.color = '#1D9E75';
       loadStats();
-    } else { msg.textContent = d.detail || 'Failed'; msg.style.color = '#f4212e'; }
-  } catch(e) { msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
+    } else { msg.textContent = d.detail || 'Failed'; msg.style.color = '#E24B4A'; }
+  } catch(e) { msg.textContent = 'Connection error'; msg.style.color = '#E24B4A'; }
 }
 
 async function setAnnouncement() {
@@ -1647,9 +1649,9 @@ async function setAnnouncement() {
   try {
     const r = await api('/panel/api/set-announcement', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
     const d = await r.json();
-    if (d.success) { msg.textContent = 'Saved'; msg.style.color = '#00ba7c'; }
-    else { msg.textContent = typeof d.detail === 'string' ? d.detail : 'Failed'; msg.style.color = '#f4212e'; }
-  } catch(e) { console.error('setAnnouncement', e); msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
+    if (d.success) { msg.textContent = 'Saved'; msg.style.color = '#1D9E75'; }
+    else { msg.textContent = typeof d.detail === 'string' ? d.detail : 'Failed'; msg.style.color = '#E24B4A'; }
+  } catch(e) { console.error('setAnnouncement', e); msg.textContent = 'Connection error'; msg.style.color = '#E24B4A'; }
 }
 
 async function clearAnnouncement() {
@@ -1659,11 +1661,11 @@ async function clearAnnouncement() {
   form.append('value', '');
   try {
     const r = await api('/panel/api/set-announcement', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: form.toString() });
-    if (!r.ok) { msg.textContent = 'Error: ' + r.status; msg.style.color = '#f4212e'; return; }
+    if (!r.ok) { msg.textContent = 'Error: ' + r.status; msg.style.color = '#E24B4A'; return; }
     const d = await r.json();
-    if (d.success) { msg.textContent = 'Cleared'; msg.style.color = '#f4212e'; }
-    else { msg.textContent = typeof d.detail === 'string' ? d.detail : 'Failed'; msg.style.color = '#f4212e'; }
-  } catch(e) { console.error('clearAnnouncement', e); msg.textContent = 'Connection error'; msg.style.color = '#f4212e'; }
+    if (d.success) { msg.textContent = 'Cleared'; msg.style.color = '#E24B4A'; }
+    else { msg.textContent = typeof d.detail === 'string' ? d.detail : 'Failed'; msg.style.color = '#E24B4A'; }
+  } catch(e) { console.error('clearAnnouncement', e); msg.textContent = 'Connection error'; msg.style.color = '#E24B4A'; }
 }
 
 // ── Activity helpers ──
@@ -1693,9 +1695,9 @@ async function loadSettingsActivity() {
         + '<div class="meta" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px">'
         + '<strong>' + escHtml(a.admin_name || 'Admin #' + a.admin_id) + '</strong>'
         + '<span class="status-badge status-pending">' + a.action + '</span>'
-        + '<span style="font-size:0.75rem;color:#71767b">' + fmtTime(a.created_at) + '</span>'
+        + '<span style="font-size:0.75rem;color:#888780">' + fmtTime(a.created_at) + '</span>'
         + '</div>'
-        + '<div style="font-size:0.85rem;color:#e7e9ea">'
+        + '<div style="font-size:0.85rem;color:#2C2C2A">'
         + (a.target_type ? a.target_type + ' #' + a.target_id : '')
         + (a.details ? ' — ' + escHtml(a.details) : '')
         + '</div>'
@@ -1707,7 +1709,7 @@ async function loadSettingsActivity() {
       + '<span class="page-info">Page ' + stabActivityPage + ' of ' + totalPages + '</span>'
       + '<button onclick="stabActivityPage++;loadSettingsActivity()"' + (stabActivityPage >= totalPages ? ' disabled' : '') + '>Next</button>';
   } catch(e) {
-    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load activity</div>';
+    el.innerHTML = '<div class="empty-state" style="color:#E24B4A">Failed to load activity</div>';
     pagination.innerHTML = '';
   }
 }
@@ -1725,10 +1727,10 @@ async function loadUsers() {
 
     let html = '<div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
       + '<button class="btn-small primary" onclick="syncAllUsers()" style="padding:6px 14px">Sync All</button>'
-      + '<span id="syncMsg" style="font-size:0.8rem;color:#71767b"></span>'
+      + '<span id="syncMsg" style="font-size:0.8rem;color:#888780"></span>'
       + '<input id="usersSearchInput" placeholder="Search username..." value="' + escHtml(usersSearch) + '"'
       + ' onkeydown="if(event.key===\'Enter\'){usersSearch=this.value;usersPage=1;loadUsers()}"'
-      + ' style="margin-left:auto;background:#0e0e12;border:1px solid #2f3336;border-radius:8px;color:#e7e9ea;padding:6px 10px;font-size:0.8rem;outline:none;width:180px">'
+      + ' style="margin-left:auto;background:#FFFFFF;border:1px solid #D3D1C7;border-radius:8px;color:#2C2C2A;padding:6px 10px;font-size:0.8rem;outline:none;width:180px">'
       + '<button class="btn-small primary" onclick="usersSearch=document.getElementById(\'usersSearchInput\').value;usersPage=1;loadUsers()">Search</button>'
       + '</div>';
 
@@ -1750,13 +1752,13 @@ async function loadUsers() {
       const statusText = u.status === 'inactive' ? 'Inactive' : 'Active';
       cards += '<div class="item-card">'
         + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'
-        + '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
+        + '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:#D3D1C7;flex-shrink:0">'
         + (u.avatar_url ? '<img src="' + u.avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
         + '</div>'
         + '<div style="flex:1">'
-        + '<div><a href="javascript:void(0)" onclick="showUserTweets(' + u.id + ')" style="color:#1d9bf0;text-decoration:none;font-weight:500">@' + escHtml(u.screen_name) + '</a>'
+        + '<div><a href="javascript:void(0)" onclick="showUserTweets(' + u.id + ')" style="color:#2C2C2A;text-decoration:none;font-weight:500">@' + escHtml(u.screen_name) + '</a>'
         + '</div>'
-        + '<div style="font-size:0.8rem;color:#71767b">' + escHtml(u.name || '-') + '</div>'
+        + '<div style="font-size:0.8rem;color:#888780">' + escHtml(u.name || '-') + '</div>'
         + '</div>'
         + '</div>'
         + '<div class="meta" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'
@@ -1765,7 +1767,7 @@ async function loadUsers() {
         + '<span class="status-badge ' + blockedClass + '">' + blockedText + '</span>'
         + '<span class="status-badge ' + statusClass + '">' + statusText + '</span>'
         + '</div>'
-        + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#71767b">'
+        + '<div class="meta" style="display:flex;gap:12px;flex-wrap:wrap;font-size:0.75rem;color:#888780">'
         + '<span>Last login: ' + fmtTime(u.last_login_at) + '</span>'
         + '</div>'
         + '<div class="actions" style="margin-top:8px">'
@@ -1788,7 +1790,7 @@ async function loadUsers() {
 
     el.innerHTML = html;
   } catch(e) {
-    el.innerHTML = '<div class="empty-state" style="color:#f4212e">Failed to load users</div>';
+    el.innerHTML = '<div class="empty-state" style="color:#E24B4A">Failed to load users</div>';
   }
 }
 
@@ -1874,7 +1876,7 @@ function switchTab(name) {
 
   // Show loading placeholder immediately
   if (name !== 'settings') {
-    tabEl.innerHTML = '<div class="empty-state" style="color:#71767b">Loading...</div>';
+    tabEl.innerHTML = '<div class="empty-state" style="color:#888780">Loading...</div>';
   }
 
   if (name === 'queue') loadQueue();
@@ -1913,11 +1915,11 @@ function connectSSE() {
       const metaStr = '<strong>#' + d.id + '</strong>' + (metaParts.length ? ' · ' + metaParts.join(' · ') : '');
       const userHtml = d.user_screen_name && d.x_user_db_id
         ? '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
-          + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#2f3336;flex-shrink:0">'
+          + '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;background:#D3D1C7;flex-shrink:0">'
           + (d.user_avatar_url ? '<img src="' + d.user_avatar_url + '" style="width:100%;height:100%;object-fit:cover">' : '')
           + '</div>'
           + '<div style="flex:1;min-width:0">'
-          + '<div style="font-size:0.85rem;font-weight:500;color:#1d9bf0;cursor:pointer" onclick="showUserTweets(' + d.x_user_db_id + ')">@' + escHtml(d.user_screen_name) + '</div>'
+          + '<div style="font-size:0.85rem;font-weight:500;color:#2C2C2A;cursor:pointer" onclick="showUserTweets(' + d.x_user_db_id + ')">@' + escHtml(d.user_screen_name) + '</div>'
           + '<div class="meta">' + metaStr + '</div>'
           + '</div>'
           + '</div>'

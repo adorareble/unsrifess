@@ -140,9 +140,9 @@ async def x_callback(request: Request):
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Redirecting...</title>
 <style>
-body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0e0e12;color:#e7e9ea;display:flex;align-items:center;justify-content:center;min-height:100vh}}
-.card{{background:#1a1a24;border:1px solid #2a2a38;border-radius:16px;padding:30px;text-align:center;max-width:400px}}
-.spinner{{width:32px;height:32px;border:3px solid #2a2a38;border-top-color:#1d9bf0;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#FAFAF9;color:#2C2C2A;display:flex;align-items:center;justify-content:center;min-height:100vh}}
+.card{{background:#F1EFE8;border:1px solid #D3D1C7;border-radius:16px;padding:30px;text-align:center;max-width:400px}}
+.spinner{{width:32px;height:32px;border:3px solid #D3D1C7;border-top-color:#2C2C2A;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px}}
 @keyframes spin{{to{{transform:rotate(360deg)}}}}
 </style></head><body><div class="card"><div class="spinner"></div><div>Logging in...</div></div>
 <script>localStorage.setItem('x_token','{token}');window.location.href='/{tenant["slug"]}'</script>
