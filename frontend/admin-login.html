@@ -5,56 +5,67 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <title>Admin Login — fessable</title>
 <style>
   :root{--bg-page:#FAFAF9;--bg-surface:#F1EFE8;--bg-card:#FFFFFF;--text-primary:#2C2C2A;--text-secondary:#888780;--text-hint:#B4B2A9;--border:#D3D1C7;--red:#E24B4A;--red-tint:#FAECE7;--red-text:#A32D2D;--amber:#EF9F27;--amber-tint:#FAEEDA;--amber-text:#854F0B;--teal:#1D9E75;--teal-tint:#EAF3DE;--teal-text:#0F6E56}
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #FAFAF9; color: #2C2C2A; min-height: 100vh; min-height: 100dvh;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: var(--bg-page); color: var(--text-primary); min-height: 100dvh;
     display: flex; justify-content: center;
   }
-  .container { width: 100%; max-width: 480px; padding: 24px 16px; display: flex; flex-direction: column; justify-content: center; min-height: 100dvh; }
+  .container { width: 100%; max-width: 400px; padding: 24px 16px; display: flex; flex-direction: column; justify-content: center; min-height: 100dvh; }
+  .logo-wrap { text-align: center; margin-bottom: 20px; }
   h1 {
-    font-size: 1.3rem; font-weight: 700; margin-bottom: 4px;
-    color: #2C2C2A; text-align: center;
+    font-size: 18px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px;
+    color: var(--text-primary); text-align: center;
   }
-  .subtitle { font-size: 0.8rem; color: #888780; margin-bottom: 24px; text-align: center; }
+  .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; text-align: center; }
   .card {
-    background: #F1EFE8; border: 1px solid #D3D1C7; border-radius: 20px; padding: 24px 20px;
+    background: var(--bg-card); border: 0.5px solid var(--border); border-radius: 14px; padding: 24px 20px;
   }
   .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 0.8rem; color: #888780; margin-bottom: 6px; }
+  .field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 6px; }
   .field input {
-    width: 100%; background: #FFFFFF; border: 1px solid #D3D1C7;
-    border-radius: 14px; color: #2C2C2A; font-size: 1rem;
-    padding: 14px; outline: none; font-family: inherit;
+    width: 100%; background: var(--bg-surface); border: 0.5px solid var(--border);
+    border-radius: 10px; color: var(--text-primary); font-size: 13px;
+    padding: 10px 12px; outline: none; font-family: inherit; transition: border-color .2s;
   }
-  .field input:focus { border-color: #2C2C2A; }
+  .field input:focus { border-color: var(--text-primary); }
   .btn {
-    width: 100%; padding: 14px; border: none; border-radius: 9999px;
-    color: #FAFAF9; font-size: 1rem; font-weight: 600;
-    cursor: pointer; margin-top: 6px; background: #2C2C2A; transition: opacity .2s;
+    width: 100%; padding: 13px 16px; border: none; border-radius: 12px;
+    color: var(--bg-page); font-size: 14px; font-weight: 700;
+    cursor: pointer; margin-top: 6px; background: var(--text-primary); font-family: inherit; transition: opacity .2s;
   }
   .btn:hover { opacity: .85; }
   .btn:disabled { opacity: 0.3; cursor: not-allowed; }
-  .msg { font-size: 0.8rem; min-height: 1.2em; margin-top: 10px; text-align: center; }
-  .msg.err { color: #E24B4A; }
-  .msg.ok { color: #1D9E75; }
+  .msg { font-size: 13px; min-height: 1.2em; margin-top: 10px; text-align: center; }
+  .msg.err { color: var(--red); }
+  .msg.ok { color: var(--teal); }
   .spinner {
     display: inline-block; width: 14px; height: 14px;
-    border: 2px solid #D3D1C7; border-top-color: #2C2C2A; border-radius: 50%;
+    border: 2px solid var(--border); border-top-color: var(--red); border-radius: 50%;
     animation: spin 0.6s linear infinite; vertical-align: middle; margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-  a.back { display: block; text-align: center; margin-top: 16px; color: #888780; font-size: 0.8rem; text-decoration: none; }
-  a.back:hover { color: #2C2C2A; }
+  a.back { display: block; text-align: center; margin-top: 16px; color: var(--text-secondary); font-size: 13px; text-decoration: none; }
+  a.back:hover { color: var(--text-primary); }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>fessable Panel</h1>
+  <div class="logo-wrap">
+    <svg width="40" height="40" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="4" width="56" height="44" rx="14" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="3"/>
+      <path d="M14,48 L8,60 L26,48 Z" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="3" stroke-linejoin="round"/>
+      <line x1="15" y1="47.2" x2="25" y2="47.2" stroke="#F1EFE8" stroke-width="5"/>
+      <circle cx="22" cy="26" r="6" fill="#E24B4A"/>
+      <circle cx="32" cy="26" r="6" fill="#EF9F27"/>
+      <circle cx="42" cy="26" r="6" fill="#1D9E75"/>
+    </svg>
+  </div>
+  <h1>fessable</h1>
   <div class="subtitle">Login to manage your service</div>
   <div class="card">
     <div class="field">

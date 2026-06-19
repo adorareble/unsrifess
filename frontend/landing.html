@@ -6,6 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/static/fessable-favicon.svg">
 <meta property="og:title" content="fessable — Anonymous Confessions">
 <meta property="og:description" content="Multi-tenant anonymous confession platform. Create your own service or submit confessions anonymously.">
 <meta property="og:type" content="website">
@@ -15,122 +16,116 @@
 <style>
   :root{--bg-page:#FAFAF9;--bg-surface:#F1EFE8;--bg-card:#FFFFFF;--text-primary:#2C2C2A;--text-secondary:#888780;--text-hint:#B4B2A9;--border:#D3D1C7;--red:#E24B4A;--red-tint:#FAECE7;--red-text:#A32D2D;--amber:#EF9F27;--amber-tint:#FAEEDA;--amber-text:#854F0B;--teal:#1D9E75;--teal-tint:#EAF3DE;--teal-text:#0F6E56}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#FAFAF9;color:#2C2C2A;min-height:100vh;display:flex;flex-direction:column;align-items:center;-webkit-font-smoothing:antialiased}
-  .container{max-width:680px;width:100%;padding:64px 16px 24px}
+  body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:#FAFAF9;color:#2C2C2A;min-height:100vh;display:flex;flex-direction:column;align-items:center;-webkit-font-smoothing:antialiased}
+  .topbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; border-bottom: 0.5px solid var(--border);
+    width: 100%; background: var(--bg-page);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  .topbar .wordmark { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+
+  .container{max-width:680px;width:100%;padding:32px 16px 24px}
 
   /* ── Hero ── */
-  .hero{text-align:center;margin-bottom:64px}
-  .hero-logo{display:flex;justify-content:center;margin-bottom:32px}
-  .hero-logo svg{width:280px;height:auto;display:block}
-  .hero-tagline{font-size:.7rem;font-weight:600;color:#888780;text-transform:uppercase;letter-spacing:4px;margin-bottom:14px}
-  .hero-desc{font-size:.92rem;color:#888780;max-width:460px;margin:0 auto;line-height:1.7}
+  .hero{text-align:center;padding-top:24px;margin-bottom:48px}
+  .hero-tagline{font-size:1.75rem;font-weight:800;color:var(--text-primary);letter-spacing:-.03em;margin-bottom:10px;line-height:1.25}
+  .hero-desc{font-size:.88rem;color:var(--text-secondary);max-width:420px;margin:0 auto;line-height:1.6}
+  .hero-accents{display:flex;gap:6px;justify-content:center;margin-top:14px}
+  .hero-accents span{width:6px;height:6px;border-radius:50%;display:block}
+  .hero-accents .a-red{background:var(--red)}
+  .hero-accents .a-amber{background:var(--amber)}
+  .hero-accents .a-teal{background:var(--teal)}
 
   /* ── Section title ── */
-  .section-title{font-size:.7rem;font-weight:600;color:#B4B2A9;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
-
-  /* ── Explainer ── */
-  .explainer{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:48px}
-  .explainer .item{background:#F1EFE8;border:1px solid #D3D1C7;border-radius:14px;padding:20px 16px;text-align:center;transition:border-color .2s}
-  .explainer .item:hover{border-color:#2C2C2A}
-  .explainer .item .icon{font-size:1.4rem;margin-bottom:8px}
-  .explainer .item .label{font-size:.82rem;font-weight:600;color:#2C2C2A;margin-bottom:4px}
-  .explainer .item .desc{font-size:.72rem;color:#888780;line-height:1.5}
+  .section-title{font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:20px;text-align:center;letter-spacing:-.02em}
+  .section-title-left{text-align:left;padding-left:2px}
 
   /* ── Tenant Cards ── */
   .tenant-list{display:flex;flex-direction:column;gap:8px;margin-bottom:48px}
-  .tenant-card{background:#F1EFE8;border:1px solid #D3D1C7;border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;transition:border-color .2s,background .2s;text-decoration:none;color:inherit}
-  .tenant-card:hover{border-color:#2C2C2A;background:#FFFFFF}
-  .tenant-card .avatar-wrap{width:44px;height:44px;border-radius:50%;background:#D3D1C7;flex-shrink:0;overflow:hidden}
+  .tenant-card{background:var(--bg-card);border:0.5px solid var(--border);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:14px;transition:all .2s;text-decoration:none;color:inherit;box-shadow:0 1px 3px rgba(0,0,0,.03)}
+  .tenant-card:hover{box-shadow:0 3px 10px rgba(0,0,0,.06);border-color:var(--text-primary)}
+  .tenant-card .avatar-wrap{width:44px;height:44px;border-radius:50%;background:var(--border);flex-shrink:0;overflow:hidden}
   .tenant-card .avatar-wrap img{width:100%;height:100%;object-fit:cover}
   .tenant-card .info{flex:1;min-width:0}
-  .tenant-card .info .top{display:flex;align-items:center;gap:8px;margin-bottom:2px}
-  .tenant-card .info .name{font-weight:600;font-size:.92rem}
-  .tenant-card .info .handle{font-size:.78rem;color:#888780}
-  .badge{display:inline-block;padding:2px 8px;border-radius:9999px;font-size:.65rem;font-weight:600;line-height:1.4}
-  .badge.active{background:#EAF3DE;color:#0F6E56;border:1px solid rgba(29,158,117,0.25)}
-  .badge.inactive{background:#FAECE7;color:#A32D2D;border:1px solid rgba(226,75,74,0.25)}
-  .tenant-card .visit-btn{margin-left:auto;padding:7px 20px;border:none;border-radius:9999px;background:#2C2C2A;color:#FAFAF9;font-size:.78rem;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .2s;flex-shrink:0}
-  .tenant-card .visit-btn:hover{opacity:.85}
+  .tenant-card .info .top{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:nowrap}
+  .tenant-card .info .name{font-weight:700;font-size:.88rem;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .badge{display:inline-block;padding:3px 10px;border-radius:9999px;font-size:10px;font-weight:600;flex-shrink:0}
+  .badge.active{background:var(--teal-tint);color:var(--teal-text)}
+  .badge.inactive{background:var(--red-tint);color:var(--red-text)}
+  .tenant-card .visit-btn{
+    margin-left:auto;font-size:1.2rem;color:var(--text-hint);cursor:pointer;
+    text-decoration:none;flex-shrink:0;transition:color .2s;font-family:inherit;line-height:1
+  }
+  .tenant-card .visit-btn:hover{color:var(--text-primary)}
 
   /* ── CTA ── */
-  .cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:48px}
-  .cta-row a{padding:14px 32px;border-radius:9999px;text-decoration:none;font-size:.9rem;font-weight:600;transition:all .2s}
+  .cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:40px}
+  .cta-row a{
+    text-decoration:none;transition:opacity .2s;
+    font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    cursor:pointer;
+  }
   .cta-row a:hover{opacity:.85}
-  .cta-primary{background:#2C2C2A;color:#FAFAF9}
-  .cta-ghost{background:transparent;border:1px solid #D3D1C7;color:#2C2C2A}
-  .cta-ghost:hover{border-color:#888780}
+  .cta-primary{
+    padding:9px 20px;border:none;border-radius:9999px;
+    background:var(--text-primary);color:var(--bg-page);
+    font-size:13px;font-weight:700;
+  }
+  .cta-ghost{
+    padding:9px 20px;border:0.5px solid var(--border);border-radius:9999px;
+    background:var(--bg-surface);color:var(--text-primary);
+    font-size:13px;font-weight:700;
+  }
 
   /* ── Footer ── */
-  .footer{padding:24px 0;text-align:center;font-size:.78rem;color:#B4B2A9;border-top:1px solid #D3D1C7;width:100%;max-width:680px}
-  .footer a{color:#888780;text-decoration:none;transition:color .2s}
-  .footer a:hover{color:#2C2C2A}
-  .footer .brand{font-weight:600;color:#888780}
+  .footer{padding:24px 0;text-align:center;font-size:.78rem;color:var(--text-hint);border-top:0.5px solid var(--border);width:100%;max-width:680px}
+  .footer .brand{font-weight:600;color:var(--text-secondary)}
 
   /* ── States ── */
-  .empty-state{text-align:center;padding:48px 20px;color:#B4B2A9;font-size:.9rem;line-height:1.6}
-  .empty-state .spinner{width:24px;height:24px;border:2px solid #D3D1C7;border-top-color:#2C2C2A;border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 8px}
+  .empty-state{text-align:center;padding:48px 20px;color:var(--text-hint);font-size:.9rem;line-height:1.6}
+  .empty-state .spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 8px}
   @keyframes spin{to{transform:rotate(360deg)}}
 
   @media(max-width:500px){
-    .container{padding:40px 16px 20px}
-    .hero-logo svg{width:220px}
-    .explainer{grid-template-columns:1fr}
+    .container{padding:24px 16px 20px}
+    .hero-tagline{font-size:1.35rem}
+    .hero{padding-top:16px}
   }
 </style>
 </head>
 <body>
+<div class="topbar">
+  <svg width="24" height="24" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="4" width="56" height="44" rx="14" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="3"/>
+    <path d="M14,48 L8,60 L26,48 Z" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="3" stroke-linejoin="round"/>
+    <line x1="15" y1="47.2" x2="25" y2="47.2" stroke="#F1EFE8" stroke-width="5"/>
+    <circle cx="22" cy="26" r="6" fill="#E24B4A"/>
+    <circle cx="32" cy="26" r="6" fill="#EF9F27"/>
+    <circle cx="42" cy="26" r="6" fill="#1D9E75"/>
+  </svg>
+  <span class="wordmark">fessable</span>
+</div>
 <div class="container">
   <div class="hero">
-    <div class="hero-logo">
-      <svg viewBox="0 0 360 160" xmlns="http://www.w3.org/2000/svg">
-        <path d="M125,14 Q125,4 135,4 L225,4 Q235,4 235,14 L235,66 Q235,76 225,76 L190,76 L178,94 L175,76 Q125,76 125,66 Z" fill="#F1EFE8" stroke="#D3D1C7" stroke-width="2"/>
-        <circle cx="158" cy="40" r="10" fill="#E24B4A"/>
-        <circle cx="180" cy="40" r="10" fill="#EF9F27"/>
-        <circle cx="202" cy="40" r="10" fill="#1D9E75"/>
-        <text x="180" y="132" font-family="'Plus Jakarta Sans',system-ui,sans-serif" font-size="44" font-weight="800" text-anchor="middle" letter-spacing="-1" fill="#2C2C2A">fessable</text>
-        <text x="180" y="153" font-family="'Plus Jakarta Sans',system-ui,sans-serif" font-size="9" font-weight="600" text-anchor="middle" letter-spacing="4" fill="#888780">AUTO MENFESS PLATFORM</text>
-      </svg>
-    </div>
-    <div class="hero-tagline">Anonymous Confessions on X</div>
-    <p class="hero-desc">Multi-tenant platform to collect anonymous confessions and post them to X. Create your own service or submit to existing ones.</p>
+    <p class="hero-tagline">your menfess base.</p>
+    <p class="hero-tagline">fully automated.</p>
+    <p class="hero-desc">the auto menfess platform for base owners</p>
+    <div class="hero-accents"><span class="a-red"></span><span class="a-amber"></span><span class="a-teal"></span></div>
   </div>
 
-  <div class="section-title">How It Works</div>
-  <div class="explainer">
-    <div class="item">
-      <div class="icon">🔧</div>
-      <div class="label">Create Service</div>
-      <div class="desc">Register your own confession page with custom branding and moderation.</div>
-    </div>
-    <div class="item">
-      <div class="icon">📝</div>
-      <div class="label">Submit Confession</div>
-      <div class="desc">Users send anonymous messages via your service page, no login needed.</div>
-    </div>
-    <div class="item">
-      <div class="icon">👀</div>
-      <div class="label">Review &amp; Moderate</div>
-      <div class="desc">Admin panel to review, approve, or reject submissions with keyword filters.</div>
-    </div>
-    <div class="item">
-      <div class="icon">🐦</div>
-      <div class="label">Post to X</div>
-      <div class="desc">Approved confessions are automatically posted to your X account.</div>
-    </div>
+  <div class="cta-row">
+    <a href="/register" class="cta-primary">Create Yours</a>
+    <a href="/admin-login" class="cta-ghost">Login</a>
   </div>
 
-  <div class="section-title">Active Services</div>
+  <div class="section-title section-title-left">Our Clients</div>
   <div class="tenant-list" id="tenantList">
     <div class="empty-state"><div class="spinner"></div>Loading services...</div>
   </div>
 
-  <div class="cta-row">
-    <a href="/register" class="cta-primary">+ Create Your Service</a>
-    <a href="/admin-login" class="cta-ghost">Login</a>
-  </div>
-
   <div class="footer">
-    <span class="brand">fessable</span> &mdash; open source auto menfess platform &middot; <a href="#">GitHub</a>
+    <span class="brand">fessable</span> &mdash; built with &lt;3
   </div>
 </div>
 <script>
@@ -144,7 +139,8 @@ async function loadTenants() {
       return;
     }
     el.innerHTML = d.map(function(t) {
-      var badge = t.is_active
+      var is_active = t.is_online_setting;
+      var badge = is_active
         ? '<span class="badge active">Active</span>'
         : '<span class="badge inactive">Inactive</span>';
       var avatar_url = t.x_avatar_url || (t.x_screen_name ? 'https://unavatar.io/x/' + encodeURIComponent(t.x_screen_name) : '');
@@ -156,7 +152,7 @@ async function loadTenants() {
         + '<div class="avatar-wrap">' + avatar + '</div>'
         + '<div class="info"><div class="top"><span class="name">' + esc(display_name) + '</span>' + badge + '</div>'
         + '<div class="handle">@' + esc(t.x_screen_name || '-') + '</div></div>'
-        + '<span class="visit-btn">Visit</span></a>';
+        + '<span class="visit-btn">›</span></a>';
     }).join('');
   } catch(e) {
     document.getElementById('tenantList').innerHTML = '<div class="empty-state">Failed to load services. Try again later.</div>';

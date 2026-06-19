@@ -234,7 +234,18 @@ async def admin_login_page():
 
 @public_router.get("/api/tenants")
 async def list_tenants():
-    return await get_all_tenants()
+    tenants = await get_all_tenants()
+    result = []
+    for t in tenants:
+        state_path = TwitterClientPool.state_path_for(t["id"])
+        has_x = os.path.exists(state_path)
+        if not has_x:
+            continue
+        t["has_x_connected"] = True
+        online_val = await get_setting("online", tenant_id=t["id"])
+        t["is_online_setting"] = online_val == "true"
+        result.append(t)
+    return result
 
 
 @public_router.post("/api/admin-login")
